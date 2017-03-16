@@ -35,7 +35,7 @@ class Octree {
 
 		void add_particle(TreeNode *r, const ParticleSystem::Particle *p);
 
-		void append_neighbours(const ParticleSystem::Particle *p, float distance, TreeNode* const r, std::vector<ParticleSystem::Particle*> &neighbours) const;
+		void append_neighbours(const ParticleSystem::Particle &p, float distance, TreeNode* const r, std::vector<ParticleSystem::Particle*> &neighbours) const;
 
 		void destroy_tree(TreeNode* &r);
 

@@ -136,12 +136,12 @@ void Octree::add_particle(TreeNode *r, const ParticleSystem::Particle *p) {
 	}
 }
 
-void Octree::append_neighbours(const ParticleSystem::Particle *p, float distance, TreeNode* const r, std::vector<ParticleSystem::Particle*> &neighbours) const {
+void Octree::append_neighbours(const ParticleSystem::Particle &p, float distance, TreeNode* const r, std::vector<ParticleSystem::Particle*> &neighbours) const {
 	// Append all particles in sub-tree r that are possibly within distance of p to neighbours.
 
 	// First check if the space around p intersects with the space represented by the tree root.
 	// If not, the entire sub-tree contains particles that are too far away.
-	if (r->intersects(p->position, distance)) {
+	if (r->intersects(p.position, distance)) {
 		if (r->is_leaf) {
 			// If r is a leaf node, consider all particles possible neighbours of p
 			neighbours.insert(neighbours.end(), r->particles.begin(), r->particles.end());
@@ -162,9 +162,10 @@ void Octree::append_neighbours(const ParticleSystem::Particle *p, float distance
 
 void Octree::destroy_tree(TreeNode* &r) {
 	// Recursively destroys all sub-trees of given tree.
+	// Needs the reference to the pointer of r so as to change the pointer to NULL afterwards!
 
 	if (!r) {
-
+		// Technically safe, but maybe add something here to debug code that tries to destroy non-existent tree.
 	}
 
 	if (!r->is_leaf) {
