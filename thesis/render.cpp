@@ -13,7 +13,7 @@ extern ParticleSystem ps;
 
 
 // Render parameters
-void (* const render_function)(ParticleSystem) = render_particles;
+void (* const render_function)(const ParticleSystem&) = render_particles;
 
 const double particle_display_size = 1.0;
 
@@ -48,7 +48,7 @@ void render_sphere(ParticleSystem ps) {
 	glutSwapBuffers();
 }
 
-void render_particles(ParticleSystem ps) {
+void render_particles(const ParticleSystem &ps) {
 	// Draws the particles of ps as small spheres.
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
