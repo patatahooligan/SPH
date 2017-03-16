@@ -114,7 +114,7 @@ void Octree::add_particle(TreeNode *r, const Particle *p) {
 
 	const size_t leaf_capacity = 10;		// Max number of particles in leaf node
 
-	if (r->is_leaf) {
+	if (!r->is_leaf) {
 		// If given particle is not a leaf node, add the particle to the sub-tree whose
 		// root is the appropriate child of r.
 		add_particle(r->get_child(p->position), p);
