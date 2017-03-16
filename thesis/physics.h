@@ -2,13 +2,14 @@
 
 #include <vector>
 
-#include "boost\geometry\geometry.hpp"
 #include "boost\numeric\ublas\matrix.hpp"
 
 #include "constants.h"
+#include "particle.h"
 #include "Vec3f.h"
 #include "octree.h"
 
+class Octree;
 
 class ParticleSystem {
 	// Holds the particles and handles the physics simulation
@@ -26,20 +27,6 @@ class ParticleSystem {
 		Octree search_tree;
 
 	public:
-		class Particle {
-			// A single particle of the SPH simulation
-		public:
-			Vec3f position, velocity, velocity_half, acceleration;
-			float
-				density, density_derivative,
-				pressure,
-				temperature, temperature_derivative,
-				viscocity;
-			boost::numeric::ublas::matrix<float> stress_tensor;
-
-			Particle(void);
-		};
-
 		Particle  particles[num_of_particles];
 
 		void randomize_particles();

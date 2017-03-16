@@ -13,7 +13,7 @@
 #include "boost\geometry\geometry.hpp"
 #include "boost\numeric\ublas\matrix.hpp"
 
-#include "physics.h"		// Also uses "boost\geometry\geometry.hpp" but it should be in "physics.h"
+#include "physics.h"
 #include "constants.h"
 #include "vec3f.h"
 #include "octree.h"
@@ -119,9 +119,9 @@ void ParticleSystem::update_derivatives() {
 		// This reference is used to write cleaner equations.
 		Particle& pi = particles[i];
 
-		std::vector<Particle*> neighbours = search_tree.find_neighbours(pi, 3 * smoothing_length);
+		std::vector<const Particle*> neighbours = search_tree.find_neighbours(pi, 3 * smoothing_length);
 
-		for (std::vector<ParticleSystem::Particle*>::iterator pj = neighbours.begin(); pj!= neighbours.end(); ++pj) {
+		for (std::vector<const Particle*>::iterator pj = neighbours.begin(); pj!= neighbours.end(); ++pj) {
 			if (*pj == &pi) continue;		// Needs to be for every OTHER particle
 
 			// Calculate their relative position and skip to next particle if it's over the smoothing kernel
@@ -273,21 +273,6 @@ void ParticleSystem::conflict_resolution() {
 	}
 }
 
-ParticleSystem::Particle::Particle() {
-	stress_tensor = ublas::zero_matrix<float>((size_t)3);
-
-	velocity.x = 0.0f;
-	velocity.y = 0.0f;
-	velocity.z = 0.0f;
-
-	velocity_half.x = 0.0f;
-	velocity_half.y = 0.0f;
-	velocity_half.z = 0.0f;
-
-	acceleration.x = 0.0f;
-	acceleration.y = 0.0f;
-	acceleration.z = 0.0f;
-}
 
 float ParticleSystem::smoothing_kernel(const Vec3f &r, const float h) {
 	// Piecewise quintic smoothing kernel.

@@ -5,6 +5,7 @@
 
 #include "octree.h"
 #include "constants.h"
+#include "physics.h"
 
 
 Octree::TreeNode::TreeNode() :
@@ -108,7 +109,7 @@ bool Octree::TreeNode::intersects(Vec3f poi, float distance) const {
 }
 
 
-void Octree::add_particle(TreeNode *r, const ParticleSystem::Particle *p) {
+void Octree::add_particle(TreeNode *r, const Particle *p) {
 	// Add particle to tree with root r.
 
 	const size_t leaf_capacity = 10;		// Max number of particles in leaf node
@@ -136,7 +137,7 @@ void Octree::add_particle(TreeNode *r, const ParticleSystem::Particle *p) {
 	}
 }
 
-void Octree::append_neighbours(const ParticleSystem::Particle &p, float distance, TreeNode* const r, std::vector<ParticleSystem::Particle*> &neighbours) const {
+void Octree::append_neighbours(const Particle &p, float distance, TreeNode* const r, std::vector<const Particle*> &neighbours) const {
 	// Append all particles in sub-tree r that are possibly within distance of p to neighbours.
 
 	// First check if the space around p intersects with the space represented by the tree root.
@@ -197,15 +198,15 @@ void Octree::construct_tree(const ParticleSystem &ps) {
 	// Construct tree for given ps. Destroy any previously stored tree.
 
 	destroy_tree(root);
-	for (size_t i; i < num_of_particles; i++) {
+	for (size_t i = 0; i < num_of_particles; i++) {
 		add_particle(root, &(ps.particles[i]));
 	}
 }
 
-std::vector<ParticleSystem::Particle*> Octree::find_neighbours(const ParticleSystem::Particle &p, float distance) const {
+std::vector<const Particle*> Octree::find_neighbours(const Particle &p, float distance) const {
 	// Returns a vector of all particles that are possibly within distance of p.
 
-	std::vector<ParticleSystem::Particle*> neighbours;
+	std::vector<const Particle*> neighbours;
 	append_neighbours(p, distance, root, neighbours);
 	return neighbours;
 }
