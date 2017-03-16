@@ -121,7 +121,7 @@ void Octree::add_particle(TreeNode *r, const Particle *p) {
 	}
 	else {
 		// If r is a leaf node, check whether it is full.
-		if (r->particles.size() <= leaf_capacity) {
+		if (r->particles.size() < leaf_capacity) {
 			// If not, just add the particle to the node.
 			r->particles.push_back(p);
 		}
@@ -133,6 +133,7 @@ void Octree::add_particle(TreeNode *r, const Particle *p) {
 				add_particle(r->get_child(r->particles[i]->position), r->particles[i]);
 			}
 			add_particle(r->get_child(p->position), p);
+			std::vector<const Particle*>().swap(r->particles);
 		}
 	}
 }
