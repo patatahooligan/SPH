@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <cfloat>
+#include <vector>
 
 #include "boost\geometry\geometry.hpp"
 #include "boost\numeric\ublas\matrix.hpp"
@@ -15,6 +16,7 @@
 #include "physics.h"		// Also uses "boost\geometry\geometry.hpp" but it should be in "physics.h"
 #include "constants.h"
 #include "vec3f.h"
+#include "octree.h"
 
 
 namespace ublas = boost::numeric::ublas;
@@ -114,65 +116,70 @@ void ParticleSystem::update_derivatives() {
 
 		ublas::matrix<float> velocity_tensor_derivative = ublas::zero_matrix<float>((size_t)3);
 
-		for (unsigned j = 0; j < num_of_particles; j++) {
-			if (i==j) continue;		// Needs to be for every OTHER particle
+		// This reference is used to write cleaner equations.
+		Particle& pi = particles[i];
+
+		std::vector<Particle*> neighbours = search_tree.find_neighbours(pi, 3 * smoothing_length);
+
+		for (std::vector<ParticleSystem::Particle*>::iterator pj = neighbours.begin(); pj!= neighbours.end(); ++pj) {
+			if (*pj == &pi) continue;		// Needs to be for every OTHER particle
 
 			// Calculate their relative position and skip to next particle if it's over the smoothing kernel
-			Vec3f relative_position = particles[i].position - particles[j].position;
+			Vec3f relative_position = pi.position - (*pj)->position;
 			if (relative_position.length_squared() > smoothing_length * smoothing_length) continue;
 
 			Vec3f
 				dw = smoothing_kernel_derivative(relative_position, smoothing_length),
-				relative_velocity = particles[i].velocity - particles[j].velocity;
+				relative_velocity = pi.velocity - (*pj)->velocity;
 
 			float vdw = relative_velocity.dot_product(dw);
 
-			sum_density += (vdw * particle_mass) / particles[j].density;
+			sum_density += (vdw * particle_mass) / (*pj)->density;
 			sum_pressure -=
 				(particle_mass *
-				(particles[i].pressure/pow(particles[i].density, 2) + particles[j].pressure/pow(particles[j].density, 2))) *
+				(pi.pressure/pow(pi.density, 2) + (*pj)->pressure/pow((*pj)->density, 2))) *
 				dw;
 
 			float vx = relative_velocity.dot_product(relative_position);
 			if (vx < 0) {
 				float mu = (vx*smoothing_length) / relative_position.length_squared() + 0.01f * smoothing_length * smoothing_length;
 				sum_acceleration -=
-					(particle_mass / particles[i].density) *
+					(particle_mass / pi.density) *
 					(visc_b * pow(mu, 2) - visc_a * mu * speed_of_sound) /
-					0.5f * (particles[i].density + particles[j].density) *
+					0.5f * (pi.density + (*pj)->density) *
 					dw;
 			}
 
 			sum_stress_derivative +=
-				(particle_mass / particles[j].density) *
-				(particles[i].stress_tensor + particles[j].stress_tensor) *
+				(particle_mass / (*pj)->density) *
+				(pi.stress_tensor + (*pj)->stress_tensor) *
 				smoothing_kernel_derivative(relative_position, smoothing_length);
 
 			sum_tempererature_laplacian +=
-				(4 * particle_mass * particles[i].density *
-				(particles[i].temperature - particles[j].temperature) * vdw) /
-				(particles[j].density * (particles[i].density + particles[j].density) *
+				(4 * particle_mass * pi.density *
+				(pi.temperature - (*pj)->temperature) * vdw) /
+				((*pj)->density * (pi.density + (*pj)->density) *
 				(relative_velocity.length_squared() + 0.01f * smoothing_length*smoothing_length));
 
-			velocity_tensor_derivative -= (particle_mass * dyadic_product(relative_velocity, dw)) / particles[j].density;
+			velocity_tensor_derivative -= (particle_mass * dyadic_product(relative_velocity, dw)) / (*pj)->density;
 		}
 		
-		particles[i].density_derivative = particles[i].density * sum_density;
+		pi.density_derivative = pi.density * sum_density;
 
-		particles[i].acceleration =
+		pi.acceleration =
 			sum_pressure +
-			sum_stress_derivative / particles[i].density -
+			sum_stress_derivative / pi.density -
 			Vec3f(0.0f, gravity_constant, 0.0f) -
 			sum_acceleration;
 
-		particles[i].temperature_derivative = thermal_diffusion_constant * sum_tempererature_laplacian;
+		pi.temperature_derivative = thermal_diffusion_constant * sum_tempererature_laplacian;
 
 		ublas::matrix<float> deformation_tensor = velocity_tensor_derivative;
 		deformation_tensor += reverse(velocity_tensor_derivative);
 		float
 			intensity_of_deformation = sqrt(pow(trace(deformation_tensor), 2)/2);
 
-		particles[i].viscocity =
+		pi.viscocity =
 			(1-exp(-(jump_number + 1) * intensity_of_deformation)) *
 			(1/sqrt(intensity_of_deformation) + 1/intensity_of_deformation);
 	}
@@ -368,6 +375,8 @@ void ParticleSystem::calculate_initial_conditions() {
 }
 
 void ParticleSystem::simulation_step() {
+	search_tree.construct_tree(*this);
+
 	update_derivatives();
 	integrate_step();
 	conflict_resolution();

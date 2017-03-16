@@ -7,9 +7,8 @@
 
 #include "constants.h"
 #include "Vec3f.h"
+#include "octree.h"
 
-
-//using point3f = boost::geometry::model::point<float, 3, boost::geometry::cs::cartesian>;
 
 class ParticleSystem {
 	// Holds the particles and handles the physics simulation
@@ -23,6 +22,8 @@ class ParticleSystem {
 		void update_derivatives();
 		void integrate_step();
 		void conflict_resolution();
+
+		Octree search_tree;
 
 	public:
 		class Particle {
