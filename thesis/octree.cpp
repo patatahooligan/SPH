@@ -166,7 +166,8 @@ void Octree::destroy_tree(TreeNode* &r) {
 	// Needs the reference to the pointer of r so as to change the pointer to NULL afterwards!
 
 	if (!r) {
-		// Technically safe, but maybe add something here to debug code that tries to destroy non-existent tree.
+		// Technically ok, but maybe add something here to debug code that tries to destroy non-existent tree.
+		return;
 	}
 
 	if (!r->is_leaf) {
@@ -195,9 +196,16 @@ Octree::~Octree() {
 }
 
 void Octree::construct_tree(const ParticleSystem &ps) {
-	// Construct tree for given ps. Destroy any previously stored tree.
+	// Construct tree for given ps.
 
+	// Destroy old tree
 	destroy_tree(root);
+
+	// Initialize root because add_particle expects valid pointers
+	root = new TreeNode(
+		Vec3f(size/2.0f, size/2.0f, size/2.0f),
+		size/2.0f);
+
 	for (size_t i = 0; i < num_of_particles; i++) {
 		add_particle(root, &(ps.particles[i]));
 	}
