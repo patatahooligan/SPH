@@ -29,6 +29,9 @@ class ParticleSystem {
 	public:
 		Particle  particles[num_of_particles];
 
+		ParticleSystem(){}
+		~ParticleSystem(){}
+
 		void randomize_particles();
 
 		void calculate_initial_conditions();
