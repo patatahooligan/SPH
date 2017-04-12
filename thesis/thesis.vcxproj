@@ -71,8 +71,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\DevStuff\freeglut-3.0.0\Source\include\;C:\DevStuff\boost_1_62_0\;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\DevStuff\freeglut-3.0.0\Binaries\lib\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\DevStuff\ffmpeg-3.2.4-win32-dev\include;C:\DevStuff\freeglut-3.0.0\Source\include\;C:\DevStuff\boost_1_62_0\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\DevStuff\ffmpeg-3.2.4-win32-dev\lib;C:\DevStuff\freeglut-3.0.0\Binaries\lib\Debug;$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>C:\Program Files (x86)\Microsoft Visual Studio 14.0\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
@@ -81,8 +81,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\DevStuff\freeglut-3.0.0\Source\include\;C:\DevStuff\boost_1_62_0\;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\DevStuff\freeglut-3.0.0\Binaries\lib\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\DevStuff\ffmpeg-3.2.4-win32-dev\include;C:\DevStuff\freeglut-3.0.0\Source\include\;C:\DevStuff\boost_1_62_0\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\DevStuff\ffmpeg-3.2.4-win32-dev\lib;C:\DevStuff\freeglut-3.0.0\Binaries\lib\Release;$(LibraryPath)</LibraryPath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -158,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="constants.h" />
+    <ClInclude Include="video.h" />
     <ClInclude Include="octree.h" />
     <ClInclude Include="particle.h" />
     <ClInclude Include="physics.h" />
@@ -178,6 +179,7 @@
     </ClCompile>
     <ClCompile Include="thesis.cpp" />
     <ClCompile Include="vec3f.cpp" />
+    <ClCompile Include="video.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

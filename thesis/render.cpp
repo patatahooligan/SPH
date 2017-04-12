@@ -62,7 +62,6 @@ void render_particles(const ParticleSystem &ps) {
 		glutSolidSphere(particle_display_size, 10, 10);
 		glPopMatrix();
 	}
-	glutSwapBuffers();
 }
 
 void render() {
@@ -71,4 +70,6 @@ void render() {
 	// render_function takes a ParticleSystem as the only argument.
 
 	render_function(ps);
+	// TODO: add call to function that writes to file here
+	glutSwapBuffers();
 }
