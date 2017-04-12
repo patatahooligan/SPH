@@ -16,18 +16,7 @@ int main(int argc, char **argv)
 	//unsigned int current_control;
 	//unsigned int err_no = _controlfp_s(&current_control, ~(_EM_ZERODIVIDE|_EM_OVERFLOW), _MCW_EM);
 
-	// Initialize glut and create the window
-	glutInit(&argc, argv);
-	glutInitWindowPosition(-1, -1);
-	glutInitWindowSize(800, 800);
-	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-	glutCreateWindow("Test window");
-
-	// Register callback
-	glutDisplayFunc(render);
-	glutIdleFunc([](){ps.simulation_step();});
-
-	render_init();
+	render_init(argc, argv);
 	
 	ps.randomize_particles();
 	ps.calculate_initial_conditions();

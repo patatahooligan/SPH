@@ -18,7 +18,17 @@ void (* const render_function)(const ParticleSystem&) = render_particles;
 const double particle_display_size = 1.0;
 
 
-void render_init() {
+void render_init(int argc, char **argv) {
+	// Initialize glut and create the window
+	glutInit(&argc, argv);
+	glutInitWindowPosition(-1, -1);
+	glutInitWindowSize(800, 800);
+	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+	glutCreateWindow("Test window");
+
+	// Register callback
+	glutDisplayFunc(render);
+	glutIdleFunc([](){ps.simulation_step();});
 	// Define a perspective projection for the camera
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();

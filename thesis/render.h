@@ -2,7 +2,7 @@
 
 #include "physics.h"
 
-void render_init();
+void render_init(int argc, char **argv);
 
 void render_sphere(ParticleSystem ps);
 
