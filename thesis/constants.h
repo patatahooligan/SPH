@@ -11,6 +11,11 @@ const float
 	sizez = 20.0f,
 	offsetz = 20.0f;
 
+// Display window (and video output) dimensions
+const int output_width = 800;
+const int output_height = 800;
+
+// Simulation parameters
 const unsigned int num_of_particles = 100;
 const float smoothing_length = 1.0f;
 const float kernel_constant = 3.0f/359.0f * pi * pow(smoothing_length, 3);

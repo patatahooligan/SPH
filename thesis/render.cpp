@@ -22,7 +22,7 @@ void render_init(int argc, char **argv) {
 	// Initialize glut and create the window
 	glutInit(&argc, argv);
 	glutInitWindowPosition(-1, -1);
-	glutInitWindowSize(800, 800);
+	glutInitWindowSize(output_width, output_height);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutCreateWindow("Test window");
 
