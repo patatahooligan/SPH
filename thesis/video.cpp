@@ -13,7 +13,7 @@ const AVCodecID codec_id = AV_CODEC_ID_H264;
 
 Video::~Video() {
 	// If an AVCodecContext has been allocated but not destroyed through video_finalize, destroy it
-	// and post a warning to std:cerr.
+	// and post a warning to std::cerr.
 
 	if (context) {
 		avcodec_free_context(&context);
@@ -37,7 +37,7 @@ void Video::video_init() {
 		throw std::runtime_error("Could not allocate AVCodecContext");
 	}
 
-	// Set dimensions to 
+	// Set video dimensions. They match with the glut output window.
 	context->width = output_width;
 	context->height = output_height;
 }
