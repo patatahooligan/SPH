@@ -24,7 +24,7 @@ void render_init(int argc, char **argv) {
 	glutInitWindowPosition(-1, -1);
 	glutInitWindowSize(output_width, output_height);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
-	glutCreateWindow("Test window");
+	glutCreateWindow("SPH");
 
 	// Register callback
 	glutDisplayFunc(render);
