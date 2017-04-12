@@ -29,7 +29,7 @@ class ParticleSystem {
 	public:
 		Particle  particles[num_of_particles];
 
-		ParticleSystem(){}
+		ParticleSystem() : simulation_time(0.0f) {}
 		~ParticleSystem(){}
 
 		void randomize_particles();

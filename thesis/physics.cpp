@@ -193,6 +193,8 @@ void ParticleSystem::integrate_step() {
 	// use a crude approximation for velocity at integer multiples of time step because it is needed for
 	// the acceleration in update_derivatives().
 	float time_step = calculate_time_step();
+	simulation_time += time_step;
+
 	Vec3f new_velocity_half[num_of_particles];
 
 	for (size_t i = 0; i < num_of_particles; i++) {
