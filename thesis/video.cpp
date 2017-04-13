@@ -28,7 +28,7 @@ void Video::video_init() {
 	AVCodec *codec = avcodec_find_encoder(codec_id);
 	if (!codec) {
 		// If avcodec_find_encoder returned null, the specified codec was not found
-		throw std::invalid_argument("Codec id not found by avcodec");
+		throw std::runtime_error("Codec id not found by avcodec");
 	}
 
 	// Initialize a context which serves as an API
