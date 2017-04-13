@@ -12,8 +12,10 @@ extern "C" {
 #include "video.h"
 #include "constants.h"
 
+
 const AVCodecID codec_id = AV_CODEC_ID_H264;
 const int framerate = 25;
+
 
 Video::~Video() {
 	// Free all AVCodec structs that have been allocated while initializing.
@@ -49,6 +51,9 @@ void Video::video_init() {
 	context->height = output_height;
 	context->time_base.num = 1;
 	context->time_base.den = framerate;
+    context->gop_size = 10;
+    context->max_b_frames = 1;
+    context->pix_fmt = AV_PIX_FMT_YUV420P;
 	// IMPORTANT : Not yet sure if context needs more params initialized!
 
 	frame = av_frame_alloc();
