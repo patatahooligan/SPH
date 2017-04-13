@@ -19,6 +19,8 @@ Video::~Video() {
 		avcodec_free_context(&context);
 		std::cerr << "WARNING : A Video object was destroyed with a live AVCodecContext. Possibly a video file was not finalized.";
 	}
+
+	av_frame_free(&frame);
 }
 
 void Video::video_init() {
@@ -38,8 +40,17 @@ void Video::video_init() {
 	}
 
 	// Set video dimensions. They match with the glut output window.
-	context->width = output_width;
+	context->width  = output_width;
 	context->height = output_height;
+
+	frame = av_frame_alloc();
+	if (!frame) {
+		throw std::runtime_error("Could not allocate AVFrame");
+	}
+
+	frame->format = context->pix_fmt;
+	frame->width  = output_width;
+	frame->height = output_height;
 }
 
 void Video::video_finalize() {
