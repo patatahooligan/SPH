@@ -3,8 +3,11 @@
 #include <stdexcept>
 #include <iostream>
 
-#include "libavcodec\avcodec.h"
-#include "libavformat\avformat.h"
+// libav is a pure C project so it needs to be included as such
+extern "C" {
+	#include "libavcodec\avcodec.h"
+	#include "libavformat\avformat.h"
+}
 
 #include "video.h"
 #include "constants.h"
