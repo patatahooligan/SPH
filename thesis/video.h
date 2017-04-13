@@ -4,17 +4,23 @@
 extern "C" {
 	#include "libavcodec\avcodec.h"
 	#include "libavformat\avformat.h"
+	#include "libavformat\avio.h"
+}
 
 class Video{
 	private:
-		AVCodecContext *context;
+		AVCodecContext *codec_context;
+		AVFormatContext *format_context;
+		AVIOContext *io_context;
 		AVFrame *frame;
 		FILE *f;
 		int current_frame;
 
 	public:
 		Video() :
-			context(NULL),
+			codec_context(NULL),
+			format_context(NULL),
+			io_context(NULL),
 			frame(NULL),
 			current_frame(0) {}
 		~Video();
