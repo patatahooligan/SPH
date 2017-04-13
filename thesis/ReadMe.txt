@@ -1,40 +1,35 @@
 ========================================================================
-    CONSOLE APPLICATION : thesis Project Overview
+							PROJECT STRUCTURE
 ========================================================================
 
-AppWizard has created this thesis application for you.
-
-This file contains a summary of what you will find in each of the files that
-make up your thesis application.
-
-
-thesis.vcxproj
-    This is the main project file for VC++ projects generated using an Application Wizard.
-    It contains information about the version of Visual C++ that generated the file, and
-    information about the platforms, configurations, and project features selected with the
-    Application Wizard.
-
-thesis.vcxproj.filters
-    This is the filters file for VC++ projects generated using an Application Wizard. 
-    It contains information about the association between the files in your project 
-    and the filters. This association is used in the IDE to show grouping of files with
-    similar extensions under a specific node (for e.g. ".cpp" files are associated with the
-    "Source Files" filter).
-
 thesis.cpp
-    This is the main application source file.
+	Holds the global ParticleSystem object and the main() function of the project
 
-/////////////////////////////////////////////////////////////////////////////
-Other standard files:
+physics.cpp & physics.h
+	Definition of class ParticleSystem which serves as a context for the whole
+	simulation. It holds all the Particles (defined in particles.h) and offers
+	all necessary functions for the physics simulation.
 
-StdAfx.h, StdAfx.cpp
-    These files are used to build a precompiled header (PCH) file
-    named thesis.pch and a precompiled types file named StdAfx.obj.
+particle.h
+	Definition of Particle class.
 
-/////////////////////////////////////////////////////////////////////////////
-Other notes:
+render.cpp & render.h
+	Functions for rendering the current state of ParticleSystem using freeglut.
 
-AppWizard uses "TODO:" comments to indicate parts of the source code you
-should add to or customize.
+vec3f.cpp & vec3f.h
+	Definition of a 3D float vector that is used for the physics emulation.
 
-/////////////////////////////////////////////////////////////////////////////
+octree.cpp and octree.h
+	An octree implementation to be used for neighbour searching to reduce
+	the complexity of some methods in physics.h.
+
+video.cpp and video.h
+	Definition of Video class that can be used to save the output from render.cpp
+	to a video file.
+
+constants.h
+	Used to hold compile time constants that are needed across multiple files.
+
+stdafx.cpp & stafx.h
+	These files are used to build a precompiled header (PCH) file
+	named thesis.pch and a precompiled types file named StdAfx.obj.
