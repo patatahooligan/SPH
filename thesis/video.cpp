@@ -10,10 +10,12 @@
 #include "constants.h"
 
 const AVCodecID codec_id = AV_CODEC_ID_H264;
+const int framerate = 25;
 
 Video::~Video() {
-	// If an AVCodecContext has been allocated but not destroyed through video_finalize, destroy it
-	// and post a warning to std::cerr.
+	// Free all AVCodec structs that have been allocated while initializing.
+	// Post a warning if the context is still open because it might mean that the file was
+	// not finalized and created.
 
 	if (context) {
 		avcodec_free_context(&context);
@@ -42,6 +44,9 @@ void Video::video_init() {
 	// Set video dimensions. They match with the glut output window.
 	context->width  = output_width;
 	context->height = output_height;
+	context->time_base.num = 1;
+	context->time_base.den = framerate;
+	// IMPORTANT : Not yet sure if context needs more params initialized!
 
 	frame = av_frame_alloc();
 	if (!frame) {
