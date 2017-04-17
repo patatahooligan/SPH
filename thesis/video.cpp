@@ -89,7 +89,7 @@ void Video::video_init() {
 		throw std::runtime_error("Could not allocate AVFormatContext");
 	}
 
-	// Set video dimensions. They match with the glut output window.
+	// Set codec parameters. Dimensions match with the glut output window.
 	codec_context->width  = output_width;
 	codec_context->height = output_height;
 	codec_context->time_base.num = 1;
