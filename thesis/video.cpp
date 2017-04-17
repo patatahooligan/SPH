@@ -33,7 +33,7 @@ int Video::save_packets() {
 		// Send packet to the format context. Give a warning if an error occurs.
 		int write_frame_err_code = av_interleaved_write_frame(format_context, pkt);
 		if (write_frame_err_code != 0) {
-			std::cerr << "av_interleaved_write_frame returned " << write_frame_err_code << std::endl;
+			std::cerr << "av_interleaved_write_frame returned error " << write_frame_err_code << std::endl;
 		}
 		err_code = avcodec_receive_packet(codec_context, pkt);
 	}
@@ -41,7 +41,7 @@ int Video::save_packets() {
 	// These error codes are expected when the codec needs more frames to encode or has
 	// been flushed. Post warning if a different error code occurs.
 	if (err_code != AVERROR(EAGAIN) && err_code != AVERROR_EOF) {
-		std::cerr << "Unexpected error from avcodec_receive_packet : " << err_code << std::endl;
+		std::cerr << "avcodec_receive_packet returned error " << err_code << std::endl;
 	}
 
 	// Return the code because it might be useful for the caller to know if the codec was in flush mode.
