@@ -116,7 +116,10 @@ void Video::video_finalize() {
 	// Send NULL to the context to put it in flush mode.
 	avcodec_send_frame(codec_context, NULL);
 
-	// TODO : encode the last packets
+	int err_code = save_packets();
+	if (err_code != AVERROR_EOF) {
+		throw std::runtime_error("Unexpected error in save_packets");
+	}
 
 	// It's important to destroy the context because the destructor checks if it exists
 	// and posts a warning to catch situations where a Video object was destroyed without
