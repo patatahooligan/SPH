@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <tchar.h>
+#include <stdexcept>
 
 #include "GL\freeglut.h"		// Not actually needed everywhere, but added to save time
 
