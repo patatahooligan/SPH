@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdexcept>
+
 #include "boost\numeric\ublas\matrix.hpp"
 
 #include "vec3f.h"
@@ -20,5 +22,11 @@ public:
 	velocity(0.0f, 0.0f, 0.0f),
 	velocity_half(0.0f, 0.0f, 0.0f),
 	acceleration(0.0f, 0.0f, 0.0f) {
+	}
+
+	Particle(const Particle& other) {
+		// There should be no code that needs this, so throw an exception to catch
+		// typos that attempt to create a copy rather than use a reference of particle.
+		throw std::exception("Copy constructor of particle was called");
 	}
 };
