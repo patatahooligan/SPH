@@ -13,8 +13,13 @@ class Video{
 		AVFormatContext *format_context;
 		AVIOContext *io_context;
 		AVFrame *frame;
+		AVPacket *pkt;
 		FILE *f;
 		int current_frame;
+
+		int save_packets();
+		// Grab packets from codec output and write them to the file. All contexts are expected to
+		// have been initialized.
 
 	public:
 		Video() :
@@ -22,6 +27,7 @@ class Video{
 			format_context(NULL),
 			io_context(NULL),
 			frame(NULL),
+			pkt(NULL),
 			current_frame(0) {}
 		~Video();
 		void video_init();

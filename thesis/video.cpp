@@ -18,6 +18,37 @@ const AVCodecID codec_id = AV_CODEC_ID_H264;
 const int framerate = 25;
 
 
+int Video::save_packets() {
+	// Grab packets from codec output and write them to the file. All contexts are expected to
+	// have been initialized.
+
+	// TODO : figure out if the packet timebase needs to be adjusted before muxing with
+	// void av_packet_rescale_ts(AVPacket * pkt, AVRational tb_src, AVRational tb_dst)
+
+	// Attempt to grab first packet.
+	int err_code = avcodec_receive_packet(codec_context, pkt);
+
+	while (err_code == 0) {			// 0 means a packet was received
+
+		// Send packet to the format context. Give a warning if an error occurs.
+		int write_frame_err_code = av_interleaved_write_frame(format_context, pkt);
+		if (write_frame_err_code != 0) {
+			std::cerr << "av_interleaved_write_frame returned " << write_frame_err_code << std::endl;
+		}
+		err_code = avcodec_receive_packet(codec_context, pkt);
+	}
+
+	// These error codes are expected when the codec needs more frames to encode or has
+	// been flushed. Post warning if a different error code occurs.
+	if (err_code != AVERROR(EAGAIN) && err_code != AVERROR_EOF) {
+		std::cerr << "Unexpected error from avcodec_receive_packet : " << err_code << std::endl;
+	}
+
+	// Return the code because it might be useful for the caller to know if the codec was in flush mode.
+	return err_code;
+}
+
+
 Video::~Video() {
 	// Free all AVCodec structs that have been allocated while initializing.
 	// Post a warning if the context is still open because it might mean that the file was
@@ -81,16 +112,11 @@ void Video::video_init() {
 void Video::video_finalize() {
 	// Currently a placeholder
 	// TODO : add stuff that save the video file
-	AVPacket *pkt = NULL;
 
 	// Send NULL to the context to put it in flush mode.
 	avcodec_send_frame(codec_context, NULL);
 
-	// The codec keeps a buffer of packets, so we have to drain it after sending the flush signal.
-	// Keep requesting packets until codec returns EOF
-	while (avcodec_receive_packet(codec_context, pkt) != AVERROR_EOF) {
-
-	}
+	// TODO : encode the last packets
 
 	// It's important to destroy the context because the destructor checks if it exists
 	// and posts a warning to catch situations where a Video object was destroyed without
