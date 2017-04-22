@@ -16,6 +16,7 @@ extern "C" {
 
 const AVCodecID codec_id = AV_CODEC_ID_H264;
 const int framerate = 25;
+const char filename[] = "output.mp4";
 
 
 int Video::save_packets() {
@@ -70,6 +71,9 @@ Video::~Video() {
 void Video::video_init() {
 	// Initialize libav
 
+	// Initializes libavformat and registers all the muxers, demuxers and protocols.
+	av_register_all();
+
 	// Find the desired codec
 	AVCodec *codec = avcodec_find_encoder(codec_id);
 	if (!codec) {
@@ -87,6 +91,12 @@ void Video::video_init() {
 	format_context = avformat_alloc_context();
 	if (!format_context) {
 		throw std::runtime_error("Could not allocate AVFormatContext");
+	}
+
+	int err_code = avio_open(&io_context, filename, AVIO_FLAG_WRITE);
+	if (err_code < 0) {
+		std::cerr << "avio_open returned " << err_code << std::endl;
+		throw std::runtime_error("Could not allocate avio_open");
 	}
 
 	// Set codec parameters. Dimensions match with the glut output window.
