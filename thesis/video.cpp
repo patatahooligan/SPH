@@ -52,8 +52,9 @@ int Video::save_packets() {
 
 Video::~Video() {
 	// Free all AVCodec structs that have been allocated while initializing.
-	// Post a warning if the context is still open because it might mean that the file was
-	// not finalized and created.
+	// Normally all contexts should be deallocated in video_finalize(), so this code serves to warn of
+	// possible bugs and premature Video destruction. It also doesn't allow memory leaks if a Video object
+	// is mishandled.
 
 	if (codec_context) {
 		avcodec_free_context(&codec_context);
@@ -66,6 +67,14 @@ Video::~Video() {
 	}
 
 	av_frame_free(&frame);
+
+	if (io_context) {
+		std::cerr << "WARNING : A Video object was destroyed with a live AVIOContext. Possibly a video file was not finalized.";
+		int err_code = avio_close(io_context);
+		if (err_code != 0) {
+			std::cerr << "avio_close returned " << err_code << std::endl;
+		}
+	}
 }
 
 void Video::video_init() {
@@ -131,10 +140,13 @@ void Video::video_finalize() {
 		throw std::runtime_error("Unexpected error in save_packets");
 	}
 
-	// It's important to destroy the context because the destructor checks if it exists
-	// and posts a warning to catch situations where a Video object was destroyed without
-	// finalizing the video capture process.
+	// Free all the stuff. The destructor also does this, but only as a fail-safe. 
 	avcodec_free_context(&codec_context);
 	avformat_free_context(format_context);
 	format_context = NULL;
+	err_code = avio_close(io_context);
+	io_context = NULL;
+	if (err_code != 0) {
+		std::cerr << "avio_close returned " << err_code << std::endl;
+	}
 }
