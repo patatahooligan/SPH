@@ -68,9 +68,9 @@ Video::~Video() {
 
 	av_frame_free(&frame);
 
-	if (io_context) {
+	if (format_context->pb) {
 		std::cerr << "WARNING : A Video object was destroyed with a live AVIOContext. Possibly a video file was not finalized.";
-		int err_code = avio_close(io_context);
+		int err_code = avio_close(format_context->pb);
 		if (err_code != 0) {
 			std::cerr << "avio_close returned " << err_code << std::endl;
 		}
@@ -102,7 +102,7 @@ void Video::video_init() {
 		throw std::runtime_error("Could not allocate AVFormatContext");
 	}
 
-	int err_code = avio_open(&io_context, filename, AVIO_FLAG_WRITE);
+	int err_code = avio_open(&(format_context->pb), filename, AVIO_FLAG_WRITE);
 	if (err_code < 0) {
 		std::cerr << "avio_open returned " << err_code << std::endl;
 		throw std::runtime_error("Could not allocate avio_open");
@@ -114,8 +114,9 @@ void Video::video_init() {
 	codec_context->time_base.num = 1;
 	codec_context->time_base.den = framerate;
     codec_context->gop_size = 10;
-    codec_context->max_b_frames = 1;
+    codec_context->max_b_frames = 2;
     codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
+	codec_context->bit_rate = 2500000;
 	// IMPORTANT : Not yet sure if context needs more params initialized!
 
 	frame = av_frame_alloc();
@@ -145,8 +146,8 @@ void Video::video_finalize() {
 	avcodec_free_context(&codec_context);
 	avformat_free_context(format_context);
 	format_context = NULL;
-	err_code = avio_close(io_context);
-	io_context = NULL;
+	err_code = avio_close(format_context->pb);
+	format_context->pb = NULL;
 	if (err_code != 0) {
 		std::cerr << "avio_close returned " << err_code << std::endl;
 	}

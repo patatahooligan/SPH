@@ -11,7 +11,6 @@ class Video{
 	private:
 		AVCodecContext *codec_context;
 		AVFormatContext *format_context;
-		AVIOContext *io_context;
 		AVFrame *frame;
 		AVPacket *pkt;
 		FILE *f;
@@ -25,7 +24,6 @@ class Video{
 		Video() :
 			codec_context(NULL),
 			format_context(NULL),
-			io_context(NULL),
 			frame(NULL),
 			pkt(NULL),
 			current_frame(0) {}
