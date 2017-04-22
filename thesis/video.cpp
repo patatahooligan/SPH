@@ -137,6 +137,7 @@ void Video::video_finalize() {
 
 	int err_code = save_packets();
 	if (err_code != AVERROR_EOF) {
+		std::cerr << "save_packets returned " << err_code << std::endl;
 		throw std::runtime_error("Unexpected error in save_packets");
 	}
 
