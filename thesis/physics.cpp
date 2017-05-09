@@ -1,8 +1,5 @@
 #include "stdafx.h"
 
-// Disable unsafe parameter error for ublas::matrix
-#define _SCL_SECURE_NO_WARNINGS
-
 #include <cstdlib>
 #include <ctime>
 #include <stdexcept>
