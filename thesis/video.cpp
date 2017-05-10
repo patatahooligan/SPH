@@ -144,7 +144,7 @@ void Video::encode_frame(float simulation_time) {
 	if (simulation_time < current_frame * framerate) return;
 
 	// Grab color info from the render buffer
-	GLubyte gl_image[output_width*output_height*3];
+	GLubyte* gl_image = new GLubyte[output_width*output_height*3];
 	glReadPixels(0, 0, output_width, output_height, GL_RGB, GL_UNSIGNED_BYTE, gl_image);
 
 	// Move the data to the frame struct. The reason we don't just pass frame->data to glReadPixels is
@@ -158,6 +158,8 @@ void Video::encode_frame(float simulation_time) {
 		}
 	}
 
+	delete [] gl_image;
+
 	// In case the simulation step is larger than the fps (unlikely), send the frame multiple times.
 	do {
 		frame->pts = current_frame;
@@ -167,6 +169,8 @@ void Video::encode_frame(float simulation_time) {
 		}
 		current_frame++;
 	} while (simulation_time >= current_frame*framerate);
+
+	save_packets();
 }
 
 void Video::video_finalize() {
