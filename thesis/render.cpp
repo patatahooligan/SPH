@@ -3,8 +3,6 @@
 // Disable unsafe parameter error for ublas::matrix
 #define _SCL_SECURE_NO_WARNINGS
 
-#include "GL\freeglut.h"
-
 #include "physics.h"
 #include "render.h"
 #include "constants.h"
