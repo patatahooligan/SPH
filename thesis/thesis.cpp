@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	ps.calculate_initial_conditions();
 
 	GLubyte const *s = glGetString(GL_VERSION);
-	std::cout << s;
+	std::cout << s << std::endl;
 
 	// Enter main loop
 	glutMainLoop();
