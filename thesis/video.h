@@ -15,6 +15,7 @@ class Video{
 		AVPacket *pkt;
 		FILE *f;
 		int current_frame;
+		bool finalized;
 
 		int save_packets();
 		// Grab packets from codec output and write them to the file. All contexts are expected to
@@ -26,7 +27,8 @@ class Video{
 			format_context(NULL),
 			frame(NULL),
 			pkt(NULL),
-			current_frame(0) {}
+			current_frame(0),
+			finalized(false) {}
 		~Video();
 		void video_init();
 		void encode_frame(float simulation_time);

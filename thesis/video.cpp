@@ -52,30 +52,26 @@ int Video::save_packets() {
 
 
 Video::~Video() {
-	// Free all AVCodec structs that have been allocated while initializing.
-	// Normally all contexts should be deallocated in video_finalize(), so this code serves to warn of
-	// possible bugs and premature Video destruction. It also doesn't allow memory leaks if a Video object
-	// is mishandled.
+	// Call video_finalize(). This should have been done manually, but in case of crashes or user error, this might save the
+	// video file after all. Post a bunch of warnings if things have not been finalized to draw attention to bugs.
+
+	if (!finalized) {
+		std::cerr << "WARNING : A Video object is not in a finalized state. The program has either crashed or video.finalize() was not called " << std::endl;
+	}
 
 	if (codec_context) {
-		avcodec_free_context(&codec_context);
 		std::cerr << "WARNING : A Video object was destroyed with a live AVCodecContext. Possibly a video file was not finalized.";
 	}
 
 	if (format_context) {
-		avformat_free_context(format_context);
 		std::cerr << "WARNING : A Video object was destroyed with a live AVFormatContext. Possibly a video file was not finalized.";
 	}
 
-	av_frame_free(&frame);
-
 	if (format_context->pb) {
 		std::cerr << "WARNING : A Video object was destroyed with a live AVIOContext. Possibly a video file was not finalized.";
-		int err_code = avio_close(format_context->pb);
-		if (err_code != 0) {
-			std::cerr << "avio_close returned " << err_code << std::endl;
-		}
 	}
+
+	video_finalize();
 }
 
 void Video::video_init() {
@@ -177,6 +173,10 @@ void Video::video_finalize() {
 	// Currently a placeholder
 	// TODO : add stuff that save the video file
 
+	// Fail safe if already finalized
+	if (finalized) return;
+	finalized = true;
+	
 	// Send NULL to the context to put it in flush mode.
 	avcodec_send_frame(codec_context, NULL);
 
@@ -186,7 +186,7 @@ void Video::video_finalize() {
 		throw std::runtime_error("Unexpected error in save_packets");
 	}
 
-	// Free all the stuff. The destructor also does this, but only as a fail-safe. 
+	// Free all the stuff.
 	avcodec_free_context(&codec_context);
 	avformat_free_context(format_context);
 	format_context = NULL;
