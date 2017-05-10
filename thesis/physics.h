@@ -16,6 +16,7 @@ class ParticleSystem {
 
 	private:
 		float simulation_time;
+
 		float smoothing_kernel(const Vec3f &r, const float h);
 		Vec3f smoothing_kernel_derivative(const Vec3f &r, const float h);
 
@@ -26,11 +27,13 @@ class ParticleSystem {
 
 		Octree search_tree;
 
-	public:
+	public:		
 		Particle  particles[num_of_particles];
 
 		ParticleSystem() : simulation_time(0.0f) {}
-		~ParticleSystem(){}
+		~ParticleSystem() {}
+
+		float current_time() {return simulation_time;}
 
 		void randomize_particles();
 

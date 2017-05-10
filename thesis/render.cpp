@@ -8,8 +8,12 @@
 #include "physics.h"
 #include "render.h"
 #include "constants.h"
+#include "video.h"
 
 extern ParticleSystem ps;
+namespace {
+	Video video_output;
+}
 
 
 // Render parameters
@@ -29,6 +33,8 @@ void render_init(int argc, char **argv) {
 	// Register callback
 	glutDisplayFunc(render);
 	glutIdleFunc([](){ps.simulation_step();});
+	glutKeyboardFunc(keyboardfunc);
+
 	// Define a perspective projection for the camera
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -40,6 +46,8 @@ void render_init(int argc, char **argv) {
 	
 	// Reposition camera to move back to [0, size].
 	glTranslated(-size/2, -size/2, -offsetz);
+
+	video_output.video_init();
 }
 
 void render_sphere(ParticleSystem ps) {
@@ -80,6 +88,17 @@ void render() {
 	// render_function takes a ParticleSystem as the only argument.
 
 	render_function(ps);
-	// TODO: add call to function that writes to file here
+	video_output.encode_frame(ps.current_time());
 	glutSwapBuffers();
+}
+
+void keyboardfunc(unsigned char key, int x, int y) {
+	switch (key) {
+	case 27:
+		video_output.video_finalize();
+		// Warning, local objects are not destroyed by exit. Currently, all important objects are global
+		// scope so we don't care, but this could be rewritten to throw an exception handled by main to
+		// enforce proper stack unwinding.
+		exit(0);
+	}
 }
