@@ -170,7 +170,11 @@ void Video::encode_frame(float simulation_time) {
 		current_frame++;
 	} while (simulation_time >= current_frame*framerate);
 
-	save_packets();
+	int err_code = save_packets();
+	if (err_code) {
+		std::cerr << "save_packets returned " << err_code << std::endl;
+		throw std::runtime_error("Unexpected error in save_packets");
+	}
 }
 
 void Video::video_finalize() {
