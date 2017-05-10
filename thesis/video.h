@@ -29,5 +29,6 @@ class Video{
 			current_frame(0) {}
 		~Video();
 		void video_init();
+		void encode_frame(float simulation_time);
 		void video_finalize();
 };

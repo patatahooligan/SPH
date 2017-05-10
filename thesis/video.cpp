@@ -8,6 +8,7 @@ extern "C" {
 	#include "libavcodec\avcodec.h"
 	#include "libavformat\avformat.h"
 	#include "libavformat\avio.h"
+	#include "libavutil\imgutils.h"
 }
 
 #include "video.h"
@@ -115,18 +116,61 @@ void Video::video_init() {
 	codec_context->time_base.den = framerate;
     codec_context->gop_size = 10;
     codec_context->max_b_frames = 2;
-    codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
+    codec_context->pix_fmt = AV_PIX_FMT_RGB24;
 	codec_context->bit_rate = 2500000;
 	// IMPORTANT : Not yet sure if context needs more params initialized!
 
+	// Allocate frame object
 	frame = av_frame_alloc();
 	if (!frame) {
 		throw std::runtime_error("Could not allocate AVFrame");
 	}
 
+	// Set its parameters
 	frame->format = codec_context->pix_fmt;
 	frame->width  = output_width;
 	frame->height = output_height;
+
+	// Allocate space for the image data within the frame object
+	err_code = av_image_alloc(frame->data, frame->linesize, output_width, output_height, codec_context->pix_fmt, 32);
+	if (err_code < 0) {
+		std::cout << "av_image_alloc returned " << err_code << std::endl;
+	}
+	else {
+		std::clog << "av_image_alloc allocated " << err_code << " bytes for image buffer" << std::endl;
+		std::clog << "Sizeof(GLubyte * output_width * output_height * 3) returned " << sizeof(GLubyte) * output_width * output_height * 3 << std::endl;
+	}
+}
+
+void Video::encode_frame(float simulation_time) {
+
+	// Check if enough time has passed to warrant a frame.
+	if (simulation_time < current_frame * framerate) return;
+
+	// Grab color info from the render buffer
+	GLubyte gl_image[output_width*output_height*3];
+	glReadPixels(0, 0, output_width, output_height, GL_RGB, GL_UNSIGNED_BYTE, gl_image);
+
+	// Move the data to the frame struct. The reason we don't just pass frame->data to glReadPixels is
+	// that there may be padding around the image data meaning that possibly linesize!= ouput_width so
+	// glReadPixels would not move the data to the proper location.
+	for (unsigned y = 0; y < output_height; y++) {
+		for (unsigned x = 0; x < output_width; x++) {
+			for (unsigned color = 0; color < 3; color++) {
+				frame->data[0][y * frame->linesize[0] + 3 * x + color] = gl_image[y * 3 * output_width + 3 * x + color];
+			}
+		}
+	}
+
+	// In case the simulation step is larger than the fps (unlikely), send the frame multiple times.
+	do {
+		frame->pts = current_frame;
+		int errcode = avcodec_send_frame(codec_context, frame);
+		if (errcode) {
+			std::cerr << "avcodec_send_frame returned " << errcode << std::endl;
+		}
+		current_frame++;
+	} while (simulation_time >= current_frame*framerate);
 }
 
 void Video::video_finalize() {
