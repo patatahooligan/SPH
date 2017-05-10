@@ -12,7 +12,6 @@ class Video{
 		AVCodecContext *codec_context;
 		AVFormatContext *format_context;
 		AVFrame *frame;
-		AVPacket *pkt;
 		FILE *f;
 		int current_frame;
 		bool finalized;
@@ -26,7 +25,6 @@ class Video{
 			codec_context(NULL),
 			format_context(NULL),
 			frame(NULL),
-			pkt(NULL),
 			current_frame(0),
 			finalized(false) {}
 		~Video();

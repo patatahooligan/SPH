@@ -28,16 +28,20 @@ int Video::save_packets() {
 	// void av_packet_rescale_ts(AVPacket * pkt, AVRational tb_src, AVRational tb_dst)
 
 	// Attempt to grab first packet.
-	int err_code = avcodec_receive_packet(codec_context, pkt);
+	AVPacket pkt;
+	av_init_packet(&pkt);
+	pkt.data = NULL;
+	pkt.size = 0;
+	int err_code = avcodec_receive_packet(codec_context, &pkt);
 
 	while (err_code == 0) {			// 0 means a packet was received
 
 		// Send packet to the format context. Give a warning if an error occurs.
-		int write_frame_err_code = av_interleaved_write_frame(format_context, pkt);
+		int write_frame_err_code = av_interleaved_write_frame(format_context, &pkt);
 		if (write_frame_err_code != 0) {
 			std::cerr << "av_interleaved_write_frame returned " << write_frame_err_code << std::endl;
 		}
-		err_code = avcodec_receive_packet(codec_context, pkt);
+		err_code = avcodec_receive_packet(codec_context, &pkt);
 	}
 
 	// These error codes are expected when the codec needs more frames to encode or has
