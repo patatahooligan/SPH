@@ -5,13 +5,15 @@ extern "C" {
 	#include "libavcodec\avcodec.h"
 	#include "libavformat\avformat.h"
 	#include "libavformat\avio.h"
+	#include "libswscale\swscale.h"
 }
 
 class Video{
 	private:
 		AVCodecContext *codec_context;
 		AVFormatContext *format_context;
-		AVFrame *frame;
+		AVFrame *rgbframe, *yuvframe;
+		SwsContext *sws;
 		FILE *f;
 		int current_frame;
 		bool finalized;
@@ -24,7 +26,7 @@ class Video{
 		Video() :
 			codec_context(NULL),
 			format_context(NULL),
-			frame(NULL),
+			rgbframe(NULL),
 			current_frame(0),
 			finalized(false) {}
 		~Video();

@@ -2,6 +2,7 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <assert.h>
 
 // libav is a pure C project so it needs to be included as such
 extern "C" {
@@ -9,6 +10,8 @@ extern "C" {
 	#include "libavformat\avformat.h"
 	#include "libavformat\avio.h"
 	#include "libavutil\imgutils.h"
+	#include "libswscale\swscale.h"
+	#include "libavutil\opt.h"
 }
 
 #include "video.h"
@@ -41,6 +44,7 @@ int Video::save_packets() {
 		if (write_frame_err_code != 0) {
 			char error[AV_ERROR_MAX_STRING_SIZE];
 			std::cerr << "av_interleaved_write_frame returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, write_frame_err_code) << std::endl;
+			return err_code;
 		}
 		err_code = avcodec_receive_packet(codec_context, &pkt);
 	}
@@ -120,33 +124,71 @@ void Video::video_init() {
     codec_context->max_b_frames = 2;
     codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
 	codec_context->bit_rate = 2500000;
-	// IMPORTANT : Not yet sure if context needs more params initialized!
 
-	// Allocate frame object
-	frame = av_frame_alloc();
-	if (!frame) {
+	err_code = av_opt_set(codec_context->priv_data, "preset", "slow", 0);
+	if (err_code < 0) {
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::cout << "av_opt_set returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
+	}
+	err_code = av_opt_set(codec_context->priv_data, "profile", "baseline", AV_OPT_SEARCH_CHILDREN);
+	if (err_code < 0) {
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::cout << "av_opt_set returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
+	}
+
+	err_code = avcodec_open2(codec_context, codec, NULL);
+	if (err_code) {
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::cout << "av_opt_set returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
+		throw std::runtime_error("Unexpected error in video_init when calling avcodec_open2");
+	}
+
+	// Allocate frame objects
+	rgbframe = av_frame_alloc();
+	yuvframe = av_frame_alloc();
+	if (!rgbframe) {
 		throw std::runtime_error("Could not allocate AVFrame");
 	}
 
-	// Set its parameters
-	frame->format = codec_context->pix_fmt;
-	frame->width  = output_width;
-	frame->height = output_height;
+	// Set their parameters
+	rgbframe->format = AV_PIX_FMT_RGB24;
+	rgbframe->width  = output_width;
+	rgbframe->height = output_height;
+	rgbframe->format = codec_context->pix_fmt;
+	rgbframe->width  = output_width;
+	rgbframe->height = output_height;
 
-	// Allocate space for the image data within the frame object
-	err_code = av_image_alloc(frame->data, frame->linesize, output_width, output_height, codec_context->pix_fmt, 32);
+	yuvframe->format = AV_PIX_FMT_YUV420P;
+	yuvframe->width  = output_width;
+	yuvframe->height = output_height;
+	yuvframe->format = codec_context->pix_fmt;
+	yuvframe->width  = output_width;
+	yuvframe->height = output_height;
+
+	// Allocate an SwScontext which will be used to convert RGB24->YUV420P
+	sws = sws_getContext (
+		output_height, output_width, AV_PIX_FMT_RGB24,
+		output_height, output_width, AV_PIX_FMT_YUV420P,
+		0, NULL, NULL, NULL);
+	if (!sws) {
+		throw std::runtime_error("Could not allocate SwsContext");
+	}
+
+	// Allocate space for the image data within the frame objects
+	err_code = av_image_alloc(rgbframe->data, rgbframe->linesize, output_width, output_height, codec_context->pix_fmt, 32);
 	if (err_code < 0) {
 		char error[AV_ERROR_MAX_STRING_SIZE];
 		std::cout << "av_image_alloc returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
 	}
-	else {
+	err_code = av_image_alloc(yuvframe->data, yuvframe->linesize, output_width, output_height, codec_context->pix_fmt, 32);
+	if (err_code < 0) {
 		char error[AV_ERROR_MAX_STRING_SIZE];
-		std::clog << "av_image_alloc allocated " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << " bytes for image buffer" << std::endl;
-		std::clog << "Sizeof(GLubyte * output_width * output_height * 3) returned " << sizeof(GLubyte) * output_width * output_height * 3 << std::endl;
+		std::cout << "av_image_alloc returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
 	}
 }
 
 void Video::encode_frame(float simulation_time) {
+	if (!sws)
 
 	// Check if enough time has passed to warrant a frame.
 	if (simulation_time <= current_frame * framerate) return;
@@ -161,26 +203,32 @@ void Video::encode_frame(float simulation_time) {
 	for (unsigned y = 0; y < output_height; y++) {
 		for (unsigned x = 0; x < output_width; x++) {
 			for (unsigned color = 0; color < 3; color++) {
-				frame->data[0][y * frame->linesize[0] + 3 * x + color] = gl_image[y * 3 * output_width + 3 * x + color];
+				rgbframe->data[0][y * rgbframe->linesize[0] + 3 * x + color] = gl_image[y * 3 * output_width + 3 * x + color];
 			}
 		}
 	}
 
 	delete [] gl_image;
+	gl_image = NULL;
+
+	// Convert data from rgbframe to yuvframe
+	int err_code = sws_scale(sws, rgbframe->data, rgbframe->linesize, 0, output_height, yuvframe->data, yuvframe->linesize);
+	assert(err_code == output_height);
 
 	// In case the simulation step is larger than the fps (unlikely), send the frame multiple times.
 	do {
-		frame->pts = current_frame;
-		int errcode = avcodec_send_frame(codec_context, frame);
+		yuvframe->pts = current_frame;
+		int errcode = avcodec_send_frame(codec_context, yuvframe);
 		if (errcode) {
 			char error[AV_ERROR_MAX_STRING_SIZE];
 			std::cerr << "avcodec_send_frame returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, errcode) << std::endl;
 		}
 		current_frame++;
-	} while (simulation_time >= current_frame*framerate);
+	} while (simulation_time > current_frame*framerate);
 
-	int err_code = save_packets();
-	if (err_code) {
+	err_code = save_packets();
+
+	if (err_code != AVERROR(EAGAIN)) {
 		char error[AV_ERROR_MAX_STRING_SIZE];
 		std::cerr << "save_packets returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
 		throw std::runtime_error("Unexpected error in save_packets");
@@ -207,10 +255,10 @@ void Video::video_finalize() {
 
 	// Free all the stuff.
 	avcodec_free_context(&codec_context);
-	avformat_free_context(format_context);
-	format_context = NULL;
 	err_code = avio_close(format_context->pb);
 	format_context->pb = NULL;
+	avformat_free_context(format_context);
+	format_context = NULL;
 	if (err_code != 0) {
 		char error[AV_ERROR_MAX_STRING_SIZE];
 		std::cerr << "avio_close returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
