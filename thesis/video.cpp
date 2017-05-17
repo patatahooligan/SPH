@@ -39,7 +39,8 @@ int Video::save_packets() {
 		// Send packet to the format context. Give a warning if an error occurs.
 		int write_frame_err_code = av_interleaved_write_frame(format_context, &pkt);
 		if (write_frame_err_code != 0) {
-			std::cerr << "av_interleaved_write_frame returned " << write_frame_err_code << std::endl;
+			char error[AV_ERROR_MAX_STRING_SIZE];
+			std::cerr << "av_interleaved_write_frame returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, write_frame_err_code) << std::endl;
 		}
 		err_code = avcodec_receive_packet(codec_context, &pkt);
 	}
@@ -47,7 +48,8 @@ int Video::save_packets() {
 	// These error codes are expected when the codec needs more frames to encode or has
 	// been flushed. Post warning if a different error code occurs.
 	if (err_code != AVERROR(EAGAIN) && err_code != AVERROR_EOF) {
-		std::cerr << "avcodec_receive_packet returned " << err_code << std::endl;
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::cerr << "avcodec_receive_packet returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
 	}
 
 	// Return the code because it might be useful for the caller to know if the codec was in flush mode.
@@ -116,7 +118,7 @@ void Video::video_init() {
 	codec_context->time_base.den = framerate;
     codec_context->gop_size = 10;
     codec_context->max_b_frames = 2;
-    codec_context->pix_fmt = AV_PIX_FMT_RGB24;
+    codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
 	codec_context->bit_rate = 2500000;
 	// IMPORTANT : Not yet sure if context needs more params initialized!
 
@@ -134,10 +136,12 @@ void Video::video_init() {
 	// Allocate space for the image data within the frame object
 	err_code = av_image_alloc(frame->data, frame->linesize, output_width, output_height, codec_context->pix_fmt, 32);
 	if (err_code < 0) {
-		std::cout << "av_image_alloc returned " << err_code << std::endl;
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::cout << "av_image_alloc returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
 	}
 	else {
-		std::clog << "av_image_alloc allocated " << err_code << " bytes for image buffer" << std::endl;
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::clog << "av_image_alloc allocated " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << " bytes for image buffer" << std::endl;
 		std::clog << "Sizeof(GLubyte * output_width * output_height * 3) returned " << sizeof(GLubyte) * output_width * output_height * 3 << std::endl;
 	}
 }
@@ -145,7 +149,7 @@ void Video::video_init() {
 void Video::encode_frame(float simulation_time) {
 
 	// Check if enough time has passed to warrant a frame.
-	if (simulation_time < current_frame * framerate) return;
+	if (simulation_time <= current_frame * framerate) return;
 
 	// Grab color info from the render buffer
 	GLubyte* gl_image = new GLubyte[output_width*output_height*3];
@@ -169,14 +173,16 @@ void Video::encode_frame(float simulation_time) {
 		frame->pts = current_frame;
 		int errcode = avcodec_send_frame(codec_context, frame);
 		if (errcode) {
-			std::cerr << "avcodec_send_frame returned " << errcode << std::endl;
+			char error[AV_ERROR_MAX_STRING_SIZE];
+			std::cerr << "avcodec_send_frame returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, errcode) << std::endl;
 		}
 		current_frame++;
 	} while (simulation_time >= current_frame*framerate);
 
 	int err_code = save_packets();
 	if (err_code) {
-		std::cerr << "save_packets returned " << err_code << std::endl;
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::cerr << "save_packets returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
 		throw std::runtime_error("Unexpected error in save_packets");
 	}
 }
@@ -194,7 +200,8 @@ void Video::video_finalize() {
 
 	int err_code = save_packets();
 	if (err_code != AVERROR_EOF) {
-		std::cerr << "save_packets returned " << err_code << std::endl;
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::cerr << "save_packets returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
 		throw std::runtime_error("Unexpected error in save_packets");
 	}
 
@@ -205,6 +212,7 @@ void Video::video_finalize() {
 	err_code = avio_close(format_context->pb);
 	format_context->pb = NULL;
 	if (err_code != 0) {
-		std::cerr << "avio_close returned " << err_code << std::endl;
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::cerr << "avio_close returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
 	}
 }
