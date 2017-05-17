@@ -12,6 +12,7 @@ class Video{
 	private:
 		AVCodecContext *codec_context;
 		AVFormatContext *format_context;
+		AVStream *ostream;
 		AVFrame *rgbframe, *yuvframe;
 		SwsContext *sws;
 		FILE *f;

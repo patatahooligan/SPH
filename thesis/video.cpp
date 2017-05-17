@@ -20,7 +20,7 @@ extern "C" {
 
 const AVCodecID codec_id = AV_CODEC_ID_H264;
 const int framerate = 25;
-const char filename[] = "output.mp4";
+const char filename[] = "C:\DevStuff\thesis\output.mp4";
 
 
 int Video::save_packets() {
@@ -103,18 +103,6 @@ void Video::video_init() {
 		throw std::runtime_error("Could not allocate AVCodecContext");
 	}
 
-	// Initialize a format context
-	format_context = avformat_alloc_context();
-	if (!format_context) {
-		throw std::runtime_error("Could not allocate AVFormatContext");
-	}
-
-	int err_code = avio_open(&(format_context->pb), filename, AVIO_FLAG_WRITE);
-	if (err_code < 0) {
-		std::cerr << "avio_open returned " << err_code << std::endl;
-		throw std::runtime_error("Could not allocate avio_open");
-	}
-
 	// Set codec parameters. Dimensions match with the glut output window.
 	codec_context->width  = output_width;
 	codec_context->height = output_height;
@@ -124,6 +112,25 @@ void Video::video_init() {
     codec_context->max_b_frames = 2;
     codec_context->pix_fmt = AV_PIX_FMT_YUV420P;
 	codec_context->bit_rate = 2500000;
+
+	// Initialize a format context
+	int err_code = avformat_alloc_output_context2(&format_context, NULL, NULL, filename);
+	if (!format_context) {
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::cerr << "avformat_alloc_output_context2 returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
+		throw std::runtime_error("Could not allocate AVFormatContext");
+	}
+
+	ostream = avformat_new_stream(format_context, codec);
+
+	err_code = avformat_write_header(format_context, NULL);
+	if (err_code < 0) {
+		char error[AV_ERROR_MAX_STRING_SIZE];
+		std::cerr << "avformat_write_header returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
+	}
+
+	// Copy codec parameters to output stream
+	avcodec_parameters_from_context(ostream->codecpar, codec_context);
 
 	err_code = av_opt_set(codec_context->priv_data, "preset", "slow", 0);
 	if (err_code < 0) {
@@ -241,7 +248,6 @@ void Video::video_finalize() {
 
 	// Fail safe if already finalized
 	if (finalized) return;
-	finalized = true;
 	
 	// Send NULL to the context to put it in flush mode.
 	avcodec_send_frame(codec_context, NULL);
@@ -253,13 +259,17 @@ void Video::video_finalize() {
 	}
 
 	// Free all the stuff.
+	
 	avcodec_free_context(&codec_context);
+
 	err_code = avio_close(format_context->pb);
 	format_context->pb = NULL;
-	avformat_free_context(format_context);
-	format_context = NULL;
 	if (err_code != 0) {
 		char error[AV_ERROR_MAX_STRING_SIZE];
 		std::cerr << "avio_close returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
 	}
+
+	avformat_free_context(format_context);
+	format_context = NULL;
+	finalized = true;
 }
