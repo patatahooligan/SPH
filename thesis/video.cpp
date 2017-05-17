@@ -250,7 +250,6 @@ void Video::video_finalize() {
 	if (err_code != AVERROR_EOF) {
 		char error[AV_ERROR_MAX_STRING_SIZE];
 		std::cerr << "save_packets returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
-		throw std::runtime_error("Unexpected error in save_packets");
 	}
 
 	// Free all the stuff.
