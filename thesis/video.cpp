@@ -20,7 +20,7 @@ extern "C" {
 
 const AVCodecID codec_id = AV_CODEC_ID_H264;
 const int framerate = 25;
-const char filename[] = "C:\DevStuff\thesis\output.mp4";
+const char filename[] = "C:/DevStuff/thesis/output.mp4";
 
 
 int Video::save_packets() {
@@ -87,6 +87,8 @@ Video::~Video() {
 void Video::video_init() {
 	// Initialize libav
 
+	int err_code;
+
 	// Initializes libavformat and registers all the muxers, demuxers and protocols.
 	av_register_all();
 
@@ -114,7 +116,7 @@ void Video::video_init() {
 	codec_context->bit_rate = 2500000;
 
 	// Initialize a format context
-	int err_code = avformat_alloc_output_context2(&format_context, NULL, NULL, filename);
+	err_code = avformat_alloc_output_context2(&format_context, NULL, NULL, filename);
 	if (!format_context) {
 		char error[AV_ERROR_MAX_STRING_SIZE];
 		std::cerr << "avformat_alloc_output_context2 returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
@@ -122,6 +124,8 @@ void Video::video_init() {
 	}
 
 	ostream = avformat_new_stream(format_context, codec);
+	ostream->codecpar = avcodec_parameters_alloc();
+	avcodec_parameters_from_context(ostream->codecpar, codec_context);
 
 	err_code = avformat_write_header(format_context, NULL);
 	if (err_code < 0) {
@@ -258,9 +262,9 @@ void Video::video_finalize() {
 		std::cerr << "save_packets returned " << av_make_error_string(error, AV_ERROR_MAX_STRING_SIZE, err_code) << std::endl;
 	}
 
-	// Free all the stuff.
-	
+	// Free all the stuff.	
 	avcodec_free_context(&codec_context);
+	avcodec_parameters_free(&(ostream->codecpar));
 
 	err_code = avio_close(format_context->pb);
 	format_context->pb = NULL;
