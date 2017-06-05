@@ -123,6 +123,8 @@ void Video::video_init() {
 		throw std::runtime_error("Could not allocate AVFormatContext");
 	}
 
+	err_code = avio_open(&(format_context->pb), filename, AVIO_FLAG_WRITE);
+
 	ostream = avformat_new_stream(format_context, codec);
 	ostream->codecpar = avcodec_parameters_alloc();
 	avcodec_parameters_from_context(ostream->codecpar, codec_context);
