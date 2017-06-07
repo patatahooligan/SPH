@@ -81,8 +81,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>C:\DevStuff\ffmpeg-20170520-64ea4d1-win32-dev\include;C:\DevStuff\freeglut-3.0.0\Source\include\;C:\DevStuff\boost_1_62_0\;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\DevStuff\ffmpeg-20170520-64ea4d1-win32-dev\lib;C:\DevStuff\freeglut-3.0.0\Binaries\lib\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\DevStuff\ffmpeg-git\build\release\include;C:\DevStuff\freeglut-3.0.0\Source\include\;C:\DevStuff\boost_1_62_0\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\DevStuff\ffmpeg-git\build\release\bin;C:\DevStuff\freeglut-3.0.0\Binaries\lib\Release;$(LibraryPath)</LibraryPath>
     <ExecutablePath>$(ExecutablePath)</ExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
