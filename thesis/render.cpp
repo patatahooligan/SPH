@@ -9,9 +9,7 @@
 #include "video.h"
 
 extern ParticleSystem ps;
-namespace {
-	Video video_output;
-}
+extern Video video_output;
 
 
 // Render parameters
@@ -93,7 +91,7 @@ void render() {
 void keyboardfunc(unsigned char key, int x, int y) {
 	switch (key) {
 	case 27:
-		video_output.video_finalize();
 		glutLeaveMainLoop();
+		break;
 	}
 }

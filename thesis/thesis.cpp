@@ -6,9 +6,11 @@
 
 #include "render.h"
 #include "physics.h"
+#include "video.h"
 
 
 ParticleSystem ps;
+Video video_output; 
 
 int main(int argc, char **argv)
 {
@@ -26,6 +28,7 @@ int main(int argc, char **argv)
 
 	// Enter main loop
 	glutMainLoop();
+	video_output.video_finalize();
 
     return 0;
 }
