@@ -71,8 +71,8 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\DevStuff\ffmpeg-3.3.1\build\debug\include;C:\DevStuff\freeglut-3.0.0\Source\include\;C:\DevStuff\boost_1_62_0\;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\DevStuff\ffmpeg-3.3.1\build\debug\bin;C:\DevStuff\freeglut-3.0.0\Binaries\lib\Debug;$(LibraryPath)</LibraryPath>
+    <IncludePath>C:\DevStuff\ffmpeg-git\build\debug\include;C:\DevStuff\freeglut-3.0.0\Source\include\;C:\DevStuff\boost_1_62_0\;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\DevStuff\ffmpeg-git\build\debug\bin;C:\DevStuff\freeglut-3.0.0\Binaries\lib\Debug;$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>C:\Program Files (x86)\Microsoft Visual Studio 14.0\Team Tools\Static Analysis Tools\Rule Sets\NativeRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <RunCodeAnalysis>false</RunCodeAnalysis>
   </PropertyGroup>
