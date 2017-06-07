@@ -94,9 +94,6 @@ void keyboardfunc(unsigned char key, int x, int y) {
 	switch (key) {
 	case 27:
 		video_output.video_finalize();
-		// Warning, local objects are not destroyed by exit. Currently, all important objects are global
-		// scope so we don't care, but this could be rewritten to throw an exception handled by main to
-		// enforce proper stack unwinding.
-		exit(0);
+		glutLeaveMainLoop();
 	}
 }
