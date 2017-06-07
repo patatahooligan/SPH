@@ -18,7 +18,7 @@ extern "C" {
 #include "constants.h"
 
 
-const AVCodecID codec_id = AV_CODEC_ID_H264;
+const AVCodecID codec_id = AV_CODEC_ID_MPEG4;
 const int framerate = 25;
 const char filename[] = "C:/DevStuff/thesis/output.mp4";
 
