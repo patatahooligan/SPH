@@ -67,19 +67,19 @@ Video::~Video() {
 	// video file after all. Post a bunch of warnings if things have not been finalized to draw attention to bugs.
 
 	if (!finalized) {
-		std::cerr << "WARNING : A Video object is not in a finalized state. The program has either crashed or video.finalize() was not called " << std::endl;
+		std::cerr << "WARNING : A Video object is not in a finalized state. The program has either crashed or video.finalize() was not called" << std::endl;
 	}
 
 	if (codec_context) {
-		std::cerr << "WARNING : A Video object was destroyed with a live AVCodecContext. Possibly a video file was not finalized.";
+		std::cerr << "WARNING : A Video object was destroyed with a live AVCodecContext. Possibly a video file was not finalized." << std::endl;
 	}
 
 	if (format_context) {
-		std::cerr << "WARNING : A Video object was destroyed with a live AVFormatContext. Possibly a video file was not finalized.";
+		std::cerr << "WARNING : A Video object was destroyed with a live AVFormatContext. Possibly a video file was not finalized." << std::endl;
 	}
 
 	if (format_context->pb) {
-		std::cerr << "WARNING : A Video object was destroyed with a live AVIOContext. Possibly a video file was not finalized.";
+		std::cerr << "WARNING : A Video object was destroyed with a live AVIOContext. Possibly a video file was not finalized." << std::endl;
 	}
 
 	video_finalize();
@@ -185,8 +185,6 @@ void Video::video_init() {
 }
 
 void Video::encode_frame(float simulation_time) {
-	if (!sws)
-
 	// Check if enough time has passed to warrant a frame.
 	if (simulation_time <= current_frame * framerate) return;
 
