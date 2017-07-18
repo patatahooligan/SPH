@@ -364,6 +364,4 @@ void ParticleSystem::simulation_step() {
 	update_derivatives();
 	integrate_step();
 	conflict_resolution();
-
-	glutPostRedisplay();
 }
