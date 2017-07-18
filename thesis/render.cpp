@@ -28,8 +28,12 @@ void render_init(int argc, char **argv) {
 
 	// Register callback
 	glutDisplayFunc(render);
-	glutIdleFunc([](){ps.simulation_step();});
+	glutIdleFunc([](){
+		ps.simulation_step();
+		if (video_output.need_new_frame(ps.current_time())) glutPostRedisplay();
+	});
 	glutKeyboardFunc(keyboardfunc);
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,GLUT_ACTION_CONTINUE_EXECUTION);
 
 	// Define a perspective projection for the camera
 	glMatrixMode(GL_PROJECTION);
