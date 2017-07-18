@@ -8,6 +8,11 @@ extern "C" {
 	#include "libswscale\swscale.h"
 }
 
+
+const AVCodecID codec_id = AV_CODEC_ID_MPEG4;
+const int framerate = 25;
+const char filename[] = "C:/DevStuff/thesis/output.mp4";
+
 class Video{
 	private:
 		AVCodecContext *codec_context;
@@ -32,6 +37,7 @@ class Video{
 			finalized(false) {}
 		~Video();
 		void video_init();
+		inline bool need_new_frame(float simulation_time) {return simulation_time >= current_frame * framerate; }
 		void encode_frame(float simulation_time);
 		void video_finalize();
 };
