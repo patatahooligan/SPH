@@ -18,10 +18,6 @@ extern "C" {
 #include "constants.h"
 
 
-const AVCodecID codec_id = AV_CODEC_ID_MPEG4;
-const int framerate = 25;
-const char filename[] = "C:/DevStuff/thesis/output.mp4";
-
 
 // Helper function that prints errors from libav functions in readable way.
 void print_av_error(int err_code, const char *suffix, std::ostream &output=std::cerr) {
@@ -76,10 +72,10 @@ Video::~Video() {
 
 	if (format_context) {
 		std::cerr << "WARNING : A Video object was destroyed with a live AVFormatContext. Possibly a video file was not finalized." << std::endl;
-	}
 
-	if (format_context->pb) {
-		std::cerr << "WARNING : A Video object was destroyed with a live AVIOContext. Possibly a video file was not finalized." << std::endl;
+		if (format_context->pb) {
+			std::cerr << "WARNING : A Video object was destroyed with a live AVIOContext. Possibly a video file was not finalized." << std::endl;
+		}
 	}
 
 	video_finalize();
@@ -156,7 +152,6 @@ void Video::video_init() {
 	rgbframe->format = AV_PIX_FMT_RGB24;
 	rgbframe->width  = output_width;
 	rgbframe->height = output_height;
-	rgbframe->format = codec_context->pix_fmt;
 	rgbframe->width  = output_width;
 	rgbframe->height = output_height;
 
@@ -177,7 +172,7 @@ void Video::video_init() {
 	}
 
 	// Allocate space for the image data within the frame objects
-	err_code = av_image_alloc(rgbframe->data, rgbframe->linesize, output_width, output_height, codec_context->pix_fmt, 32);
+	err_code = av_image_alloc(rgbframe->data, rgbframe->linesize, output_width, output_height, AVPixelFormat(rgbframe->format), 32);
 	if (err_code < 0) print_av_error(err_code, " in av_image_alloc");
 
 	err_code = av_image_alloc(yuvframe->data, yuvframe->linesize, output_width, output_height, codec_context->pix_fmt, 32);
@@ -186,25 +181,27 @@ void Video::video_init() {
 
 void Video::encode_frame(float simulation_time) {
 	// Check if enough time has passed to warrant a frame.
-	if (simulation_time <= current_frame * framerate) return;
+	if (!need_new_frame(simulation_time)) return;
 
-	// Grab color info from the render buffer
-	GLubyte* gl_image = new GLubyte[output_width*output_height*3];
-	glReadPixels(0, 0, output_width, output_height, GL_RGB, GL_UNSIGNED_BYTE, gl_image);
+	//// Grab color info from the render buffer
+	//GLubyte* gl_image = new GLubyte[output_width*output_height*3];
+	//glReadPixels(0, 0, output_width, output_height, GL_RGB, GL_UNSIGNED_BYTE, gl_image);
 
-	// Move the data to the frame struct. The reason we don't just pass frame->data to glReadPixels is
-	// that there may be padding around the image data meaning that possibly linesize!= ouput_width so
-	// glReadPixels would not move the data to the proper location.
-	for (unsigned y = 0; y < output_height; y++) {
-		for (unsigned x = 0; x < output_width; x++) {
-			for (unsigned color = 0; color < 3; color++) {
-				rgbframe->data[0][y * rgbframe->linesize[0] + 3 * x + color] = gl_image[y * 3 * output_width + 3 * x + color];
-			}
-		}
-	}
+	//// Move the data to the frame struct. The reason we don't just pass frame->data to glReadPixels is
+	//// that there may be padding around the image data meaning that possibly linesize!= ouput_width so
+	//// glReadPixels would not move the data to the proper location.
+	//for (unsigned y = 0; y < output_height; y++) {
+	//	for (unsigned x = 0; x < output_width; x++) {
+	//		for (unsigned color = 0; color < 3; color++) {
+	//			rgbframe->data[0][y * rgbframe->linesize[0] + 3 * x + color] = gl_image[y * 3 * output_width + 3 * x + color];
+	//		}
+	//	}
+	//}
 
-	delete [] gl_image;
-	gl_image = NULL;
+	//delete [] gl_image;
+	//gl_image = NULL;
+
+	glReadPixels(0, 0, output_width, output_height, GL_RGB, GL_UNSIGNED_BYTE, rgbframe->data[0]);
 
 	// Convert data from rgbframe to yuvframe
 	int err_code = sws_scale(sws, rgbframe->data, rgbframe->linesize, 0, output_height, yuvframe->data, yuvframe->linesize);
