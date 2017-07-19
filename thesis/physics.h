@@ -39,6 +39,10 @@ class ParticleSystem {
 		ParticleSystem() : simulation_time(0.0f) {}
 		~ParticleSystem() {}
 
+		// Delete these to make sure ParticleSystem is only ever passed by value.
+		ParticleSystem(const ParticleSystem &other) = delete;
+		ParticleSystem& operator=(const ParticleSystem &other) = delete;
+
 		float current_time() {return simulation_time;}
 
 		// Randomly insert particles in the bounding box defined by const float size.
