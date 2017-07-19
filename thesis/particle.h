@@ -27,4 +27,5 @@ public:
 	// Do no permit copying of Particle as it does not currently serve any purpose so using
 	// it might be accidental and lead to bugs.
 	Particle(const Particle& other) = delete;
+	Particle& operator=(const Particle& other) = delete;
 };
