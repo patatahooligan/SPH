@@ -24,9 +24,7 @@ public:
 	acceleration(0.0f, 0.0f, 0.0f) {
 	}
 
-	Particle(const Particle& other) {
-		// There should be no code that needs this, so throw an exception to catch
-		// typos that attempt to create a copy rather than use a reference of particle.
-		throw std::exception("Copy constructor of particle was called");
-	}
+	// Do no permit copying of Particle as it does not currently serve any purpose so using
+	// it might be accidental and lead to bugs.
+	Particle(const Particle& other) = delete;
 };
