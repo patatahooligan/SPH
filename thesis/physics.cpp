@@ -96,6 +96,7 @@ float ParticleSystem::calculate_time_step(void) {
 
 void ParticleSystem::update_derivatives() {
 	// Calculate and update all derivatives of particle quantities needed to integrate
+	// TODO: consider the case for zero neighbors and figure out if it needs handling
 
 	for (unsigned i = 0; i < num_of_particles; i++) {
 		// There are multiple quantities we need to sum for the following equations
@@ -116,25 +117,31 @@ void ParticleSystem::update_derivatives() {
 		// This reference is used to write cleaner equations.
 		Particle& pi = particles[i];
 
-		std::vector<const Particle*> neighbours = search_tree.find_neighbours(pi, 3 * smoothing_length);
+		std::vector<std::pair<size_t, float>> indices_dists;
+		indices_dists.reserve(30);
+		float position[3] = {pi.position.x, pi.position.y, pi.position.z};
+		kd_tree.radiusSearch(position, 9 * (smoothing_length*smoothing_length), indices_dists, nanoflann::SearchParams(32, 0.0f, false));
 
-		for (std::vector<const Particle*>::iterator pj = neighbours.begin(); pj!= neighbours.end(); ++pj) {
-			if (*pj == &pi) continue;		// Needs to be for every OTHER particle
+		for (auto indice_dist_pair : indices_dists) {
+			const size_t j = indice_dist_pair.first;
+			if (i == j) continue;		// Needs to be for every OTHER particle
+
+			Particle& pj = particles[j];
 
 			// Calculate their relative position and skip to next particle if it's over the smoothing kernel
-			Vec3f relative_position = pi.position - (*pj)->position;
+			Vec3f relative_position = pi.position - pj.position;
 			if (relative_position.length_squared() > smoothing_length * smoothing_length) continue;
 
 			Vec3f
 				dw = smoothing_kernel_derivative(relative_position, smoothing_length),
-				relative_velocity = pi.velocity - (*pj)->velocity;
+				relative_velocity = pi.velocity - pj.velocity;
 
 			float vdw = relative_velocity.dot_product(dw);
 
-			sum_density += (vdw * particle_mass) / (*pj)->density;
+			sum_density += (vdw * particle_mass) / pj.density;
 			sum_pressure -=
 				(particle_mass *
-				(pi.pressure/pow(pi.density, 2) + (*pj)->pressure/pow((*pj)->density, 2))) *
+				(pi.pressure/pow(pi.density, 2) + pj.pressure/pow(pj.density, 2))) *
 				dw;
 
 			float vx = relative_velocity.dot_product(relative_position);
@@ -143,22 +150,22 @@ void ParticleSystem::update_derivatives() {
 				sum_acceleration -=
 					(particle_mass / pi.density) *
 					(visc_b * pow(mu, 2) - visc_a * mu * speed_of_sound) /
-					0.5f * (pi.density + (*pj)->density) *
+					0.5f * (pi.density + pj.density) *
 					dw;
 			}
 
 			sum_stress_derivative +=
-				(particle_mass / (*pj)->density) *
-				(pi.stress_tensor + (*pj)->stress_tensor) *
+				(particle_mass / pj.density) *
+				(pi.stress_tensor + pj.stress_tensor) *
 				smoothing_kernel_derivative(relative_position, smoothing_length);
 
 			sum_tempererature_laplacian +=
 				(4 * particle_mass * pi.density *
-				(pi.temperature - (*pj)->temperature) * vdw) /
-				((*pj)->density * (pi.density + (*pj)->density) *
+				(pi.temperature - pj.temperature) * vdw) /
+				(pj.density * (pi.density + pj.density) *
 				(relative_velocity.length_squared() + 0.01f * smoothing_length*smoothing_length));
 
-			velocity_tensor_derivative -= (particle_mass * dyadic_product(relative_velocity, dw)) / (*pj)->density;
+			velocity_tensor_derivative -= (particle_mass * dyadic_product(relative_velocity, dw)) / pj.density;
 		}
 		
 		pi.density_derivative = pi.density * sum_density;
@@ -360,6 +367,7 @@ void ParticleSystem::calculate_initial_conditions() {
 
 void ParticleSystem::simulation_step() {
 	search_tree.construct_tree(*this);
+	kd_tree.buildIndex();
 
 	update_derivatives();
 	integrate_step();
