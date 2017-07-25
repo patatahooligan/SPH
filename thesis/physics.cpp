@@ -340,7 +340,7 @@ void ParticleSystem::randomize_particles() {
 		normalizing_coefy = size / RAND_MAX,
 		normalizing_coefz = size / RAND_MAX;
 
-	srand(time(NULL));
+	srand((unsigned int)time(NULL));
 	for (size_t i=0; i < num_of_particles; i++) {
 		particles[i].position.x = rand() * normalizing_coefx;
 		particles[i].position.y = rand() * normalizing_coefy;
