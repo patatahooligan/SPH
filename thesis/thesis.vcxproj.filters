@@ -36,13 +36,13 @@
     <ClInclude Include="vec3f.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="octree.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="particle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="video.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="kdtree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -60,9 +60,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="vec3f.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="octree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="video.cpp">
