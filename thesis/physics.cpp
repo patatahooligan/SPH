@@ -366,7 +366,6 @@ void ParticleSystem::calculate_initial_conditions() {
 }
 
 void ParticleSystem::simulation_step() {
-	search_tree.construct_tree(*this);
 	kd_tree.buildIndex();
 
 	update_derivatives();

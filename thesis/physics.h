@@ -17,6 +17,7 @@ class ParticleSystem {
 
 	private:
 		float simulation_time;
+		ParticleKDTree kd_tree;
 
 		float smoothing_kernel(const Vec3f &r, const float h);
 		Vec3f smoothing_kernel_derivative(const Vec3f &r, const float h);
@@ -32,8 +33,6 @@ class ParticleSystem {
 		// Handle particle-wall collision
 		void conflict_resolution();
 
-		Octree search_tree;
-		ParticleKDTree kd_tree;
 
 	public:		
 		Particle  particles[num_of_particles];
