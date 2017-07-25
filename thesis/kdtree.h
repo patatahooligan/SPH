@@ -37,4 +37,8 @@ class ParticleAdaptor {
 		}
 };
 
-typedef nanoflann::KDTreeSingleIndexAdaptor<nanoflann::metric_L2, ParticleAdaptor, 3, size_t> ParticleKDTree;
+typedef nanoflann::KDTreeSingleIndexAdaptor<
+	nanoflann::L2_Simple_Adaptor<float, ParticleAdaptor>,
+	ParticleAdaptor,
+	3, size_t>
+	ParticleKDTree;
