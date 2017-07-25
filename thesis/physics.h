@@ -8,6 +8,7 @@
 #include "particle.h"
 #include "Vec3f.h"
 #include "octree.h"
+#include "kdtree.h"
 
 class Octree;
 
@@ -32,11 +33,14 @@ class ParticleSystem {
 		void conflict_resolution();
 
 		Octree search_tree;
+		ParticleKDTree kd_tree;
 
 	public:		
 		Particle  particles[num_of_particles];
 
-		ParticleSystem() : simulation_time(0.0f) {}
+		ParticleSystem() :
+			simulation_time(0.0f),
+			kd_tree(3, particles) {}
 		~ParticleSystem() {}
 
 		// Delete these to make sure ParticleSystem is only ever passed by value.
