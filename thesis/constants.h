@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 // Constants needed in more than one translation unit
 const float pi = 3.14159265359f;
 
@@ -18,7 +20,7 @@ const int output_height = 800;
 // Simulation parameters
 const unsigned int num_of_particles = 100;
 const float smoothing_length = 1.0f;
-const float kernel_constant = 3.0f/359.0f * pi * pow(smoothing_length, 3);
+const float kernel_constant = 3.0f/359.0f * pi * std::pow(smoothing_length, 3);
 const float particle_mass = 1.0f;
 const float visc_a = 1.0f;		// Bulk viscocity
 const float visc_b = 1.0f;		// von Neumann-Ritchmyer viscocity

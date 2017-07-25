@@ -13,7 +13,6 @@
 #include "physics.h"
 #include "constants.h"
 #include "vec3f.h"
-#include "octree.h"
 
 
 namespace ublas = boost::numeric::ublas;

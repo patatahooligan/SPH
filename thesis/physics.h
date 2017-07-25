@@ -7,7 +7,6 @@
 #include "constants.h"
 #include "particle.h"
 #include "Vec3f.h"
-#include "octree.h"
 #include "kdtree.h"
 
 class Octree;
