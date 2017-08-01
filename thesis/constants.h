@@ -18,7 +18,7 @@ const int output_width = 800;
 const int output_height = 800;
 
 // Simulation parameters
-const unsigned int num_of_particles = 100;
+const int num_of_particles = 100;
 const float smoothing_length = 1.0f;
 const float kernel_constant = 3.0f/359.0f * pi * std::pow(smoothing_length, 3);
 const float particle_mass = 1.0f;

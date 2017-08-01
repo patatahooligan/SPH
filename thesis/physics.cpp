@@ -97,7 +97,8 @@ void ParticleSystem::update_derivatives() {
 	// Calculate and update all derivatives of particle quantities needed to integrate
 	// TODO: consider the case for zero neighbors and figure out if it needs handling
 
-	for (unsigned i = 0; i < num_of_particles; i++) {
+	#pragma omp parallel for
+	for (int i = 0; i < num_of_particles; i++) {
 		// There are multiple quantities we need to sum for the following equations
 		float
 			sum_density = 0.0f,
@@ -200,7 +201,8 @@ void ParticleSystem::integrate_step() {
 
 	Vec3f new_velocity_half[num_of_particles];
 
-	for (size_t i = 0; i < num_of_particles; i++) {
+	#pragma omp parallel for
+	for (int i = 0; i < num_of_particles; i++) {
 		// Initial approximation for new velocity_half
 		new_velocity_half[i] = Vec3f(
 			particles[i].velocity_half.x + particles[i].acceleration.x * time_step,
@@ -213,11 +215,13 @@ void ParticleSystem::integrate_step() {
 
 		particles[i].pressure = (speed_of_sound * speed_of_sound) * (particles[i].density - reference_density);
 	}
-	for (size_t i = 0; i < num_of_particles; i++) {
+
+	#pragma omp parallel for
+	for (int i = 0; i < num_of_particles; i++) {
 		Vec3f velocity_correction_sum(0.0f, 0.0f, 0.0f);
 
 		// XSPH velocity correction
-		for (size_t j = 0; j < num_of_particles; j++) {
+		for (int j = 0; j < num_of_particles; j++) {
 			Vec3f
 				relative_velocity = new_velocity_half[j] - new_velocity_half[i],
 				relative_position = particles[i].position - particles[j].position;
@@ -238,7 +242,8 @@ void ParticleSystem::integrate_step() {
 void ParticleSystem::conflict_resolution() {
 	const float damping_factor = 0.2f;
 
-	for (size_t i = 0; i < num_of_particles; i++) {
+	#pragma omp parallel for
+	for (int i = 0; i < num_of_particles; i++) {
 		if (particles[i].position.x > sizex) {
 			particles[i].position.x = 2 * sizex - particles[i].position.x;
 			if (particles[i].velocity.x > 0) {
