@@ -34,7 +34,7 @@ float trace(const ublas::matrix<float> &m) {
 	size_t size = m.size1();
 	if (size != m.size2()) throw std::invalid_argument("Trace undefined for non-square matrix");
 	float sum = 0;
-	for (size_t i = 0; i < size; i++) {
+	for (size_t i = 0; i < size; ++i) {
 		sum += m(i, i);
 	}
 	return sum;
@@ -60,8 +60,8 @@ ublas::matrix<float> reverse(ublas::matrix<float> m) {
 		size1 = m.size1(),
 		size2 = m.size2();
 	ublas::matrix<float> ret(size2, size1);
-	for (unsigned i = 1; i < size2; i++) {
-		for (unsigned j = 1; j < size1; j++) {
+	for (unsigned i = 1; i < size2; ++i) {
+		for (unsigned j = 1; j < size1; ++j) {
 			ret(i, j) = m(j, i);
 		}
 	}
@@ -98,7 +98,7 @@ void ParticleSystem::update_derivatives() {
 	// TODO: consider the case for zero neighbors and figure out if it needs handling
 
 	#pragma omp parallel for
-	for (int i = 0; i < num_of_particles; i++) {
+	for (int i = 0; i < num_of_particles; ++i) {
 		// There are multiple quantities we need to sum for the following equations
 		float
 			sum_density = 0.0f,
@@ -202,7 +202,7 @@ void ParticleSystem::integrate_step() {
 	Vec3f new_velocity_half[num_of_particles];
 
 	#pragma omp parallel for
-	for (int i = 0; i < num_of_particles; i++) {
+	for (int i = 0; i < num_of_particles; ++i) {
 		// Initial approximation for new velocity_half
 		new_velocity_half[i] = Vec3f(
 			particles[i].velocity_half.x + particles[i].acceleration.x * time_step,
@@ -217,11 +217,11 @@ void ParticleSystem::integrate_step() {
 	}
 
 	#pragma omp parallel for
-	for (int i = 0; i < num_of_particles; i++) {
+	for (int i = 0; i < num_of_particles; ++i) {
 		Vec3f velocity_correction_sum(0.0f, 0.0f, 0.0f);
 
 		// XSPH velocity correction
-		for (int j = 0; j < num_of_particles; j++) {
+		for (int j = 0; j < num_of_particles; ++j) {
 			Vec3f
 				relative_velocity = new_velocity_half[j] - new_velocity_half[i],
 				relative_position = particles[i].position - particles[j].position;
@@ -243,7 +243,7 @@ void ParticleSystem::conflict_resolution() {
 	const float damping_factor = 0.2f;
 
 	#pragma omp parallel for
-	for (int i = 0; i < num_of_particles; i++) {
+	for (int i = 0; i < num_of_particles; ++i) {
 		if (particles[i].position.x > sizex) {
 			particles[i].position.x = 2 * sizex - particles[i].position.x;
 			if (particles[i].velocity.x > 0) {
@@ -352,7 +352,7 @@ void ParticleSystem::randomize_particles() {
 		normalizing_coefz = size / RAND_MAX;
 
 	srand((unsigned int)time(NULL));
-	for (size_t i=0; i < num_of_particles; i++) {
+	for (size_t i=0; i < num_of_particles; ++i) {
 		particles[i].position.x = rand() * normalizing_coefx;
 		particles[i].position.y = rand() * normalizing_coefy;
 		particles[i].position.z = rand() * normalizing_coefz;
@@ -360,9 +360,9 @@ void ParticleSystem::randomize_particles() {
 }
 
 void ParticleSystem::calculate_initial_conditions() {
-	for (size_t i = 0; i < num_of_particles; i++) {
+	for (size_t i = 0; i < num_of_particles; ++i) {
 		particles[i].density = 0.0f;
-		for (size_t j = 0; j < num_of_particles; j++) {
+		for (size_t j = 0; j < num_of_particles; ++j) {
 			particles[i].density += particle_mass * smoothing_kernel(particles[i].position - particles[j].position, smoothing_length);
 		}
 		particles[i].pressure = speed_of_sound * speed_of_sound * (particles[i].density - reference_density);
