@@ -109,9 +109,6 @@ void ParticleSystem::update_derivatives() {
 			sum_acceleration(0, 0, 0),
 			sum_stress_derivative(0, 0, 0);
 
-		// If a particle gets isolated it might not interact with anything
-		bool interact = false;
-
 		ublas::matrix<float> velocity_tensor_derivative = ublas::zero_matrix<float>((size_t)3);
 
 		// This reference is used to write cleaner equations.
