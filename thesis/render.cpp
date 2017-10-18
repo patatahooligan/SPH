@@ -6,16 +6,14 @@
 #include "physics.h"
 #include "render.h"
 #include "constants.h"
-#include "video.h"
 
 extern ParticleSystem ps;
-extern Video video_output;
-
 
 // Render parameters
 void (* const render_function)(const ParticleSystem&) = render_particles;
 
 const double particle_display_size = 1.0;
+const float framerate = 30.0f;
 
 
 void render_init(int argc, char **argv) {
@@ -29,8 +27,12 @@ void render_init(int argc, char **argv) {
 	// Register callback
 	glutDisplayFunc(render);
 	glutIdleFunc([](){
+		static size_t current_frame = 0;
 		ps.simulation_step();
-		if (video_output.need_new_frame(ps.current_time())) glutPostRedisplay();
+		if (ps.current_time() >= current_frame / framerate) {
+			glutPostRedisplay();
+			++current_frame;
+		}
 	});
 	glutKeyboardFunc(keyboardfunc);
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,GLUT_ACTION_CONTINUE_EXECUTION);
@@ -46,8 +48,6 @@ void render_init(int argc, char **argv) {
 	
 	// Reposition camera to move back to [0, size].
 	glTranslated(-size/2, -size/2, -offsetz);
-
-	video_output.video_init();
 }
 
 void render_sphere(ParticleSystem ps) {
@@ -88,7 +88,6 @@ void render() {
 	// render_function takes a ParticleSystem as the only argument.
 
 	render_function(ps);
-	video_output.encode_frame(ps.current_time());
 	glutSwapBuffers();
 }
 
