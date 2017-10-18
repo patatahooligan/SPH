@@ -41,7 +41,7 @@ class ParticleSystem {
 			kd_tree(3, particles) {}
 		~ParticleSystem() {}
 
-		// Delete these to make sure ParticleSystem is only ever passed by value.
+		// Delete these to make sure ParticleSystem is only ever passed by reference.
 		ParticleSystem(const ParticleSystem &other) = delete;
 		ParticleSystem& operator=(const ParticleSystem &other) = delete;
 
