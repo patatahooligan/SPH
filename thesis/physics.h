@@ -16,6 +16,7 @@ class ParticleSystem {
 
 	private:
 		float simulation_time;
+		ParticleAdaptor kd_tree_adaptor;
 		ParticleKDTree kd_tree;
 
 		float smoothing_kernel(const Vec3f &r, const float h);
@@ -38,7 +39,8 @@ class ParticleSystem {
 
 		ParticleSystem() :
 			simulation_time(0.0f),
-			kd_tree(3, particles) {}
+			kd_tree_adaptor(particles),
+			kd_tree(3, kd_tree_adaptor) {}
 		~ParticleSystem() {}
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.

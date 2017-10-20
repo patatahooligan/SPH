@@ -14,11 +14,14 @@ class ParticleAdaptor {
 		// Just to make the following declaration more readable
 		using particlearray = std::array<Particle, num_of_particles>;
 		const particlearray &particles;
+		const particlearray *particles_p;
 
 	public:
 		ParticleAdaptor() = delete;		// Must construct with reference to particles
-		ParticleAdaptor(const particlearray &target_array):
-			particles(target_array) {};
+		ParticleAdaptor(const particlearray &target_array) :
+			particles(target_array),
+			particles_p(&target_array)
+			{};
 
 		inline size_t kdtree_get_point_count() const { return num_of_particles; }
 
