@@ -11,14 +11,10 @@
 
 ParticleSystem ps;
 
-int main(int argc, char **argv)
-{
-	unsigned int _clearfp();
-	//unsigned int current_control;
-	//unsigned int err_no = _controlfp_s(&current_control, ~(_EM_ZERODIVIDE|_EM_OVERFLOW), _MCW_EM);
+int main(int argc, char **argv) {
 	omp_set_num_threads(5);
 
-	render_init(argc, argv);
+	render_init(&argc, argv);
 	
 	ps.randomize_particles();
 	ps.calculate_initial_conditions();

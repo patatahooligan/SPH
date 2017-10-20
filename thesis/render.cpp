@@ -16,9 +16,9 @@ const double particle_display_size = 1.0;
 const float framerate = 30.0f;
 
 
-void render_init(int argc, char **argv) {
+void render_init(int *argc, char **argv) {
 	// Initialize glut and create the window
-	glutInit(&argc, argv);
+	glutInit(argc, argv);
 	glutInitWindowPosition(-1, -1);
 	glutInitWindowSize(output_width, output_height);
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
