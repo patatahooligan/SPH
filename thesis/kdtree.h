@@ -12,12 +12,12 @@ class ParticleAdaptor {
 
 	private:
 		// Just to make the following declaration more readable
-		typedef Particle particlearray[num_of_particles];
-		particlearray &particles;
+		using particlearray = std::array<Particle, num_of_particles>;
+		const particlearray &particles;
 
 	public:
 		ParticleAdaptor() = delete;		// Must construct with reference to particles
-		ParticleAdaptor(particlearray &target_array):
+		ParticleAdaptor(const particlearray &target_array):
 			particles(target_array) {};
 
 		inline size_t kdtree_get_point_count() const { return num_of_particles; }
