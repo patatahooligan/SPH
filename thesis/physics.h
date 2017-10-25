@@ -35,7 +35,7 @@ class ParticleSystem {
 
 
 	public:		
-		std::array<Particle, num_of_particles> particles;
+		particlearray particles;
 
 		ParticleSystem() :
 			simulation_time(0.0f),

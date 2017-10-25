@@ -29,3 +29,6 @@ public:
 	Particle(const Particle& other) = delete;
 	Particle& operator=(const Particle& other) = delete;
 };
+
+// This is used across translation units. Defining it here enforces consistency and facilitates changes.
+using particlearray = std::array<Particle, num_of_particles>;

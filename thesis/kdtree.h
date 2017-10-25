@@ -11,8 +11,6 @@ class ParticleAdaptor {
 	// This class provides an interface for nanoflann
 
 	private:
-		// Just to make the following declaration more readable
-		using particlearray = std::array<Particle, num_of_particles>;
 		const particlearray &particles;
 		const particlearray *particles_p;
 
