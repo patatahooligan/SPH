@@ -56,12 +56,12 @@ ublas::matrix<float> dyadic_product(Vec3f &v1, Vec3f &v2) {
 
 ublas::matrix<float> reverse(ublas::matrix<float> m) {
 
-	unsigned
+	auto
 		size1 = m.size1(),
 		size2 = m.size2();
 	ublas::matrix<float> ret(size2, size1);
-	for (unsigned i = 1; i < size2; ++i) {
-		for (unsigned j = 1; j < size1; ++j) {
+	for (size_t i = 1; i < size2; ++i) {
+		for (size_t j = 1; j < size1; ++j) {
 			ret(i, j) = m(j, i);
 		}
 	}
@@ -72,15 +72,15 @@ ublas::matrix<float> reverse(ublas::matrix<float> m) {
 
 float ParticleSystem::calculate_time_step(void) {
 	float
-		max_velocity_magnitude_square = 0.0,
+		max_velocity_magnitude_square = 0.0f,
 		max_viscocity = 0.0f;
-	for (size_t i = 0; i < num_of_particles; i++) {
-		float v2 = particles[i].velocity_half.length_squared();
+	for (auto& particle : particles) {
+		float v2 = particle.velocity_half.length_squared();
 		if (v2 > max_velocity_magnitude_square) {
 			max_velocity_magnitude_square = v2;
 		}
-		if (particles[i].viscocity > max_viscocity) {
-			max_viscocity = particles[i].viscocity;
+		if (particle.viscocity > max_viscocity) {
+			max_viscocity = particle.viscocity;
 		}
 	}
 	float
