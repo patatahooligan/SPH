@@ -165,6 +165,7 @@
     <ClInclude Include="particle.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="render.h" />
+    <ClInclude Include="savestate.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="vec3f.h" />
@@ -172,6 +173,7 @@
   <ItemGroup>
     <ClCompile Include="physics.cpp" />
     <ClCompile Include="render.cpp" />
+    <ClCompile Include="savestate.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
