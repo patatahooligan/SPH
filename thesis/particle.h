@@ -4,6 +4,7 @@
 
 #include "boost\numeric\ublas\matrix.hpp"
 
+#include "constants.h"
 #include "vec3f.h"
 
 class Particle {
