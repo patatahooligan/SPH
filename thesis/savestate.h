@@ -16,7 +16,7 @@ class SaveState {
 			if (!output_file.is_open)
 				throw std::runtime_error(std::string("Could not open file ") + output_filename);
 
-			output_file << "SaveState" << unsigned int{ 1 };
+			output_file << std::string("SaveState") << unsigned int{ 1 };
 		}
 
 		void save(particlearray &data);
