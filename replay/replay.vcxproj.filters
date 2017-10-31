@@ -24,12 +24,21 @@
     <ClInclude Include="loadstate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\thesis\particle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="replay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="loadstate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\thesis\vec3f.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
