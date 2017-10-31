@@ -4,6 +4,8 @@ class Vec3f {
 	public:
 		float x, y, z;
 
+		Vec3f() : x(0.0f), y(0.0f), z(0.0f) {}
+
 		Vec3f(float setx, float sety, float setz);
 
 		Vec3f(const Vec3f &other) = default;

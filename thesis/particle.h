@@ -19,11 +19,7 @@ public:
 	boost::numeric::ublas::matrix<float> stress_tensor;
 
 	Particle() :
-	stress_tensor (boost::numeric::ublas::zero_matrix<float>((size_t)3)),
-	velocity(0.0f, 0.0f, 0.0f),
-	velocity_half(0.0f, 0.0f, 0.0f),
-	acceleration(0.0f, 0.0f, 0.0f) {
-	}
+	stress_tensor (boost::numeric::ublas::zero_matrix<float>((size_t)3)) {}
 
 	// Would have been generated implicitly anyway, but explicit declaration is preferred
 	Particle(const Particle& other) = default;
