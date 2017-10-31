@@ -50,22 +50,6 @@ void render_init(int *argc, char **argv) {
 	glTranslated(-size/2, -size/2, -offsetz);
 }
 
-void render_sphere(ParticleSystem ps) {
-	// Only exists to test glut functionality
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
-	glMatrixMode(GL_MODELVIEW);
-	glPushMatrix();
-	glTranslatef(25.0f, 25.0f, -25.0f);
-	glutSolidSphere(particle_display_size, 100, 100);
-	glTranslatef(50.0f, 50.0f, -50.0f);
-	glutSolidSphere(particle_display_size, 100, 100);
-	glPopMatrix();
-
-	glutSwapBuffers();
-}
-
 void render_particles(const ParticleSystem &ps) {
 	// Draws the particles of ps as small spheres.
 
