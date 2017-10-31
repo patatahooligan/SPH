@@ -5,12 +5,6 @@
 #include "vec3f.h"
 
 
-Vec3f::Vec3f(float setx, float sety, float setz) {
-	x = setx;
-	y = sety;
-	z = setz;
-}
-
 Vec3f& Vec3f::operator+=(const Vec3f &other) {
 	x += other.x;
 	y += other.y;
