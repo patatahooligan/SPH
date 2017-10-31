@@ -34,22 +34,16 @@ float Vec3f::length_squared() const {
 }
 
 float Vec3f::length() const {
-	return sqrt(x*x + y*y + z*z);
+	return sqrt(length_squared());
 }
 
 
-Vec3f operator+(const Vec3f &v1, const Vec3f &v2) {
-	return Vec3f(
-		v1.x + v2.x,
-		v1.y + v2.y,
-		v1.z + v2.z);
+Vec3f operator+(Vec3f v1, const Vec3f &v2) {
+	return v1 += v2;
 }
 
-Vec3f operator-(const Vec3f &v1, const Vec3f &v2) {
-	return Vec3f(
-		v1.x - v2.x,
-		v1.y - v2.y,
-		v1.z - v2.z);
+Vec3f operator-(Vec3f v1, const Vec3f &v2) {
+	return v1 -= v2;
 }
 
 Vec3f operator*(const Vec3f &v, const float c) {
@@ -60,13 +54,10 @@ Vec3f operator*(const Vec3f &v, const float c) {
 }
 
 Vec3f operator*(const float c, const Vec3f &v) {
-	return Vec3f(
-		v.x * c,
-		v.y * c,
-		v.z * c);
+	return v * c;
 }
 
-Vec3f operator/(const Vec3f v, const float c) {
+Vec3f operator/(const Vec3f &v, const float c) {
 	return Vec3f(
 		v.x / c,
 		v.y / c,

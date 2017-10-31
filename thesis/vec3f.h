@@ -23,12 +23,12 @@ class Vec3f {
 		float length() const;
 };
 
-Vec3f operator+(const Vec3f &v1, const Vec3f &v2);
+Vec3f operator+(Vec3f v1, const Vec3f &v2);
 
-Vec3f operator-(const Vec3f &v1, const Vec3f &v2);
+Vec3f operator-(Vec3f v1, const Vec3f &v2);
 
 Vec3f operator*(const Vec3f &v, const float c);
 
 Vec3f operator*(const float c, const Vec3f &v);
 
-Vec3f operator/(const Vec3f v, const float c);
+Vec3f operator/(const Vec3f &v, const float c);
