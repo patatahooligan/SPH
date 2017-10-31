@@ -11,19 +11,6 @@ Vec3f::Vec3f(float setx, float sety, float setz) {
 	z = setz;
 }
 
-Vec3f::Vec3f(const Vec3f &other) {
-	x = other.x;
-	y = other.y;
-	z = other.z;
-}
-
-Vec3f& Vec3f::operator=(const Vec3f &other) {
-	x = other.x;
-	y = other.y;
-	z = other.z;
-	return *this;
-}
-
 Vec3f& Vec3f::operator+=(const Vec3f &other) {
 	x += other.x;
 	y += other.y;

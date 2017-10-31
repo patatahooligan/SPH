@@ -4,13 +4,11 @@ class Vec3f {
 	public:
 		float x, y, z;
 
-		Vec3f() {}
-
 		Vec3f(float setx, float sety, float setz);
 
-		Vec3f(const Vec3f &other);
+		Vec3f(const Vec3f &other) = default;
 
-		Vec3f& operator=(const Vec3f &other);
+		Vec3f& operator=(const Vec3f &other) = default;
 
 		Vec3f& operator+=(const Vec3f &other);
 
