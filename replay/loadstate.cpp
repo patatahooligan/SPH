@@ -7,7 +7,7 @@
 LoadState::LoadState(std::string input_filename) :
 	input_file(input_filename, std::ios_base::binary)
 {
-	if (!input_file.is_open)
+	if (!input_file.is_open())
 		throw std::runtime_error("Cannot open file");
 
 	// Verify the format of the file
