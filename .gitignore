@@ -213,3 +213,5 @@ ModelManifest.xml
 
 thesis.VC.opendb
 /replay/particle.h
+/replay/constants.h
+/replay/vec3f.h
