@@ -25,10 +25,11 @@ public:
 	acceleration(0.0f, 0.0f, 0.0f) {
 	}
 
-	// Do no permit copying of Particle as it does not currently serve any purpose so using
-	// it might be accidental and lead to bugs.
-	Particle(const Particle& other) = delete;
-	Particle& operator=(const Particle& other) = delete;
+	// Would have been generated implicitly anyway, but explicit declaration is preferred
+	Particle(const Particle& other) = default;
+	Particle(Particle&& other) = default;
+	Particle& operator=(const Particle& other) = default;
+	Particle& operator=(Particle&& other) = default;
 };
 
 // This is used across translation units. Defining it here enforces consistency and facilitates changes.
