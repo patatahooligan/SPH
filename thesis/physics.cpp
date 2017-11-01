@@ -31,7 +31,7 @@ Vec3f operator*(const ublas::matrix<float> &m, const Vec3f &v) {
 }
 
 float trace(const ublas::matrix<float> &m) {
-	size_t size = m.size1();
+	const size_t size = m.size1();
 	if (size != m.size2()) throw std::invalid_argument("Trace undefined for non-square matrix");
 	float sum = 0;
 	for (size_t i = 0; i < size; ++i) {
@@ -56,7 +56,7 @@ ublas::matrix<float> dyadic_product(Vec3f &v1, Vec3f &v2) {
 
 ublas::matrix<float> reverse(ublas::matrix<float> m) {
 
-	auto
+	const auto
 		size1 = m.size1(),
 		size2 = m.size2();
 	ublas::matrix<float> ret(size2, size1);
@@ -74,8 +74,8 @@ float ParticleSystem::calculate_time_step(void) {
 	float
 		max_velocity_magnitude_square = 0.0f,
 		max_viscocity = 0.0f;
-	for (auto& particle : particles) {
-		float v2 = particle.velocity_half.length_squared();
+	for (const auto& particle : particles) {
+		const auto v2 = particle.velocity_half.length_squared();
 		if (v2 > max_velocity_magnitude_square) {
 			max_velocity_magnitude_square = v2;
 		}
@@ -83,7 +83,7 @@ float ParticleSystem::calculate_time_step(void) {
 			max_viscocity = particle.viscocity;
 		}
 	}
-	float
+	const float
 		t1 = smoothing_length / (sqrt(max_velocity_magnitude_square) + speed_of_sound * speed_of_sound),
 		t2 = (smoothing_length * smoothing_length) / (6 * max_viscocity);
 
@@ -123,7 +123,7 @@ void ParticleSystem::update_derivatives() {
 			const size_t j = indice_dist_pair.first;
 			if (i == j) continue;		// Needs to be for every OTHER particle
 
-			Particle& pj = particles[j];
+			const Particle& pj = particles[j];
 
 			// Calculate their relative position and skip to next particle if it's over the smoothing kernel
 			Vec3f relative_position = pi.position - pj.position;
@@ -177,7 +177,7 @@ void ParticleSystem::update_derivatives() {
 
 		ublas::matrix<float> deformation_tensor = velocity_tensor_derivative;
 		deformation_tensor += reverse(velocity_tensor_derivative);
-		float
+		const float
 			intensity_of_deformation = sqrt(pow(trace(deformation_tensor), 2)/2);
 
 		pi.viscocity =
@@ -193,7 +193,7 @@ void ParticleSystem::integrate_step() {
 	// time steps, with the exclusion of acceleration (because it is 2nd order derivative). However, we
 	// use a crude approximation for velocity at integer multiples of time step because it is needed for
 	// the acceleration in update_derivatives().
-	float time_step = calculate_time_step();
+	const float time_step = calculate_time_step();
 	simulation_time += time_step;
 
 	Vec3f new_velocity_half[num_of_particles];
@@ -285,7 +285,7 @@ float ParticleSystem::smoothing_kernel(const Vec3f &r, const float h) {
 	// Piecewise quintic smoothing kernel.
 	// r is the vector argument, h is the smoothing length
 
-	float q2 = r.length_squared()/(h*h);
+	const float q2 = r.length_squared()/(h*h);
 
 	// Figure out which part of the piecewise function we want
 	if (q2 > 9) {
@@ -296,22 +296,22 @@ float ParticleSystem::smoothing_kernel(const Vec3f &r, const float h) {
 		return pow(3-sqrt(q2), 5) * kernel_constant;
 	}
 	else if (q2 > 1) {
-		float q = sqrt(q2);
+		const float q = sqrt(q2);
 		return pow(3-q, 5) - 6 * pow(2-q, 5) * kernel_constant;
 	}
 	else {
-		float q = sqrt(q2);
+		const float q = sqrt(q2);
 		return pow(3-q, 5) - 6 * pow(2-q, 5) + 15 * pow(1-q, 5) * kernel_constant;
 	}
 }
 
 Vec3f ParticleSystem::smoothing_kernel_derivative(const Vec3f &r, const float h) {
-	float q2 = r.length_squared()/(h*h);
+	const float q2 = r.length_squared()/(h*h);
 	if (q2 >= 9) {
 		return Vec3f(0, 0, 0);
 	}
 	else {
-		float
+		const float
 			q = sqrt(q2),
 			xh = q * (h*h),
 			c1 = (5.0f * pow(3-q, 4)) / xh;
@@ -323,7 +323,7 @@ Vec3f ParticleSystem::smoothing_kernel_derivative(const Vec3f &r, const float h)
 				c1 * r.z);
 		}
 		else {
-			float c2 = (-30.0f * pow(2-q, 4)) / xh;
+			const float c2 = (-30.0f * pow(2-q, 4)) / xh;
 			if (q >= 1) {
 				return Vec3f(
 					(c1+c2) * r.x,
@@ -331,7 +331,7 @@ Vec3f ParticleSystem::smoothing_kernel_derivative(const Vec3f &r, const float h)
 					(c1+c2) * r.z);
 			}
 			else {
-				float c3 = (75.0f * pow(1-q, 4)) / xh;
+				const float c3 = (75.0f * pow(1-q, 4)) / xh;
 				return Vec3f(
 					(c1+c2+c3) * r.x,
 					(c1+c2+c3) * r.y,
@@ -349,20 +349,20 @@ void ParticleSystem::randomize_particles() {
 		normalizing_coefz = size / RAND_MAX;
 
 	srand((unsigned int)time(NULL));
-	for (size_t i=0; i < num_of_particles; ++i) {
-		particles[i].position.x = rand() * normalizing_coefx;
-		particles[i].position.y = rand() * normalizing_coefy;
-		particles[i].position.z = rand() * normalizing_coefz;
+	for (auto &particle : particles) {
+		particle.position.x = rand() * normalizing_coefx;
+		particle.position.y = rand() * normalizing_coefy;
+		particle.position.z = rand() * normalizing_coefz;
 	}
 }
 
 void ParticleSystem::calculate_initial_conditions() {
-	for (size_t i = 0; i < num_of_particles; ++i) {
-		particles[i].density = 0.0f;
-		for (size_t j = 0; j < num_of_particles; ++j) {
-			particles[i].density += particle_mass * smoothing_kernel(particles[i].position - particles[j].position, smoothing_length);
+	for (auto &pi : particles) {
+		pi.density = 0.0f;
+		for (const auto &pj : particles) {
+			pi.density += particle_mass * smoothing_kernel(pi.position - pj.position, smoothing_length);
 		}
-		particles[i].pressure = speed_of_sound * speed_of_sound * (particles[i].density - reference_density);
+		pi.pressure = speed_of_sound * speed_of_sound * (pi.density - reference_density);
 	}
 }
 
