@@ -20,8 +20,8 @@ class ParticleSystem {
 		ParticleAdaptor kd_tree_adaptor;
 		ParticleKDTree kd_tree;
 
-		float smoothing_kernel(const Vec3f &r, const float h);
-		Vec3f smoothing_kernel_derivative(const Vec3f &r, const float h);
+		static float smoothing_kernel(const Vec3f &r, const float h);
+		static Vec3f smoothing_kernel_derivative(const Vec3f &r, const float h);
 
 		// Calculate a time step that is stable.
 		float calculate_time_step();
