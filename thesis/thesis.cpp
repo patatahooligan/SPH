@@ -15,7 +15,7 @@
 static ParticleSystem *ps_pointer;
 
 void render_func() {
-	render_particles(ps_pointer->particles);
+	render_particles(ps_pointer->get_particlearray());
 }
 
 void idle_func() {

@@ -16,6 +16,7 @@ class ParticleSystem {
 
 	private:
 		float simulation_time;
+		particlearray particles;
 		ParticleAdaptor kd_tree_adaptor;
 		ParticleKDTree kd_tree;
 
@@ -34,9 +35,7 @@ class ParticleSystem {
 		void conflict_resolution();
 
 
-	public:		
-		particlearray particles;
-
+	public:
 		ParticleSystem() :
 			simulation_time(0.0f),
 			kd_tree_adaptor(particles),
@@ -47,7 +46,9 @@ class ParticleSystem {
 		ParticleSystem(const ParticleSystem &other) = delete;
 		ParticleSystem& operator=(const ParticleSystem &other) = delete;
 
-		float current_time() {return simulation_time;}
+		const particlearray& get_particlearray() const { return particles; }
+
+		float current_time() const {return simulation_time;}
 
 		// Randomly insert particles in the bounding box defined by const float size.
 		void randomize_particles();
