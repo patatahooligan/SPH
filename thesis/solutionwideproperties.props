@@ -10,6 +10,7 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />
