@@ -16,6 +16,7 @@ constexpr float
 // Display window (and video output) dimensions
 constexpr int output_width = 800;
 constexpr int output_height = 800;
+constexpr float framerate = 30.0f;
 
 // Simulation parameters
 constexpr size_t num_of_particles = 100;

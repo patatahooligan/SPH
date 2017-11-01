@@ -7,16 +7,11 @@
 #include "render.h"
 #include "constants.h"
 
-extern ParticleSystem ps;
 
-// Render parameters
-void (* const render_function)(const ParticleSystem&) = render_particles;
-
-const double particle_display_size = 1.0;
-const float framerate = 30.0f;
+constexpr double particle_display_size = 1.0;
 
 
-void render_init(int *argc, char **argv) {
+void render_init(int *argc, char **argv, GlutCallbackType *render_function, GlutCallbackType *idle_callback) {
 	// Initialize glut and create the window
 	glutInit(argc, argv);
 	glutInitWindowPosition(-1, -1);
@@ -24,16 +19,15 @@ void render_init(int *argc, char **argv) {
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutCreateWindow("SPH");
 
-	// Register callback
-	glutDisplayFunc(render);
-	glutIdleFunc([](){
-		static size_t current_frame = 0;
-		ps.simulation_step();
-		if (ps.current_time() >= current_frame / framerate) {
-			glutPostRedisplay();
-			++current_frame;
-		}
-	});
+	// Register callbacks
+	if (render_function)
+		glutDisplayFunc(render_function);
+	else
+		std::clog << "WARNING: no render function registered\n";
+	if (idle_callback)
+		glutIdleFunc(idle_callback);
+	else
+		std::clog << "WARNING: no idle function registered\n";
 	glutKeyboardFunc(keyboardfunc);
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,GLUT_ACTION_CONTINUE_EXECUTION);
 
@@ -50,29 +44,20 @@ void render_init(int *argc, char **argv) {
 	glTranslated(-size/2, -size/2, -offsetz);
 }
 
-void render_particles(const ParticleSystem &ps) {
+void render_particles(const particlearray &particles) {
 	// Draws the particles of ps as small spheres.
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
-	for (unsigned i = 0; i < num_of_particles; i++) {
+	for (auto &particle : particles) {
 		glPushMatrix();
 		glTranslatef(
-			ps.particles[i].position.x,
-			ps.particles[i].position.y,
-			-ps.particles[i].position.z);
+			particle.position.x,
+			particle.position.y,
+			particle.position.z);
 		glutSolidSphere(particle_display_size, 10, 10);
 		glPopMatrix();
 	}
-}
-
-void render() {
-	// Function to be used as glut display function. Calls a
-	// function given by global compile-time constant render_function.
-	// render_function takes a ParticleSystem as the only argument.
-
-	render_function(ps);
-	glutSwapBuffers();
 }
 
 void keyboardfunc(unsigned char key, int x, int y) {
