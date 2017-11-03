@@ -19,7 +19,7 @@ class SaveState {
 			output_file << std::string("SaveState") << unsigned int{ 1 };
 		}
 
-		void save(particlearray &data);
+		void save(const particlearray &data);
 
 	private:
 		std::ofstream output_file;
