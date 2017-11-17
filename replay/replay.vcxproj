@@ -151,7 +151,6 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\thesis\vec3f.cpp" />
     <ClCompile Include="loadstate.cpp" />
     <ClCompile Include="replay.cpp" />
     <ClCompile Include="stdafx.cpp">

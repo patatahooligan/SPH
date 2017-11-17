@@ -59,9 +59,6 @@
     <ClCompile Include="physics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="vec3f.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="savestate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
