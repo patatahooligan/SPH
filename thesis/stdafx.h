@@ -13,6 +13,7 @@
 #include <omp.h>
 #include <array>
 #include <string>
+#include <cassert>
 
 #include "GL\freeglut.h"		// Not actually needed everywhere, but added to save time
 
