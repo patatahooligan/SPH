@@ -93,6 +93,9 @@ void ParticleSystem::update_derivatives() {
 	// Calculate and update all derivatives of particle quantities needed to integrate
 	// TODO: consider the case for zero neighbors and figure out if it needs handling
 
+	// Save the results kd-tree searches here to re-use them in the second loop
+	std::vector<std::pair<size_t, float> > indices_dists[num_of_particles];
+
 	#pragma omp parallel for
 	for (int i = 0; i < num_of_particles; ++i) {
 		// There are multiple quantities we need to sum for the following equations
@@ -106,16 +109,15 @@ void ParticleSystem::update_derivatives() {
 		Particle& Pi = particles[i];
 
 		// Get a par of <index, distance> for neighbors of pi
-		std::vector<std::pair<size_t, float>> indices_dists;
 		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
 		kd_tree.radiusSearch(
-			position, smoothing_length , indices_dists, { 32, 0.0f, false });
-		assert(indices_dists.size() > 0);
+			position, smoothing_length, indices_dists[i], { 32, 0.0f, false });
+		assert(indices_dists[i].size() > 0);
 
 		// Calculate density
 		// This has to be done for every particle before acceleration can be calculated
 		Pi.density = 0.0f;
-		for (auto indice_dist_pair : indices_dists) {
+		for (auto indice_dist_pair : indices_dists[i]) {
 			// This calculates the sum of the equation without the normalizing constant
 			auto distance = indice_dist_pair.second;
 			Pi.density += pow((pow(smoothing_length, 2) - pow(distance, 2)), 3);
@@ -123,13 +125,18 @@ void ParticleSystem::update_derivatives() {
 		// Multiply by the normalizing constant
 		assert(Pi.density > 0.0f && isfinite(Pi.density));
 		Pi.density *= (4 * particle_mass) / (pi * pow(smoothing_length, 8));
+	}
 
+	#pragma omp parallel for
+	for (int i = 0; i < num_of_particles; ++i) {
 		// Sum of interaction forces
 		Vec3f sumF{ 0.0f, 0.0f, 0.0f };
 		auto h4 = pow(smoothing_length, 4);
 
+		Particle& Pi = particles[i];
+
 		// Calculate acceleration
-		for (auto indice_dist_pair : indices_dists) {
+		for (auto indice_dist_pair : indices_dists[i]) {
 			// If Pi is Pj, do not compute force
 			if (i == indice_dist_pair.first) continue;
 
@@ -146,9 +153,9 @@ void ParticleSystem::update_derivatives() {
 			sumF +=
 				((particle_mass * (1 - q_ij)) / (pi * h4 * rhoj)) *
 				(15 * bulk_modulus * (rhoi + rhoj - 2 * rho0) * ((1 - q_ij) / q_ij) * r_ij - 40 * viscocity * v_ij);
+			assert(isfinite(sumF));
 		}
 		// Multiply by the normalizing constant
-		assert(isfinite(sumF));
 		sumF *= particle_mass / (pi * h4);
 
 		Pi.acceleration = (sumF + Vec3f{ 0.0, -gravity_constant, 0.0f }) / Pi.density;
@@ -175,6 +182,8 @@ void ParticleSystem::integrate_step() {
 			particles[i].velocity_half.y + particles[i].acceleration.y * time_step,
 			particles[i].velocity_half.z + particles[i].acceleration.z * time_step);
 
+		assert(isfinite(new_velocity_half[i]));
+
 		// Crude approximation for velocity at current time
 		particles[i].velocity = (particles[i].velocity_half + new_velocity_half[i]) / 2;
 
@@ -183,6 +192,7 @@ void ParticleSystem::integrate_step() {
 
 		// Integrate position
 		particles[i].position += particles[i].velocity_half * time_step;
+		assert(isfinite(particles[i].position));
 	}
 }
 
