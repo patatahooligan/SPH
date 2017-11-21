@@ -70,3 +70,7 @@ inline Vec3f operator*(const float c, Vec3f v) {
 inline Vec3f operator/(Vec3f v, const float c) {
 	return v /= c;
 }
+
+inline bool isfinite(Vec3f v) {
+	return isfinite(v.x) && isfinite(v.y) && isfinite(v.z);
+}

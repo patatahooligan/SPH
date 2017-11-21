@@ -109,7 +109,7 @@ void ParticleSystem::update_derivatives() {
 		std::vector<std::pair<size_t, float>> indices_dists;
 		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
 		kd_tree.radiusSearch(
-			position, 9 * (smoothing_length*smoothing_length), indices_dists, { 32, 0.0f, false });
+			position, smoothing_length , indices_dists, { 32, 0.0f, false });
 		assert(indices_dists.size() > 0);
 
 		// Calculate density
@@ -121,6 +121,7 @@ void ParticleSystem::update_derivatives() {
 			Pi.density += pow((pow(smoothing_length, 2) - pow(distance, 2)), 3);
 		}
 		// Multiply by the normalizing constant
+		assert(Pi.density > 0.0f && isfinite(Pi.density));
 		Pi.density *= (4 * particle_mass) / (pi * pow(smoothing_length, 8));
 
 		// Sum of interaction forces
@@ -147,6 +148,7 @@ void ParticleSystem::update_derivatives() {
 				(15 * bulk_modulus * (rhoi + rhoj - 2 * rho0) * ((1 - q_ij) / q_ij) * r_ij - 40 * viscocity * v_ij);
 		}
 		// Multiply by the normalizing constant
+		assert(isfinite(sumF));
 		sumF *= particle_mass / (pi * h4);
 
 		Pi.acceleration = (sumF + Vec3f{ 0.0, -gravity_constant, 0.0f }) / Pi.density;
