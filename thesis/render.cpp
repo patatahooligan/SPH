@@ -58,6 +58,7 @@ void render_particles(const particlearray &particles) {
 		glutSolidSphere(particle_display_size, 10, 10);
 		glPopMatrix();
 	}
+	glutSwapBuffers();
 }
 
 void keyboardfunc(unsigned char key, int x, int y) {
