@@ -9,6 +9,7 @@
 
 
 constexpr double particle_display_size = 1.0;
+constexpr double fov = 60.0;
 
 
 void render_init(int *argc, char **argv, GlutCallbackType *render_function, GlutCallbackType *idle_callback) {
@@ -31,17 +32,22 @@ void render_init(int *argc, char **argv, GlutCallbackType *render_function, Glut
 	glutKeyboardFunc(keyboardfunc);
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,GLUT_ACTION_CONTINUE_EXECUTION);
 
-	// Define a perspective projection for the camera
+	// Define the projection of the world onto the camera
+	// Arguments are fov(degrees), aspect ratio, near clipping plane, far clipping plane.
+	// To ensure that no polygon is clipped, the clipping planes extend outside of the walls
+	// of the container by a bit more than the particle display size.
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
+	gluPerspective(fov, 1.0, offsetz - 1.1 * particle_display_size, offsetz + size + 1.1 * particle_display_size);
 
-	// If x,y are not symmetric, perspective is skewed so use [-size/2,size/2]
-	// instead of [0, size]. Offsetz is important because a clipping plane that
-	// is too near also causes weird perspective.
-	glFrustum(-size/2, size/2, -size/2, size/2, offsetz, offsetz+size);
-	
-	// Reposition camera to move back to [0, size].
-	glTranslated(-size/2, -size/2, -offsetz);
+	// Define the camera position and orientation
+	// The arguments are as follows
+	// x, y, z of camera position
+	// x, y, z of point the camera is lookit towards
+	// x, y, z of camera's up vector
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(size / 2, size / 2, -offsetz, size / 2, size / 2, size / 2, 0.0, 1.0, 0.0);
 }
 
 void render_particles(const particlearray &particles) {
