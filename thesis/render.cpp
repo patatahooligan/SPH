@@ -8,7 +8,7 @@
 #include "constants.h"
 
 
-constexpr double particle_display_size = 1.0;
+constexpr double particle_display_size = 0.01;
 constexpr double fov = 60.0;
 
 
