@@ -10,6 +10,14 @@ class Vec3f {
 
 		Vec3f& operator=(const Vec3f &other) = default;
 
+		bool operator==(const Vec3f &other) const {
+			return x == other.x && y == other.y && z == other.z;
+		}
+
+		bool operator!=(const Vec3f &other) const {
+			return !(*this == other);
+		}
+
 		Vec3f& operator+=(const Vec3f &other) {
 			x += other.x;
 			y += other.y;
