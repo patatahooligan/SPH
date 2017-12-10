@@ -111,7 +111,7 @@ void ParticleSystem::update_derivatives() {
 		// Get a par of <index, distance> for neighbors of pi
 		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
 		kd_tree.radiusSearch(
-			position, smoothing_length, indices_dists[i], { 32, 0.0f, false });
+			position, pow(smoothing_length, 2), indices_dists[i], { 32, 0.0f, false });
 		assert(indices_dists[i].size() > 0);
 
 		// Calculate density
@@ -119,8 +119,8 @@ void ParticleSystem::update_derivatives() {
 		Pi.density = 0.0f;
 		for (auto indice_dist_pair : indices_dists[i]) {
 			// This calculates the sum of the equation without the normalizing constant
-			auto distance = indice_dist_pair.second;
-			Pi.density += pow((pow(smoothing_length, 2) - pow(distance, 2)), 3);
+			auto distance_squared = indice_dist_pair.second;
+			Pi.density += pow((pow(smoothing_length, 2) - distance_squared), 3);
 		}
 		// Multiply by the normalizing constant
 		assert(Pi.density > 0.0f && isfinite(Pi.density));
@@ -145,10 +145,11 @@ void ParticleSystem::update_derivatives() {
 			// A bunch of shorthands to make the following equations readable
 			auto
 				rhoi = Pi.density, rhoj = Pj.density, rho0 = reference_density,   // densities
-				q_ij = indice_dist_pair.second / smoothing_length;                // normalized distance
+				q_ij = sqrt(indice_dist_pair.second) / smoothing_length;                // normalized distance
 
 			auto
-				r_ij = Pi.position - Pj.position, v_ij = Pi.velocity - Pj.velocity;
+				r_ij = Pi.position - Pj.position,
+				v_ij = Pi.velocity - Pj.velocity;
 
 			sumF +=
 				((particle_mass * (1 - q_ij)) / (pi * h4 * rhoj)) *
