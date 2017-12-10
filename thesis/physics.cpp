@@ -137,10 +137,10 @@ void ParticleSystem::update_derivatives() {
 
 		// Calculate acceleration
 		for (auto indice_dist_pair : indices_dists[i]) {
-			// If Pi is Pj, do not compute force
-			if (i == indice_dist_pair.first) continue;
 
+			// If pi is pj or they are at the exact same point, do not compute interaction forces
 			auto& Pj = particles[indice_dist_pair.first];
+			if (Pi.position == Pj.position) continue;
 
 			// A bunch of shorthands to make the following equations readable
 			auto
