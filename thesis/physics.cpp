@@ -96,26 +96,20 @@ void ParticleSystem::update_derivatives() {
 	// Save the results kd-tree searches here to re-use them in the second loop
 	std::vector<std::pair<size_t, float> > indices_dists[num_of_particles];
 
+	// Calculate density
+	// This has to be done for every particle before acceleration can be calculated
 	#pragma omp parallel for
 	for (int i = 0; i < num_of_particles; ++i) {
-		// There are multiple quantities we need to sum for the following equations
-		float
-			sum_density = 0.0f;
-
-		Vec3f
-			sum_acceleration(0, 0, 0);
 
 		// This reference is used to write cleaner equations.
 		Particle& Pi = particles[i];
 
-		// Get a par of <index, distance> for neighbors of pi
+		// Get a pair of <index, distance> for neighbors of pi
 		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
 		kd_tree.radiusSearch(
 			position, pow(smoothing_length, 2), indices_dists[i], { 32, 0.0f, false });
 		assert(indices_dists[i].size() > 0);
 
-		// Calculate density
-		// This has to be done for every particle before acceleration can be calculated
 		Pi.density = 0.0f;
 		for (auto indice_dist_pair : indices_dists[i]) {
 			// This calculates the sum of the equation without the normalizing constant
@@ -127,6 +121,7 @@ void ParticleSystem::update_derivatives() {
 		Pi.density *= (4 * particle_mass) / (pi * pow(smoothing_length, 8));
 	}
 
+	// Calculate acceleration
 	#pragma omp parallel for
 	for (int i = 0; i < num_of_particles; ++i) {
 		// Sum of interaction forces
@@ -134,18 +129,15 @@ void ParticleSystem::update_derivatives() {
 		auto h4 = pow(smoothing_length, 4);
 
 		Particle& Pi = particles[i];
-
-		// Calculate acceleration
 		for (auto indice_dist_pair : indices_dists[i]) {
-
 			// If pi is pj or they are at the exact same point, do not compute interaction forces
 			auto& Pj = particles[indice_dist_pair.first];
 			if (Pi.position == Pj.position) continue;
 
 			// A bunch of shorthands to make the following equations readable
 			auto
-				rhoi = Pi.density, rhoj = Pj.density, rho0 = reference_density,   // densities
-				q_ij = sqrt(indice_dist_pair.second) / smoothing_length;                // normalized distance
+				rhoi = Pi.density, rhoj = Pj.density, rho0 = reference_density,  // densities
+				q_ij = sqrt(indice_dist_pair.second) / smoothing_length;         // normalized distance
 
 			auto
 				r_ij = Pi.position - Pj.position,
