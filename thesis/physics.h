@@ -34,6 +34,8 @@ class ParticleSystem {
 		// Handle particle-wall collision
 		void conflict_resolution();
 
+		Vec3f boundary_force(const Particle& p);
+
 
 	public:
 		ParticleSystem() :

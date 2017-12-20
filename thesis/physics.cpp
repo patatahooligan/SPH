@@ -70,7 +70,7 @@ ublas::matrix<float> reverse(ublas::matrix<float> m) {
 }
 
 
-float ParticleSystem::calculate_time_step(void) {
+float ParticleSystem::calculate_time_step() {
 	float
 		max_velocity_magnitude_square = 0.0f;
 	for (const auto& particle : particles) {
@@ -150,8 +150,10 @@ void ParticleSystem::update_derivatives() {
 		}
 		// Multiply by the normalizing constant
 		sumF *= particle_mass / (pi * h4);
+		
+		sumF += boundary_force(Pi);
 
-		Pi.acceleration = (sumF + Vec3f{ 0.0, -gravity_constant, 0.0f }) / Pi.density;
+		Pi.acceleration = sumF / Pi.density + Vec3f{ 0.0, -gravity_constant, 0.0f };
 	}
 }
 
@@ -187,50 +189,63 @@ void ParticleSystem::integrate_step() {
 		particles[i].position += particles[i].velocity_half * time_step;
 		assert(isfinite(particles[i].position));
 	}
+
+	// Handle particles that have clipped into wall
+	conflict_resolution();
 }
 
 void ParticleSystem::conflict_resolution() {
-	const float damping_factor = 0.2f;
+	// If particles have intersected the wall, bring them back out to the surface.
+	// Note that this does not implement a boundary condition because it is intented
+	// to be called when integration position, whereas boundary conditions should be
+	// calculated when calculating forces & acceleration.
 
 	#pragma omp parallel for
 	for (int i = 0; i < num_of_particles; ++i) {
-		if (particles[i].position.x > sizex) {
-			particles[i].position.x = 2 * sizex - particles[i].position.x;
-			if (particles[i].velocity.x > 0) {
-				particles[i].velocity.x = (damping_factor-1.0f) * particles[i].velocity.x;
-			}
-		}
-		else if (particles[i].position.x < 0) {
-			particles[i].position.x = -particles[i].position.y;
-			if (particles[i].velocity.x < 0) {
-				particles[i].velocity.x = (damping_factor-1.0f) * particles[i].velocity.x;
-			}
-		}
-		if (particles[i].position.y > sizey) {
-			particles[i].position.y = 2 * sizey - particles[i].position.y;
-			if (particles[i].velocity.y > 0) {
-				particles[i].velocity.y = (damping_factor-1.0f) * particles[i].velocity.y;
-			}
-		}
-		else if (particles[i].position.y < 0) {
-			particles[i].position.y = -particles[i].position.y;
-			if (particles[i].velocity.y < 0) {
-				particles[i].velocity.y = (damping_factor-1.0f) * particles[i].velocity.y;
-			}
-		}
-		if (particles[i].position.z > sizez) {
-			particles[i].position.z = 2 * sizez - particles[i].position.z;
-			if (particles[i].velocity.z > 0) {
-				particles[i].velocity.z = (damping_factor-1.0f) * particles[i].velocity.z;
-			}
-		}
-		else if (particles[i].position.z < 0) {
-			particles[i].position.z = -particles[i].position.z;
-			if (particles[i].velocity.z < 0) {
-				particles[i].velocity.z = (damping_factor-1.0f) * particles[i].velocity.z;
-			}
-		}
+		particles[i].position.x = std::max(particles[i].position.x, 0.0f);
+		particles[i].position.x = std::min(particles[i].position.x, size);
+
+		particles[i].position.y = std::max(particles[i].position.y, 0.0f);
+		particles[i].position.y = std::min(particles[i].position.y, size);
+
+		particles[i].position.z = std::max(particles[i].position.z, 0.0f);
+		particles[i].position.z = std::min(particles[i].position.z, size);
+
 	}
+}
+
+Vec3f ParticleSystem::boundary_force(const Particle& p) {
+
+	// The fictitious particle that enforces the boundary condition should be slightly offset
+	// so as to not intersect with the particles.
+	constexpr float wall_offset = smoothing_length / 100.0f;
+
+	auto lennard_jones_force = [](float r) {
+		constexpr float
+			delta = 1.0f,
+			r_0 = smoothing_length;
+
+		return (delta * (pow(r_0 / r, 12) - pow(r_0 / r, 6))) / r;
+	};
+
+	Vec3f F{ 0.0f, 0.0f, 0.0f };
+
+	if (p.position.x > smoothing_length)
+		F.x += lennard_jones_force(p.position.x);
+	else if (p.position.x > size - smoothing_length)
+		F.x -= lennard_jones_force(size - p.position.x);
+
+	if (p.position.y > smoothing_length)
+		F.y += lennard_jones_force(p.position.y);
+	else if (p.position.y > size - smoothing_length)
+		F.y -= lennard_jones_force(size - p.position.y);
+
+	if (p.position.z > smoothing_length)
+		F.z += lennard_jones_force(p.position.z);
+	else if (p.position.z > size - smoothing_length)
+		F.z -= lennard_jones_force(size - p.position.z);
+
+	return F;
 }
 
 
@@ -297,7 +312,7 @@ Vec3f ParticleSystem::smoothing_kernel_derivative(const Vec3f &r, const float h)
 void ParticleSystem::randomize_particles() {
 	// Coefficients to normalize rand() to [0, size].
 	constexpr float
-		normalizing_coefx = size / RAND_MAX,
+		normalizing_coefx = (size / 10.0f) / RAND_MAX,
 		normalizing_coefy = size / RAND_MAX,
 		normalizing_coefz = size / RAND_MAX;
 
@@ -314,5 +329,4 @@ void ParticleSystem::simulation_step() {
 
 	update_derivatives();
 	integrate_step();
-	conflict_resolution();
 }
