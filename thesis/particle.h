@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdexcept>
+#include <array>
 
 #include "constants.h"
 #include "vec3f.h"
