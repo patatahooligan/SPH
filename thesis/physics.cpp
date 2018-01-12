@@ -312,7 +312,7 @@ Vec3f ParticleSystem::smoothing_kernel_derivative(const Vec3f &r, const float h)
 void ParticleSystem::randomize_particles() {
 	// Coefficients to normalize rand() to [0, size].
 	constexpr float
-		normalizing_coefx = (size / 10.0f) / RAND_MAX,
+		normalizing_coefx = (size / 2.0f) / RAND_MAX,
 		normalizing_coefy = size / RAND_MAX,
 		normalizing_coefz = size / RAND_MAX;
 
