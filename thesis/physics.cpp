@@ -70,22 +70,18 @@ ublas::matrix<float> reverse(ublas::matrix<float> m) {
 }
 
 
-float ParticleSystem::calculate_time_step(void) {
+float ParticleSystem::calculate_time_step() {
 	float
-		max_velocity_magnitude_square = 0.0f,
-		max_viscocity = 0.0f;
+		max_velocity_magnitude_square = 0.0f;
 	for (const auto& particle : particles) {
 		const auto v2 = particle.velocity_half.length_squared();
 		if (v2 > max_velocity_magnitude_square) {
 			max_velocity_magnitude_square = v2;
 		}
-		if (particle.viscocity > max_viscocity) {
-			max_viscocity = particle.viscocity;
-		}
 	}
 	const float
 		t1 = smoothing_length / (sqrt(max_velocity_magnitude_square) + speed_of_sound * speed_of_sound),
-		t2 = (smoothing_length * smoothing_length) / (6 * max_viscocity);
+		t2 = (smoothing_length * smoothing_length) / (6 * viscocity);
 
 	if (t1 < t2) 
 		return t1/10.0f;
@@ -97,92 +93,67 @@ void ParticleSystem::update_derivatives() {
 	// Calculate and update all derivatives of particle quantities needed to integrate
 	// TODO: consider the case for zero neighbors and figure out if it needs handling
 
+	// Save the results kd-tree searches here to re-use them in the second loop
+	std::vector<std::pair<size_t, float> > indices_dists[num_of_particles];
+
+	// Calculate density
+	// This has to be done for every particle before acceleration can be calculated
 	#pragma omp parallel for
 	for (int i = 0; i < num_of_particles; ++i) {
-		// There are multiple quantities we need to sum for the following equations
-		float
-			sum_density = 0.0f,
-			sum_tempererature_laplacian = 0.0f;
-
-		Vec3f
-			sum_pressure(0, 0, 0),
-			sum_acceleration(0, 0, 0),
-			sum_stress_derivative(0, 0, 0);
-
-		ublas::matrix<float> velocity_tensor_derivative = ublas::zero_matrix<float>((size_t)3);
 
 		// This reference is used to write cleaner equations.
-		Particle& pi = particles[i];
+		Particle& Pi = particles[i];
 
-		std::vector<std::pair<size_t, float>> indices_dists;
-		indices_dists.reserve(30);
-		float position[3] = {pi.position.x, pi.position.y, pi.position.z};
-		kd_tree.radiusSearch(position, 9 * (smoothing_length*smoothing_length), indices_dists, nanoflann::SearchParams(32, 0.0f, false));
+		// Get a pair of <index, distance> for neighbors of pi
+		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
+		kd_tree.radiusSearch(
+			position, pow(smoothing_length, 2), indices_dists[i], { 32, 0.0f, false });
+		assert(indices_dists[i].size() > 0);
 
-		for (auto indice_dist_pair : indices_dists) {
-			const size_t j = indice_dist_pair.first;
-			if (i == j) continue;		// Needs to be for every OTHER particle
-
-			const Particle& pj = particles[j];
-
-			// Calculate their relative position and skip to next particle if it's over the smoothing kernel
-			Vec3f relative_position = pi.position - pj.position;
-			if (relative_position.length_squared() > smoothing_length * smoothing_length) continue;
-
-			Vec3f
-				dw = smoothing_kernel_derivative(relative_position, smoothing_length),
-				relative_velocity = pi.velocity - pj.velocity;
-
-			float vdw = relative_velocity.dot_product(dw);
-
-			sum_density += (vdw * particle_mass) / pj.density;
-			sum_pressure -=
-				(particle_mass *
-				(pi.pressure/pow(pi.density, 2) + pj.pressure/pow(pj.density, 2))) *
-				dw;
-
-			float vx = relative_velocity.dot_product(relative_position);
-			if (vx < 0) {
-				float mu = (vx*smoothing_length) / relative_position.length_squared() + 0.01f * smoothing_length * smoothing_length;
-				sum_acceleration -=
-					(particle_mass / pi.density) *
-					(visc_b * pow(mu, 2) - visc_a * mu * speed_of_sound) /
-					0.5f * (pi.density + pj.density) *
-					dw;
-			}
-
-			sum_stress_derivative +=
-				(particle_mass / pj.density) *
-				(pi.stress_tensor + pj.stress_tensor) *
-				smoothing_kernel_derivative(relative_position, smoothing_length);
-
-			sum_tempererature_laplacian +=
-				(4 * particle_mass * pi.density *
-				(pi.temperature - pj.temperature) * vdw) /
-				(pj.density * (pi.density + pj.density) *
-				(relative_velocity.length_squared() + 0.01f * smoothing_length*smoothing_length));
-
-			velocity_tensor_derivative -= (particle_mass * dyadic_product(relative_velocity, dw)) / pj.density;
+		Pi.density = 0.0f;
+		for (auto indice_dist_pair : indices_dists[i]) {
+			// This calculates the sum of the equation without the normalizing constant
+			auto distance_squared = indice_dist_pair.second;
+			Pi.density += pow((pow(smoothing_length, 2) - distance_squared), 3);
 		}
+		// Multiply by the normalizing constant
+		assert(Pi.density > 0.0f && isfinite(Pi.density));
+		Pi.density *= (4 * particle_mass) / (pi * pow(smoothing_length, 8));
+	}
+
+	// Calculate acceleration
+	#pragma omp parallel for
+	for (int i = 0; i < num_of_particles; ++i) {
+		// Sum of interaction forces
+		Vec3f sumF{ 0.0f, 0.0f, 0.0f };
+		auto h4 = pow(smoothing_length, 4);
+
+		Particle& Pi = particles[i];
+		for (auto indice_dist_pair : indices_dists[i]) {
+			// If pi is pj or they are at the exact same point, do not compute interaction forces
+			auto& Pj = particles[indice_dist_pair.first];
+			if (Pi.position == Pj.position) continue;
+
+			// A bunch of shorthands to make the following equations readable
+			auto
+				rhoi = Pi.density, rhoj = Pj.density, rho0 = reference_density,  // densities
+				q_ij = sqrt(indice_dist_pair.second) / smoothing_length;         // normalized distance
+
+			auto
+				r_ij = Pi.position - Pj.position,
+				v_ij = Pi.velocity - Pj.velocity;
+
+			sumF +=
+				((particle_mass * (1 - q_ij)) / (pi * h4 * rhoj)) *
+				(15 * bulk_modulus * (rhoi + rhoj - 2 * rho0) * ((1 - q_ij) / q_ij) * r_ij - 40 * viscocity * v_ij);
+			assert(isfinite(sumF));
+		}
+		// Multiply by the normalizing constant
+		sumF *= particle_mass / (pi * h4);
 		
-		pi.density_derivative = pi.density * sum_density;
+		sumF += boundary_force(Pi);
 
-		pi.acceleration =
-			sum_pressure +
-			sum_stress_derivative / pi.density -
-			Vec3f(0.0f, gravity_constant, 0.0f) -
-			sum_acceleration;
-
-		pi.temperature_derivative = thermal_diffusion_constant * sum_tempererature_laplacian;
-
-		ublas::matrix<float> deformation_tensor = velocity_tensor_derivative;
-		deformation_tensor += reverse(velocity_tensor_derivative);
-		const float
-			intensity_of_deformation = sqrt(pow(trace(deformation_tensor), 2)/2);
-
-		pi.viscocity =
-			(1-exp(-(jump_number + 1) * intensity_of_deformation)) *
-			(1/sqrt(intensity_of_deformation) + 1/intensity_of_deformation);
+		Pi.acceleration = sumF / Pi.density + Vec3f{ 0.0, -gravity_constant, 0.0f };
 	}
 }
 
@@ -200,84 +171,81 @@ void ParticleSystem::integrate_step() {
 
 	#pragma omp parallel for
 	for (int i = 0; i < num_of_particles; ++i) {
-		// Initial approximation for new velocity_half
+		// Integrate velocity
 		new_velocity_half[i] = Vec3f(
 			particles[i].velocity_half.x + particles[i].acceleration.x * time_step,
 			particles[i].velocity_half.y + particles[i].acceleration.y * time_step,
 			particles[i].velocity_half.z + particles[i].acceleration.z * time_step);
-		
-		particles[i].density += particles[i].density_derivative * time_step;
 
-		particles[i].temperature += particles[i].temperature_derivative * time_step;
+		assert(isfinite(new_velocity_half[i]));
 
-		particles[i].pressure = (speed_of_sound * speed_of_sound) * (particles[i].density - reference_density);
-	}
-
-	#pragma omp parallel for
-	for (int i = 0; i < num_of_particles; ++i) {
-		Vec3f velocity_correction_sum(0.0f, 0.0f, 0.0f);
-
-		// XSPH velocity correction
-		for (int j = 0; j < num_of_particles; ++j) {
-			Vec3f
-				relative_velocity = new_velocity_half[j] - new_velocity_half[i],
-				relative_position = particles[i].position - particles[j].position;
-			velocity_correction_sum += (2 * relative_velocity * smoothing_kernel(relative_position, smoothing_length)) / (particles[i].density + particles[j].density);
-		}
-		new_velocity_half[i] += particle_mass * xsph_coeff * velocity_correction_sum;
-
-		// Crude approximation for velocity at current time + time step
+		// Crude approximation for velocity at current time
 		particles[i].velocity = (particles[i].velocity_half + new_velocity_half[i]) / 2;
-		
+
 		// Replace old velocity_half with new one
 		particles[i].velocity_half = new_velocity_half[i];
 
+		// Integrate position
 		particles[i].position += particles[i].velocity_half * time_step;
+		assert(isfinite(particles[i].position));
 	}
+
+	// Handle particles that have clipped into wall
+	conflict_resolution();
 }
 
 void ParticleSystem::conflict_resolution() {
-	const float damping_factor = 0.2f;
+	// If particles have intersected the wall, bring them back out to the surface.
+	// Note that this does not implement a boundary condition because it is intented
+	// to be called when integration position, whereas boundary conditions should be
+	// calculated when calculating forces & acceleration.
 
 	#pragma omp parallel for
 	for (int i = 0; i < num_of_particles; ++i) {
-		if (particles[i].position.x > sizex) {
-			particles[i].position.x = 2 * sizex - particles[i].position.x;
-			if (particles[i].velocity.x > 0) {
-				particles[i].velocity.x = (damping_factor-1.0f) * particles[i].velocity.x;
-			}
-		}
-		else if (particles[i].position.x < 0) {
-			particles[i].position.x = -particles[i].position.y;
-			if (particles[i].velocity.x < 0) {
-				particles[i].velocity.x = (damping_factor-1.0f) * particles[i].velocity.x;
-			}
-		}
-		if (particles[i].position.y > sizey) {
-			particles[i].position.y = 2 * sizey - particles[i].position.y;
-			if (particles[i].velocity.y > 0) {
-				particles[i].velocity.y = (damping_factor-1.0f) * particles[i].velocity.y;
-			}
-		}
-		else if (particles[i].position.y < 0) {
-			particles[i].position.y = -particles[i].position.y;
-			if (particles[i].velocity.y < 0) {
-				particles[i].velocity.y = (damping_factor-1.0f) * particles[i].velocity.y;
-			}
-		}
-		if (particles[i].position.z > sizez) {
-			particles[i].position.z = 2 * sizez - particles[i].position.z;
-			if (particles[i].velocity.z > 0) {
-				particles[i].velocity.z = (damping_factor-1.0f) * particles[i].velocity.z;
-			}
-		}
-		else if (particles[i].position.z < 0) {
-			particles[i].position.z = -particles[i].position.z;
-			if (particles[i].velocity.z < 0) {
-				particles[i].velocity.z = (damping_factor-1.0f) * particles[i].velocity.z;
-			}
-		}
+		particles[i].position.x = std::max(particles[i].position.x, 0.0f);
+		particles[i].position.x = std::min(particles[i].position.x, size);
+
+		particles[i].position.y = std::max(particles[i].position.y, 0.0f);
+		particles[i].position.y = std::min(particles[i].position.y, size);
+
+		particles[i].position.z = std::max(particles[i].position.z, 0.0f);
+		particles[i].position.z = std::min(particles[i].position.z, size);
+
 	}
+}
+
+Vec3f ParticleSystem::boundary_force(const Particle& p) {
+
+	// The fictitious particle that enforces the boundary condition should be slightly offset
+	// so as to not intersect with the particles.
+	constexpr float wall_offset = smoothing_length / 100.0f;
+
+	auto lennard_jones_force = [](float r) {
+		constexpr float
+			delta = 1.0f,
+			r_0 = smoothing_length;
+
+		return (delta * (pow(r_0 / r, 12) - pow(r_0 / r, 6))) / r;
+	};
+
+	Vec3f F{ 0.0f, 0.0f, 0.0f };
+
+	if (p.position.x > smoothing_length)
+		F.x += lennard_jones_force(p.position.x);
+	else if (p.position.x > size - smoothing_length)
+		F.x -= lennard_jones_force(size - p.position.x);
+
+	if (p.position.y > smoothing_length)
+		F.y += lennard_jones_force(p.position.y);
+	else if (p.position.y > size - smoothing_length)
+		F.y -= lennard_jones_force(size - p.position.y);
+
+	if (p.position.z > smoothing_length)
+		F.z += lennard_jones_force(p.position.z);
+	else if (p.position.z > size - smoothing_length)
+		F.z -= lennard_jones_force(size - p.position.z);
+
+	return F;
 }
 
 
@@ -343,8 +311,8 @@ Vec3f ParticleSystem::smoothing_kernel_derivative(const Vec3f &r, const float h)
 
 void ParticleSystem::randomize_particles() {
 	// Coefficients to normalize rand() to [0, size].
-	const float
-		normalizing_coefx = size / RAND_MAX,
+	constexpr float
+		normalizing_coefx = (size / 2.0f) / RAND_MAX,
 		normalizing_coefy = size / RAND_MAX,
 		normalizing_coefz = size / RAND_MAX;
 
@@ -356,20 +324,9 @@ void ParticleSystem::randomize_particles() {
 	}
 }
 
-void ParticleSystem::calculate_initial_conditions() {
-	for (auto &pi : particles) {
-		pi.density = 0.0f;
-		for (const auto &pj : particles) {
-			pi.density += particle_mass * smoothing_kernel(pi.position - pj.position, smoothing_length);
-		}
-		pi.pressure = speed_of_sound * speed_of_sound * (pi.density - reference_density);
-	}
-}
-
 void ParticleSystem::simulation_step() {
 	kd_tree.buildIndex();
 
 	update_derivatives();
 	integrate_step();
-	conflict_resolution();
 }

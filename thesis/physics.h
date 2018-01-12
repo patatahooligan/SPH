@@ -34,6 +34,8 @@ class ParticleSystem {
 		// Handle particle-wall collision
 		void conflict_resolution();
 
+		Vec3f boundary_force(const Particle& p);
+
 
 	public:
 		ParticleSystem() :
@@ -52,10 +54,6 @@ class ParticleSystem {
 
 		// Randomly insert particles in the bounding box defined by const float size.
 		void randomize_particles();
-
-		// Calculates the initial conditions of the system. Must be used after particles are created
-		// and before the first simulation_step() call.
-		void calculate_initial_conditions();
 
 		// Update all derivatives and integrate a single step forward.
 		void simulation_step();

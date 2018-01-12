@@ -10,6 +10,11 @@
 #include <stdio.h>
 #include <tchar.h>
 #include <stdexcept>
+#include <omp.h>
+#include <array>
+#include <string>
+#include <cassert>
+#include <algorithm>
 
 #include "GL\freeglut.h"		// Not actually needed everywhere, but added to save time
 

@@ -12,13 +12,7 @@ std::ostream& operator<<(std::ostream& out, const Particle& particle) {
 		particle.position <<
 		particle.velocity <<
 		particle.acceleration <<
-		particle.temperature <<
-		particle.temperature_derivative <<
-		particle.density <<
-		particle.density_derivative <<
-		particle.temperature <<
-		particle.temperature_derivative <<
-		particle.viscocity;
+		particle.density;
 	return out;
 }
 

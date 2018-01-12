@@ -20,9 +20,9 @@ constexpr float framerate = 30.0f;
 
 // Simulation parameters
 constexpr size_t num_of_particles = 500;
-constexpr float smoothing_length = 0.2f;
+constexpr float smoothing_length = 0.1f;
 constexpr float kernel_constant = 3.0f/359.0f * pi * smoothing_length * smoothing_length * smoothing_length;
-constexpr float particle_mass = 0.5f / num_of_particles;
+constexpr float particle_mass = 0.001f;
 constexpr float visc_a = 1.0f; // Bulk viscocity
 constexpr float visc_b = 1.0f; // von Neumann-Ritchmyer viscocity
 constexpr float viscocity = 0.0007978f;

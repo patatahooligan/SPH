@@ -10,23 +10,75 @@ class Vec3f {
 
 		Vec3f& operator=(const Vec3f &other) = default;
 
-		Vec3f& operator+=(const Vec3f &other);
+		bool operator==(const Vec3f &other) const {
+			return x == other.x && y == other.y && z == other.z;
+		}
 
-		Vec3f& operator-=(const Vec3f &other);
+		bool operator!=(const Vec3f &other) const {
+			return !(*this == other);
+		}
 
-		float dot_product(const Vec3f &other) const;
+		Vec3f& operator+=(const Vec3f &other) {
+			x += other.x;
+			y += other.y;
+			z += other.z;
+			return *this;
+		}
 
-		float length_squared() const;
+		Vec3f& operator-=(const Vec3f &other) {
+			x -= other.x;
+			y -= other.y;
+			z -= other.z;
+			return *this;
+		}
+
+		Vec3f& operator*=(const float c) {
+			x *= c;
+			y *= c;
+			z *= c;
+			return *this;
+		}
+
+		Vec3f& operator/=(const float c) {
+			x /= c;
+			y /= c;
+			z /= c;
+			return *this;
+		}
+
+		float dot_product(const Vec3f &other) const {
+			return x*other.x + y * other.y + z * other.z;
+		}
+
+		float length_squared() const {
+			return x*x + y*y + z*z;
+		}
 		
-		float length() const;
+		float length() const {
+			return sqrt(length_squared());
+		}
 };
 
-Vec3f operator+(Vec3f v1, const Vec3f &v2);
+inline Vec3f operator+(Vec3f v1, const Vec3f &v2) {
+	return v1 += v2;
+}
 
-Vec3f operator-(Vec3f v1, const Vec3f &v2);
+inline Vec3f operator-(Vec3f v1, const Vec3f &v2) {
+	return v1 -= v2;
+}
 
-Vec3f operator*(const Vec3f &v, const float c);
+inline Vec3f operator*(Vec3f v, const float c) {
+	return v *= c;
+}
 
-Vec3f operator*(const float c, const Vec3f &v);
+inline Vec3f operator*(const float c, Vec3f v) {
+	return v *= c;
+}
 
-Vec3f operator/(const Vec3f &v, const float c);
+inline Vec3f operator/(Vec3f v, const float c) {
+	return v /= c;
+}
+
+inline bool isfinite(Vec3f v) {
+	return isfinite(v.x) && isfinite(v.y) && isfinite(v.z);
+}
