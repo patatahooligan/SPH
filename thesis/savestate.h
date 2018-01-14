@@ -6,8 +6,10 @@
 
 class SaveState {
 	public:
-		// Disallow construction without a file to open
+		// Disallow construction without a file to open, and copy-construction
 		SaveState() = delete;
+		SaveState(SaveState&) = delete;
+		SaveState(SaveState&&) = default;
 
 		SaveState(std::string output_filename) :
 			output_file(output_filename, std::ios_base::binary) {

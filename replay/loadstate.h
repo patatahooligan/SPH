@@ -7,8 +7,10 @@
 
 class LoadState {
 	public:
-		// Disallow construction without a file to open
+		// Disallow construction without a file to open, and copy-construction
 		LoadState() = delete;
+		LoadState(LoadState&) = delete;
+		LoadState(LoadState&&) = default;
 
 		LoadState(std::string input_filename);
 
