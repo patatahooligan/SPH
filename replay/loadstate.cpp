@@ -14,13 +14,7 @@ std::istream& operator>>(std::istream &in, Particle &particle) {
 		particle.position >>
 		particle.velocity >>
 		particle.acceleration >>
-		particle.temperature >>
-		particle.temperature_derivative >>
-		particle.density >>
-		particle.density_derivative >>
-		particle.temperature >>
-		particle.temperature_derivative >>
-		particle.viscocity;
+		particle.density;
 	return in;
 }
 
@@ -45,4 +39,12 @@ void LoadState::load(particlearray& target_array) {
 	for (auto& particle : target_array) {
 		input_file >> particle;
 	}
+}
+
+void LoadState::load_particle(Particle & particle) {
+	input_file
+		.read(reinterpret_cast<char*>(&particle.position), sizeof(particle.position))
+		.read(reinterpret_cast<char*>(&particle.velocity), sizeof(particle.velocity))
+		.read(reinterpret_cast<char*>(&particle.acceleration), sizeof(particle.acceleration))
+		.read(reinterpret_cast<char*>(&particle.density), sizeof(particle.density));
 }

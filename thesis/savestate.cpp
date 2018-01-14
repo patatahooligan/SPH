@@ -2,21 +2,15 @@
 
 #include "savestate.h"
 
-std::ostream& operator<<(std::ostream& out, const Vec3f &vec) {
-	out << vec.x << vec.y << vec.z;
-	return out;
-}
-
-std::ostream& operator<<(std::ostream& out, const Particle& particle) {
-	out <<
-		particle.position <<
-		particle.velocity <<
-		particle.acceleration <<
-		particle.density;
-	return out;
-}
-
 void SaveState::save(const particlearray &data) {
 	for (auto& particle : data)
-		output_file << particle;
+		save_particle(particle);
+}
+
+void SaveState::save_particle(const Particle& particle) {
+	output_file
+		.write(reinterpret_cast<const char*>(&particle.position), sizeof(particle.position))
+		.write(reinterpret_cast<const char*>(&particle.velocity), sizeof(particle.velocity))
+		.write(reinterpret_cast<const char*>(&particle.acceleration), sizeof(particle.acceleration))
+		.write(reinterpret_cast<const char*>(&particle.density), sizeof(particle.density));
 }

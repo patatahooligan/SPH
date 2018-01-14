@@ -15,12 +15,12 @@ class SaveState {
 			// This way if the format changes, backwards compatibility can be achieved.
 			if (!output_file.is_open())
 				throw std::runtime_error(std::string("Could not open file ") + output_filename);
-
-			output_file << std::string("SaveState") << unsigned int{ 1 };
 		}
 
 		void save(const particlearray &data);
 
 	private:
 		std::ofstream output_file;
+
+		void save_particle(const Particle& particle);
 };
