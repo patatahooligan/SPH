@@ -12,8 +12,8 @@
 // pass a local variable to our callback, nor use a lambda that captures a local variable.
 // A local variable enforces proper storage and lifetime duration, while a global pointer
 // can be used inside a capture-less lambda.
-static ParticleSystem *ps_pointer;
-static SaveState *save_state_pointer;
+static ParticleSystem *ps_pointer = nullptr;
+static SaveState *save_state_pointer = nullptr;
 
 void render_func() {
 	render_particles(ps_pointer->get_particlearray());
