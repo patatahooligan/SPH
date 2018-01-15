@@ -12,7 +12,12 @@ class LoadState {
 		LoadState(LoadState&) = delete;
 		LoadState(LoadState&&) = default;
 
-		LoadState(std::string input_filename);
+		LoadState(std::string input_filename) :
+			input_file(input_filename, std::ios_base::binary)
+		{
+			if (!input_file.is_open())
+				throw std::runtime_error("Cannot open file");
+		}
 
 		void load(particlearray& target_array);
 
