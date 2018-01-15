@@ -16,7 +16,7 @@ class LoadState {
 			input_file(input_filename, std::ios_base::binary)
 		{
 			if (!input_file.is_open())
-				throw std::runtime_error("Cannot open file");
+				throw std::runtime_error(std::string("Could not open file ") + input_filename);
 		}
 
 		void load(particlearray& target_array);
