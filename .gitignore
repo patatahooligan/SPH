@@ -212,6 +212,13 @@ _Pvt_Extensions/
 ModelManifest.xml
 
 thesis.VC.opendb
+
+# Symbolic links for cleaner includes. They point to the corresponding /thesis/ file
 /replay/particle.h
 /replay/constants.h
 /replay/vec3f.h
+/replay/render.cpp
+/replay/render.h
+
+# Output file
+output
