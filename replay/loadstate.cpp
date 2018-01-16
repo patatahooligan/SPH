@@ -4,23 +4,9 @@
 
 #include "loadstate.h"
 
-std::istream& operator>>(std::istream &in, Vec3f vec) {
-	in >> vec.x >> vec.y >> vec.z;
-	return in;
-}
-
-std::istream& operator>>(std::istream &in, Particle &particle) {
-	in >>
-		particle.position >>
-		particle.velocity >>
-		particle.acceleration >>
-		particle.density;
-	return in;
-}
-
 void LoadState::load(particlearray& target_array) {
 	for (auto& particle : target_array) {
-		input_file >> particle;
+		load_particle(particle);
 	}
 }
 
