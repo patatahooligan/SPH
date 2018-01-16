@@ -1,6 +1,6 @@
 #pragma once
 
-#include "physics.h"
+#include "particle.h"
 
 using GlutCallbackType = void();
 
