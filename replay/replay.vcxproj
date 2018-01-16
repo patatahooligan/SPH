@@ -146,11 +146,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="..\thesis\particle.h" />
+    <ClInclude Include="..\thesis\render.h" />
     <ClInclude Include="loadstate.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\thesis\render.cpp" />
     <ClCompile Include="loadstate.cpp" />
     <ClCompile Include="replay.cpp" />
     <ClCompile Include="stdafx.cpp">
