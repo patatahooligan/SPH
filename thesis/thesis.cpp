@@ -7,6 +7,7 @@
 #include "render.h"
 #include "physics.h"
 #include "savestate.h"
+#include "XMLReader.h"
 
 // glut is designed to take pointer to void() for its callback type. This means that we can't
 // pass a local variable to our callback, nor use a lambda that captures a local variable.
@@ -46,11 +47,15 @@ int main(int argc, char **argv) {
 
 	render_init(&argc, argv, render_func, idle_func);
 
+	// TODO: full command line argument parsing
+
 	// Because glut might parse some of the arguments, we have to parse our own
 	// after render_init
-	boost::optional<SaveState> save_state = parse_arguments(argc, argv);
-	if (save_state)
-		save_state_pointer = &(*save_state);
+	//boost::optional<SaveState> save_state = parse_arguments(argc, argv);
+	//if (save_state)
+	//	save_state_pointer = &(*save_state);
+
+	auto case_def = get_case_from_XML(argv[1]);
 	
 	ps.randomize_particles();
 

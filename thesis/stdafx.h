@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include "GL\freeglut.h"		// Not actually needed everywhere, but added to save time
+#include "tinyxml2.h"
 
 
 // TODO: reference additional headers your program requires here

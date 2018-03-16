@@ -7,6 +7,9 @@
     <ClCompile>
       <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
+    <Link>
+      <AdditionalDependencies>tinyxml2-x86-debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>
