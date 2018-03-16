@@ -22,7 +22,6 @@ class ParticleAdaptor {
 		inline size_t kdtree_get_point_count() const { return num_of_particles; }
 
 		inline float kdtree_get_pt(const size_t idx, int dim) const {
-			// TODO: after testing this, consider removing the invalid argument check
 			switch (dim) {
 				case 0:
 					return particles[idx].position.x;
