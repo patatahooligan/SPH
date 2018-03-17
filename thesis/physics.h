@@ -9,6 +9,12 @@
 #include "Vec3f.h"
 #include "kdtree.h"
 
+using kernel_function_t = float(const Vec3f&, const float);
+using kernel_function_derivative_t = Vec3f(const Vec3f&, const float);
+
+float piecewise_smoothing_kernel(const Vec3f &r, const float h);
+Vec3f piecewise_smoothing_kernel_derivative(const Vec3f &r, const float h);
+
 class ParticleSystem {
 	// Holds the particles and handles the physics simulation
 
@@ -19,8 +25,8 @@ class ParticleSystem {
 		ParticleKDTree kd_tree;
 		CaseDef case_def;
 
-		static float smoothing_kernel(const Vec3f &r, const float h);
-		static Vec3f smoothing_kernel_derivative(const Vec3f &r, const float h);
+		kernel_function_t &smoothing_kernel;
+		kernel_function_derivative_t &smoothing_kernel_derivative;
 
 		// Calculate a time step that is stable.
 		float calculate_time_step();
@@ -37,11 +43,18 @@ class ParticleSystem {
 
 
 	public:
-		ParticleSystem(const CaseDef &case_def) :
+		ParticleSystem(
+			const CaseDef &case_def,
+			kernel_function_t& smoothing_kernel = piecewise_smoothing_kernel,
+			kernel_function_derivative_t& smoothing_kernel_derivative = piecewise_smoothing_kernel_derivative
+		) :
 			simulation_time(0.0f),
 			kd_tree_adaptor(particles),
 			kd_tree(3, kd_tree_adaptor),
-			case_def(case_def) {}
+			case_def(case_def),
+			smoothing_kernel(smoothing_kernel),
+			smoothing_kernel_derivative(piecewise_smoothing_kernel_derivative)
+		{}
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
 		ParticleSystem(const ParticleSystem &other) = delete;

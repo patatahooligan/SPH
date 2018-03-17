@@ -17,6 +17,68 @@
 
 namespace ublas = boost::numeric::ublas;
 
+
+float piecewise_smoothing_kernel(const Vec3f &r, const float h) {
+	// Piecewise quintic smoothing kernel.
+	// r is the vector argument, h is the smoothing length
+
+	const float q2 = r.length_squared() / (h*h);
+
+	// Figure out which part of the piecewise function we want
+	if (q2 > 9) {
+		// Out of range of the smoothing kernel
+		return 0.0f;
+	}
+	else if (q2 > 4) {
+		return pow(3 - sqrt(q2), 5) * kernel_constant;
+	}
+	else if (q2 > 1) {
+		const float q = sqrt(q2);
+		return pow(3 - q, 5) - 6 * pow(2 - q, 5) * kernel_constant;
+	}
+	else {
+		const float q = sqrt(q2);
+		return pow(3 - q, 5) - 6 * pow(2 - q, 5) + 15 * pow(1 - q, 5) * kernel_constant;
+	}
+}
+
+Vec3f piecewise_smoothing_kernel_derivative(const Vec3f &r, const float h) {
+	const float q2 = r.length_squared() / (h*h);
+	if (q2 >= 9) {
+		return Vec3f(0, 0, 0);
+	}
+	else {
+		const float
+			q = sqrt(q2),
+			xh = q * (h*h),
+			c1 = (5.0f * pow(3 - q, 4)) / xh;
+
+		if (q >= 2) {
+			return Vec3f(
+				c1 * r.x,
+				c1 * r.y,
+				c1 * r.z);
+		}
+		else {
+			const float c2 = (-30.0f * pow(2 - q, 4)) / xh;
+			if (q >= 1) {
+				return Vec3f(
+					(c1 + c2) * r.x,
+					(c1 + c2) * r.y,
+					(c1 + c2) * r.z);
+			}
+			else {
+				const float c3 = (75.0f * pow(1 - q, 4)) / xh;
+				return Vec3f(
+					(c1 + c2 + c3) * r.x,
+					(c1 + c2 + c3) * r.y,
+					(c1 + c2 + c3) * r.z);
+			}
+		}
+	}
+}
+
+
 Vec3f operator*(const ublas::matrix<float> &m, const Vec3f &v) {
 	// Calculate the product of a 3x3 matrix m and a 3-vector v
 
@@ -210,7 +272,6 @@ void ParticleSystem::conflict_resolution() {
 
 		particles[i].position.z = std::max(particles[i].position.z, 0.0f);
 		particles[i].position.z = std::min(particles[i].position.z, size);
-
 	}
 }
 
@@ -246,67 +307,6 @@ Vec3f ParticleSystem::boundary_force(const Particle& p) {
 		F.z -= lennard_jones_force(size - p.position.z);
 
 	return F;
-}
-
-
-float ParticleSystem::smoothing_kernel(const Vec3f &r, const float h) {
-	// Piecewise quintic smoothing kernel.
-	// r is the vector argument, h is the smoothing length
-
-	const float q2 = r.length_squared()/(h*h);
-
-	// Figure out which part of the piecewise function we want
-	if (q2 > 9) {
-		// Out of range of the smoothing kernel
-		return 0.0f;
-	}
-	else if (q2 > 4) {
-		return pow(3-sqrt(q2), 5) * kernel_constant;
-	}
-	else if (q2 > 1) {
-		const float q = sqrt(q2);
-		return pow(3-q, 5) - 6 * pow(2-q, 5) * kernel_constant;
-	}
-	else {
-		const float q = sqrt(q2);
-		return pow(3-q, 5) - 6 * pow(2-q, 5) + 15 * pow(1-q, 5) * kernel_constant;
-	}
-}
-
-Vec3f ParticleSystem::smoothing_kernel_derivative(const Vec3f &r, const float h) {
-	const float q2 = r.length_squared()/(h*h);
-	if (q2 >= 9) {
-		return Vec3f(0, 0, 0);
-	}
-	else {
-		const float
-			q = sqrt(q2),
-			xh = q * (h*h),
-			c1 = (5.0f * pow(3-q, 4)) / xh;
-
-		if (q >= 2){
-			return Vec3f(
-				c1 * r.x,
-				c1 * r.y,
-				c1 * r.z);
-		}
-		else {
-			const float c2 = (-30.0f * pow(2-q, 4)) / xh;
-			if (q >= 1) {
-				return Vec3f(
-					(c1+c2) * r.x,
-					(c1+c2) * r.y,
-					(c1+c2) * r.z);
-			}
-			else {
-				const float c3 = (75.0f * pow(1-q, 4)) / xh;
-				return Vec3f(
-					(c1+c2+c3) * r.x,
-					(c1+c2+c3) * r.y,
-					(c1+c2+c3) * r.z);
-			}
-		}
-	}
 }
 
 void ParticleSystem::randomize_particles() {
