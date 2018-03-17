@@ -23,7 +23,7 @@ class ParticleSystem {
 		particlearray particles;
 		ParticleAdaptor kd_tree_adaptor;
 		ParticleKDTree kd_tree;
-		CaseDef case_def;
+		const CaseDef case_def;
 
 		kernel_function_t &smoothing_kernel;
 		kernel_function_derivative_t &smoothing_kernel_derivative;
