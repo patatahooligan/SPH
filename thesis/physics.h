@@ -19,6 +19,7 @@ class ParticleSystem {
 		particlearray particles;
 		ParticleAdaptor kd_tree_adaptor;
 		ParticleKDTree kd_tree;
+		CaseDef case_def;
 
 		static float smoothing_kernel(const Vec3f &r, const float h);
 		static Vec3f smoothing_kernel_derivative(const Vec3f &r, const float h);
@@ -38,11 +39,11 @@ class ParticleSystem {
 
 
 	public:
-		ParticleSystem() :
+		ParticleSystem(const CaseDef &case_def) :
 			simulation_time(0.0f),
 			kd_tree_adaptor(particles),
-			kd_tree(3, kd_tree_adaptor) {}
-		~ParticleSystem() {}
+			kd_tree(3, kd_tree_adaptor),
+			case_def(case_def) {}
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
 		ParticleSystem(const ParticleSystem &other) = delete;

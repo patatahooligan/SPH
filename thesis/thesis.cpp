@@ -41,7 +41,7 @@ boost::optional<SaveState> parse_arguments(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-	ParticleSystem ps;
+	ParticleSystem ps(get_case_from_XML(argv[1]));
 	ps_pointer = &ps;
 	omp_set_num_threads(5);
 
@@ -54,9 +54,7 @@ int main(int argc, char **argv) {
 	//boost::optional<SaveState> save_state = parse_arguments(argc, argv);
 	//if (save_state)
 	//	save_state_pointer = &(*save_state);
-
-	auto case_def = get_case_from_XML(argv[1]);
-	
+		
 	ps.randomize_particles();
 
 	GLubyte const *s = glGetString(GL_VERSION);
