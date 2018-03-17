@@ -9,8 +9,6 @@
 #include "Vec3f.h"
 #include "kdtree.h"
 
-class Octree;
-
 class ParticleSystem {
 	// Holds the particles and handles the physics simulation
 
