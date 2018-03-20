@@ -41,19 +41,24 @@ boost::optional<SaveState> parse_arguments(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-	ParticleSystem ps(get_case_from_XML(argv[1]));
-	ps_pointer = &ps;
 	omp_set_num_threads(5);
 
 	render_init(&argc, argv, render_func, idle_func);
 
-	// TODO: full command line argument parsing
-
 	// Because glut might parse some of the arguments, we have to parse our own
 	// after render_init
-	//boost::optional<SaveState> save_state = parse_arguments(argc, argv);
-	//if (save_state)
-	//	save_state_pointer = &(*save_state);
+
+	// TODO: full command line argument parsing
+	// For now 1st argument is case XML, 2nd is output file
+
+	ParticleSystem ps(get_case_from_XML(argv[1]));
+	ps_pointer = &ps;
+
+	boost::optional<SaveState> save_state;
+	if (argc == 2) {
+		save_state.emplace(argv[2]);
+		save_state_pointer = save_state.get_ptr();
+	}
 		
 	ps.randomize_particles();
 
