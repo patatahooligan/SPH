@@ -43,4 +43,9 @@ struct CaseDef {
 	float speedsound;   // Speed of sound to use in the simulation (by default speedofsound=coefsound*speedsystem)
 	float coefh;        // Coefficient to calculate the smoothing length (h=coefh*sqrt(3*dp^2) in 3D)
 	float cflnumber;    // Coefficient to multiply dt
+
+	struct {
+		float density;
+		Vec3f point_min, point_max;
+	} particles;
 };

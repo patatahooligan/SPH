@@ -5,6 +5,7 @@
 using namespace tinyxml2;
 
 void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def);
+void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def);
 
 CaseDef get_case_from_XML(const char * xml_filename) {
 	CaseDef case_def;
@@ -21,6 +22,8 @@ CaseDef get_case_from_XML(const char * xml_filename) {
 	assert(root.ToNode());
 
 	get_constants_from_XML(root, case_def);
+
+	get_geometry_from_XML(root, case_def);
 
 	return case_def;
 }
@@ -73,4 +76,26 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 	if (auto cflnumber = constants.FirstChildElement("cflnumber").ToElement())
 		case_def.cflnumber = cflnumber->FloatAttribute("value)");
+}
+
+void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
+	auto geometry = XML_root.FirstChildElement("casedef").FirstChildElement("geometry");
+	assert(geometry.ToNode());
+
+	auto definition = geometry.FirstChildElement("definition").ToElement();
+	assert(definition);
+
+	case_def.particles.density = definition->FloatAttribute("dp");
+
+	auto pointmin = definition->FirstChildElement("pointmin");
+	assert(pointmin);
+	case_def.particles.point_min.x = pointmin->FloatAttribute("x");
+	case_def.particles.point_min.y = pointmin->FloatAttribute("y");
+	case_def.particles.point_min.z = pointmin->FloatAttribute("z");
+
+	auto pointmax = definition->FirstChildElement("pointmax");
+	assert(pointmax);
+	case_def.particles.point_max.x = pointmax->FloatAttribute("x");
+	case_def.particles.point_max.y = pointmax->FloatAttribute("y");
+	case_def.particles.point_max.z = pointmax->FloatAttribute("z");
 }
