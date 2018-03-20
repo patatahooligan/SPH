@@ -11,10 +11,10 @@ class ParticleAdaptor {
 	// This class provides an interface for nanoflann
 
 	private:
-		const particlearray &particles;
+		const ParticleContainer &particles;
 
 	public:
-		ParticleAdaptor(const particlearray &target_array) :
+		ParticleAdaptor(const ParticleContainer &target_array) :
 			particles(target_array)
 			{};
 

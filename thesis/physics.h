@@ -20,7 +20,7 @@ class ParticleSystem {
 
 	private:
 		float simulation_time;
-		particlearray particles;
+		ParticleContainer particles;
 		ParticleAdaptor kd_tree_adaptor;
 		ParticleKDTree kd_tree;
 		const CaseDef case_def;
@@ -60,7 +60,7 @@ class ParticleSystem {
 		ParticleSystem(const ParticleSystem &other) = delete;
 		ParticleSystem& operator=(const ParticleSystem &other) = delete;
 
-		const particlearray& get_particlearray() const { return particles; }
+		const ParticleContainer& get_particlearray() const { return particles; }
 
 		float current_time() const {return simulation_time;}
 

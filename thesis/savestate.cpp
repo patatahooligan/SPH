@@ -2,7 +2,7 @@
 
 #include "savestate.h"
 
-void SaveState::save(const particlearray &data) {
+void SaveState::save(const ParticleContainer &data) {
 	for (auto& particle : data)
 		save_particle(particle);
 }

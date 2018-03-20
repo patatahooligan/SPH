@@ -19,11 +19,11 @@ class LoadState {
 				throw std::runtime_error(std::string("Could not open file ") + input_filename);
 		}
 
-		void load(particlearray& target_array);
+		void load(ParticleContainer& target_array);
 
-		particlearray load() {
+		ParticleContainer load() {
 			// Same functionality as the other load, to offer a choice on return method
-			particlearray target_array;
+			ParticleContainer target_array;
 			load(target_array);
 			return target_array;
 		}

@@ -17,7 +17,7 @@ class SaveState {
 				throw std::runtime_error(std::string("Could not open file ") + output_filename);
 		}
 
-		void save(const particlearray &data);
+		void save(const ParticleContainer &data);
 
 	private:
 		std::ofstream output_file;

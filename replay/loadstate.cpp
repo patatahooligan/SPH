@@ -4,7 +4,7 @@
 
 #include "loadstate.h"
 
-void LoadState::load(particlearray& target_array) {
+void LoadState::load(ParticleContainer& target_array) {
 	for (auto& particle : target_array) {
 		load_particle(particle);
 	}

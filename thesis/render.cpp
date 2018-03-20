@@ -50,7 +50,7 @@ void render_init(int *argc, char **argv, GlutCallbackType *render_function, Glut
 	gluLookAt(size / 2, size / 2, -offsetz, size / 2, size / 2, size / 2, 0.0, 1.0, 0.0);
 }
 
-void render_particles(const particlearray &particles) {
+void render_particles(const ParticleContainer &particles) {
 	// Draws the particles of ps as small spheres.
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

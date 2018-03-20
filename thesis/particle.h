@@ -21,4 +21,4 @@ public:
 };
 
 // This is used across translation units. Defining it here enforces consistency and facilitates changes.
-using particlearray = std::array<Particle, num_of_particles>;
+using ParticleContainer = std::array<Particle, num_of_particles>;
