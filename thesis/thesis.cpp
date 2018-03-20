@@ -62,8 +62,7 @@ int main(int argc, char **argv) {
 		
 	ps.randomize_particles();
 
-	GLubyte const *s = glGetString(GL_VERSION);
-	std::cout << s << std::endl;
+	std::cout << glGetString(GL_VERSION) << std::endl;
 
 	// Enter main loop
 	glutMainLoop();
