@@ -79,59 +79,6 @@ Vec3f piecewise_smoothing_kernel_derivative(const Vec3f &r, const float h) {
 }
 
 
-Vec3f operator*(const ublas::matrix<float> &m, const Vec3f &v) {
-	// Calculate the product of a 3x3 matrix m and a 3-vector v
-
-	if (m.size1()!=3 || m.size2() != 3) {
-		throw std::invalid_argument("Matrix must be 3x3");
-	}
-
-	return Vec3f(
-		m(0, 0) * v.x + m(0, 1) * v.y + m(0, 2) * v.z,
-		m(1, 2) * v.x + m(1, 1) * v.y + m(1, 2) * v.z,
-		m(2, 0) * v.x + m(2, 1) * v.y + m(2, 2) * v.z);
-}
-
-float trace(const ublas::matrix<float> &m) {
-	const size_t size = m.size1();
-	if (size != m.size2()) throw std::invalid_argument("Trace undefined for non-square matrix");
-	float sum = 0;
-	for (size_t i = 0; i < size; ++i) {
-		sum += m(i, i);
-	}
-	return sum;
-}
-
-ublas::matrix<float> dyadic_product(Vec3f &v1, Vec3f &v2) {
-	ublas::matrix<float> ret((size_t)3, (size_t)3);
-	ret(0, 0) = v1.x * v2.x;
-	ret(0, 1) = v1.x * v2.y;
-	ret(0, 2) = v1.x * v2.z;
-	ret(1, 0) = v1.y * v2.x;
-	ret(1, 1) = v1.y * v2.y;
-	ret(1, 2) = v1.y * v2.z;
-	ret(2, 0) = v1.z * v2.x;
-	ret(2, 1) = v1.z * v2.y;
-	ret(2, 2) = v1.z * v2.z;
-	return ret;
-}
-
-ublas::matrix<float> reverse(ublas::matrix<float> m) {
-
-	const auto
-		size1 = m.size1(),
-		size2 = m.size2();
-	ublas::matrix<float> ret(size2, size1);
-	for (size_t i = 1; i < size2; ++i) {
-		for (size_t j = 1; j < size1; ++j) {
-			ret(i, j) = m(j, i);
-		}
-	}
-
-	return ret;
-}
-
-
 float ParticleSystem::calculate_time_step() {
 	float
 		max_velocity_magnitude_square = 0.0f;
