@@ -14,7 +14,6 @@ class ParticleAdaptor {
 		const particlearray &particles;
 
 	public:
-		ParticleAdaptor() = delete;		// Must construct with reference to particles
 		ParticleAdaptor(const particlearray &target_array) :
 			particles(target_array)
 			{};
