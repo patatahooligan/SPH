@@ -88,11 +88,9 @@ void ParticleSystem::generate_particles() {
 	auto& density = case_def.particles.density;
 
 	int
-		x_increments = (point_max.x - point_min.x) / density,
-		y_increments = (point_max.y - point_min.y) / density,
-		z_increments = (point_max.z - point_min.z) / density;
-
-	assert(x_increments > 0 && y_increments > 0 && z_increments > 0);
+		x_increments = int((point_max.x - point_min.x) / density) + 1,
+		y_increments = int((point_max.y - point_min.y) / density) + 1,
+		z_increments = int((point_max.z - point_min.z) / density) + 1;
 
 	size_t num_of_particles = x_increments + y_increments + z_increments;
 
