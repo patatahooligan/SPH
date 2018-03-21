@@ -12,6 +12,7 @@
 #include <stdexcept>
 #include <omp.h>
 #include <array>
+#include <vector>
 #include <string>
 #include <cassert>
 #include <algorithm>

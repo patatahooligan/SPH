@@ -1,11 +1,18 @@
 #include "stdafx.h"
 
+#include "vec3f.h"
 #include "XMLReader.h"
 
 using namespace tinyxml2;
 
+Vec3f get_vec3f_from_element(XMLElement& elem);
+
 void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def);
 void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def);
+
+Vec3f get_vec3f_from_element(XMLElement& elem) {
+	return { elem.FloatAttribute("x"), elem.FloatAttribute("y"), elem.FloatAttribute("z") };
+}
 
 CaseDef get_case_from_XML(const char * xml_filename) {
 	CaseDef case_def;
@@ -32,11 +39,8 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	auto constants = XML_root.FirstChildElement("casedef").FirstChildElement("constantsdef");
 	assert(constants.ToNode());
 
-	if (auto gravity = constants.FirstChildElement("gravity").ToElement()) {
-		case_def.gravity.x = gravity->FloatAttribute("x");
-		case_def.gravity.y = gravity->FloatAttribute("y");
-		case_def.gravity.z = gravity->FloatAttribute("z");
-	}
+	if (auto gravity = constants.FirstChildElement("gravity").ToElement())
+		case_def.gravity = get_vec3f_from_element(*gravity);
 
 	if (auto rhop0 = constants.FirstChildElement("rhop0").ToElement())
 		case_def.rhop0 = rhop0->FloatAttribute("value");
@@ -87,15 +91,46 @@ void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 	case_def.particles.density = definition->FloatAttribute("dp");
 
+	// Minimum and maximum points of the domain, not the fluid
 	auto pointmin = definition->FirstChildElement("pointmin");
 	assert(pointmin);
-	case_def.particles.point_min.x = pointmin->FloatAttribute("x");
-	case_def.particles.point_min.y = pointmin->FloatAttribute("y");
-	case_def.particles.point_min.z = pointmin->FloatAttribute("z");
+	case_def.particles.point_min = get_vec3f_from_element(*pointmin);
 
 	auto pointmax = definition->FirstChildElement("pointmax");
 	assert(pointmax);
-	case_def.particles.point_max.x = pointmax->FloatAttribute("x");
-	case_def.particles.point_max.y = pointmax->FloatAttribute("y");
-	case_def.particles.point_max.z = pointmax->FloatAttribute("z");
+	case_def.particles.point_max = get_vec3f_from_element(*pointmax);
+
+	// Execute the commands
+	auto command_list = geometry.FirstChildElement("commands").FirstChildElement("mainlist");
+	while (auto command = command_list.FirstChildElement().ToElement()) {
+
+		// The nature of a box (fluid, boundary) is given in a separate command from the
+		// geometry of the box, so we have to store the vector in which it belongs
+		std::vector<CaseDef::Box>* target_boxes = nullptr;
+
+		if (std::strcmp(command->Name(), "setmkfluid"))
+			target_boxes = &case_def.fluid_boxes;
+		else if (std::strcmp(command->Name(), "setmkbound"))
+			target_boxes = &case_def.bound_boxes;
+
+		else if (std::strcmp(command->Name(), "drawbox")) {
+			if (!target_boxes)
+				throw std::runtime_error("No setmkfluid or setmkbound command used before drawbox");
+			
+			auto
+				point = command->FirstChildElement("point"),
+				size = command->FirstChildElement("size");
+
+			if (!point) throw std::runtime_error("No point given for drawbox");
+			if (!size) throw std::runtime_error("No size given for drawbox");
+
+			CaseDef::Box box;
+			box.origin = get_vec3f_from_element(*point);
+			box.size = get_vec3f_from_element(*size);
+
+			target_boxes->emplace_back(box);
+		}
+
+		command = command->NextSiblingElement();
+	}
 }

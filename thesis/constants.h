@@ -47,4 +47,10 @@ struct CaseDef {
 		float density;
 		Vec3f point_min, point_max;
 	} particles;
+
+	struct Box {
+		Vec3f origin, size;
+	};
+
+	std::vector<Box> fluid_boxes, bound_boxes;
 };
