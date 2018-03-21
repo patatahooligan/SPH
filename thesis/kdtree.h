@@ -11,14 +11,14 @@ class ParticleAdaptor {
 	// This class provides an interface for nanoflann
 
 	private:
-		const ParticleContainer &particles;
+		const ParticleContainer &fluid_particles;
 
 	public:
 		ParticleAdaptor(const ParticleContainer &target_array) :
-			particles(target_array)
+			fluid_particles(target_array)
 			{};
 
-		inline size_t kdtree_get_point_count() const { return particles.size(); }
+		inline size_t kdtree_get_point_count() const { return fluid_particles.size(); }
 
 		// This function should never be called with an invalid dim
 		// Because it is used in a heavy computational loop, we have to omit
@@ -28,11 +28,11 @@ class ParticleAdaptor {
 			assert(dim >= 0 && dim <= 2);
 			switch (dim) {
 				case 0:
-					return particles[idx].position.x;
+					return fluid_particles[idx].position.x;
 				case 1:
-					return particles[idx].position.y;
+					return fluid_particles[idx].position.y;
 				case 2:
-					return particles[idx].position.z;
+					return fluid_particles[idx].position.z;
 			}
 		}
 

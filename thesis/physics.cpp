@@ -80,8 +80,7 @@ Vec3f piecewise_smoothing_kernel_derivative(const Vec3f &r, const float h) {
 
 
 void ParticleSystem::generate_particles() {
-	for (auto& box : case_def.fluid_boxes) {
-		auto& density = case_def.particles.density;
+	auto fillbox = [](const CaseDef::Box &box, ParticleContainer &particles, float density) {
 		int
 			x_increments = int(box.size.x / density) + 1,
 			y_increments = int(box.size.y / density) + 1,
@@ -100,13 +99,19 @@ void ParticleSystem::generate_particles() {
 				}
 			}
 		}
-	}
+	};
+
+	for (const auto& box : case_def.fluid_boxes)
+		fillbox(box, fluid_particles, case_def.particles.density);
+
+	for (const auto& box : case_def.bound_boxes)
+		fillbox(box, boundary_particles, case_def.particles.density);
 }
 
 float ParticleSystem::calculate_time_step() {
 	float
 		max_velocity_magnitude_square = 0.0f;
-	for (const auto& particle : particles) {
+	for (const auto& particle : fluid_particles) {
 		const auto v2 = particle.velocity_half.length_squared();
 		if (v2 > max_velocity_magnitude_square) {
 			max_velocity_magnitude_square = v2;
@@ -127,15 +132,15 @@ void ParticleSystem::update_derivatives() {
 	// TODO: consider the case for zero neighbors and figure out if it needs handling
 
 	// Save the results kd-tree searches here to re-use them in the second loop
-	auto indices_dists = std::make_unique<std::vector<std::pair<size_t, float>>[]>(particles.size());
+	auto indices_dists = std::make_unique<std::vector<std::pair<size_t, float>>[]>(fluid_particles.size());
 
 	// Calculate density
 	// This has to be done for every particle before acceleration can be calculated
 	#pragma omp parallel for
-	for (int i = 0; i < particles.size(); ++i) {
+	for (int i = 0; i < fluid_particles.size(); ++i) {
 
 		// This reference is used to write cleaner equations.
-		Particle& Pi = particles[i];
+		Particle& Pi = fluid_particles[i];
 
 		// Get a pair of <index, distance> for neighbors of pi
 		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
@@ -156,15 +161,15 @@ void ParticleSystem::update_derivatives() {
 
 	// Calculate acceleration
 	#pragma omp parallel for
-	for (int i = 0; i < particles.size(); ++i) {
+	for (int i = 0; i < fluid_particles.size(); ++i) {
 		// Sum of interaction forces
 		Vec3f sumF{ 0.0f, 0.0f, 0.0f };
 		auto h4 = pow(smoothing_length, 4);
 
-		Particle& Pi = particles[i];
+		Particle& Pi = fluid_particles[i];
 		for (auto indice_dist_pair : indices_dists[i]) {
 			// If pi is pj or they are at the exact same point, do not compute interaction forces
-			auto& Pj = particles[indice_dist_pair.first];
+			auto& Pj = fluid_particles[indice_dist_pair.first];
 			if (Pi.position == Pj.position) continue;
 
 			// A bunch of shorthands to make the following equations readable
@@ -200,27 +205,27 @@ void ParticleSystem::integrate_step() {
 	const float time_step = calculate_time_step();
 	simulation_time += time_step;
 
-	auto new_velocity_half = std::make_unique<Vec3f[]>(particles.size());
+	auto new_velocity_half = std::make_unique<Vec3f[]>(fluid_particles.size());
 
 	#pragma omp parallel for
-	for (int i = 0; i < particles.size(); ++i) {
+	for (int i = 0; i < fluid_particles.size(); ++i) {
 		// Integrate velocity
 		new_velocity_half[i] = Vec3f(
-			particles[i].velocity_half.x + particles[i].acceleration.x * time_step,
-			particles[i].velocity_half.y + particles[i].acceleration.y * time_step,
-			particles[i].velocity_half.z + particles[i].acceleration.z * time_step);
+			fluid_particles[i].velocity_half.x + fluid_particles[i].acceleration.x * time_step,
+			fluid_particles[i].velocity_half.y + fluid_particles[i].acceleration.y * time_step,
+			fluid_particles[i].velocity_half.z + fluid_particles[i].acceleration.z * time_step);
 
 		assert(isfinite(new_velocity_half[i]));
 
 		// Crude approximation for velocity at current time
-		particles[i].velocity = (particles[i].velocity_half + new_velocity_half[i]) / 2;
+		fluid_particles[i].velocity = (fluid_particles[i].velocity_half + new_velocity_half[i]) / 2;
 
 		// Replace old velocity_half with new one
-		particles[i].velocity_half = new_velocity_half[i];
+		fluid_particles[i].velocity_half = new_velocity_half[i];
 
 		// Integrate position
-		particles[i].position += particles[i].velocity_half * time_step;
-		assert(isfinite(particles[i].position));
+		fluid_particles[i].position += fluid_particles[i].velocity_half * time_step;
+		assert(isfinite(fluid_particles[i].position));
 	}
 
 	// Handle particles that have clipped into wall
@@ -234,15 +239,15 @@ void ParticleSystem::conflict_resolution() {
 	// calculated when calculating forces & acceleration.
 
 	#pragma omp parallel for
-	for (int i = 0; i < particles.size(); ++i) {
-		particles[i].position.x = std::max(particles[i].position.x, 0.0f);
-		particles[i].position.x = std::min(particles[i].position.x, size);
+	for (int i = 0; i < fluid_particles.size(); ++i) {
+		fluid_particles[i].position.x = std::max(fluid_particles[i].position.x, 0.0f);
+		fluid_particles[i].position.x = std::min(fluid_particles[i].position.x, size);
 
-		particles[i].position.y = std::max(particles[i].position.y, 0.0f);
-		particles[i].position.y = std::min(particles[i].position.y, size);
+		fluid_particles[i].position.y = std::max(fluid_particles[i].position.y, 0.0f);
+		fluid_particles[i].position.y = std::min(fluid_particles[i].position.y, size);
 
-		particles[i].position.z = std::max(particles[i].position.z, 0.0f);
-		particles[i].position.z = std::min(particles[i].position.z, size);
+		fluid_particles[i].position.z = std::max(fluid_particles[i].position.z, 0.0f);
+		fluid_particles[i].position.z = std::min(fluid_particles[i].position.z, size);
 	}
 }
 

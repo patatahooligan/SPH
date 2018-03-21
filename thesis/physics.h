@@ -20,7 +20,7 @@ class ParticleSystem {
 
 	private:
 		float simulation_time;
-		ParticleContainer particles;
+		ParticleContainer fluid_particles, boundary_particles;
 		ParticleAdaptor kd_tree_adaptor;
 		ParticleKDTree kd_tree;
 		const CaseDef case_def;
@@ -52,7 +52,7 @@ class ParticleSystem {
 			kernel_function_derivative_t& smoothing_kernel_derivative = piecewise_smoothing_kernel_derivative
 		) :
 			simulation_time(0.0f),
-			kd_tree_adaptor(particles),
+			kd_tree_adaptor(fluid_particles),
 			kd_tree(3, kd_tree_adaptor),
 			case_def(case_def),
 			smoothing_kernel(smoothing_kernel),
@@ -65,11 +65,11 @@ class ParticleSystem {
 		ParticleSystem(const ParticleSystem &other) = delete;
 		ParticleSystem& operator=(const ParticleSystem &other) = delete;
 
-		const ParticleContainer& get_particlearray() const { return particles; }
+		const ParticleContainer& get_particlearray() const { return fluid_particles; }
 
 		float current_time() const {return simulation_time;}
 
-		auto num_of_particles() const { return particles.size(); }
+		auto num_of_particles() const { return fluid_particles.size(); }
 
 		// Update all derivatives and integrate a single step forward.
 		void simulation_step();
