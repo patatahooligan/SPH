@@ -15,6 +15,7 @@
 #include <string>
 #include <cassert>
 #include <algorithm>
+#include <memory>
 
 #include "GL\freeglut.h"		// Not actually needed everywhere, but added to save time
 #include "tinyxml2.h"

@@ -103,12 +103,12 @@ void ParticleSystem::update_derivatives() {
 	// TODO: consider the case for zero neighbors and figure out if it needs handling
 
 	// Save the results kd-tree searches here to re-use them in the second loop
-	std::vector<std::pair<size_t, float> > indices_dists[num_of_particles];
+	auto indices_dists = std::make_unique<std::vector<std::pair<size_t, float>>[]>(particles.size());
 
 	// Calculate density
 	// This has to be done for every particle before acceleration can be calculated
 	#pragma omp parallel for
-	for (int i = 0; i < num_of_particles; ++i) {
+	for (int i = 0; i < particles.size(); ++i) {
 
 		// This reference is used to write cleaner equations.
 		Particle& Pi = particles[i];
@@ -132,7 +132,7 @@ void ParticleSystem::update_derivatives() {
 
 	// Calculate acceleration
 	#pragma omp parallel for
-	for (int i = 0; i < num_of_particles; ++i) {
+	for (int i = 0; i < particles.size(); ++i) {
 		// Sum of interaction forces
 		Vec3f sumF{ 0.0f, 0.0f, 0.0f };
 		auto h4 = pow(smoothing_length, 4);
@@ -176,10 +176,10 @@ void ParticleSystem::integrate_step() {
 	const float time_step = calculate_time_step();
 	simulation_time += time_step;
 
-	Vec3f new_velocity_half[num_of_particles];
+	auto new_velocity_half = std::make_unique<Vec3f[]>(particles.size());
 
 	#pragma omp parallel for
-	for (int i = 0; i < num_of_particles; ++i) {
+	for (int i = 0; i < particles.size(); ++i) {
 		// Integrate velocity
 		new_velocity_half[i] = Vec3f(
 			particles[i].velocity_half.x + particles[i].acceleration.x * time_step,
@@ -210,7 +210,7 @@ void ParticleSystem::conflict_resolution() {
 	// calculated when calculating forces & acceleration.
 
 	#pragma omp parallel for
-	for (int i = 0; i < num_of_particles; ++i) {
+	for (int i = 0; i < particles.size(); ++i) {
 		particles[i].position.x = std::max(particles[i].position.x, 0.0f);
 		particles[i].position.x = std::min(particles[i].position.x, size);
 
