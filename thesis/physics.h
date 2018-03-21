@@ -28,6 +28,9 @@ class ParticleSystem {
 		kernel_function_t &smoothing_kernel;
 		kernel_function_derivative_t &smoothing_kernel_derivative;
 
+		// Generate particles for the geomtery specified in the case_def member
+		void generate_particles();
+
 		// Calculate a time step that is stable.
 		float calculate_time_step();
 
@@ -54,7 +57,9 @@ class ParticleSystem {
 			case_def(case_def),
 			smoothing_kernel(smoothing_kernel),
 			smoothing_kernel_derivative(piecewise_smoothing_kernel_derivative)
-		{}
+		{
+			generate_particles();
+		}
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
 		ParticleSystem(const ParticleSystem &other) = delete;
@@ -63,9 +68,6 @@ class ParticleSystem {
 		const ParticleContainer& get_particlearray() const { return particles; }
 
 		float current_time() const {return simulation_time;}
-
-		// Randomly insert particles in the bounding box defined by const float size.
-		void randomize_particles();
 
 		// Update all derivatives and integrate a single step forward.
 		void simulation_step();

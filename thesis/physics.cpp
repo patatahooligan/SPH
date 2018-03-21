@@ -79,6 +79,36 @@ Vec3f piecewise_smoothing_kernel_derivative(const Vec3f &r, const float h) {
 }
 
 
+void ParticleSystem::generate_particles() {
+	// Promote names to local namespace for brevity
+	auto
+		&point_max = case_def.particles.point_max,
+		&point_min = case_def.particles.point_min;
+
+	auto& density = case_def.particles.density;
+
+	int
+		x_increments = (point_max.x - point_min.x) / density,
+		y_increments = (point_max.y - point_min.y) / density,
+		z_increments = (point_max.z - point_min.z) / density;
+
+	assert(x_increments > 0 && y_increments > 0 && z_increments > 0);
+
+	size_t num_of_particles = x_increments + y_increments + z_increments;
+
+	particles.reserve(num_of_particles);
+
+	for (int x = 0; x < x_increments; ++x) {
+		for (int y = 0; y < y_increments; ++y) {
+			for (int z = 0; z < z_increments; ++z) {
+				Particle p;
+				p.position = point_min + Vec3f{x * density, y * density, z * density};
+				particles.emplace_back(p);
+			}
+		}
+	}
+}
+
 float ParticleSystem::calculate_time_step() {
 	float
 		max_velocity_magnitude_square = 0.0f;
@@ -254,21 +284,6 @@ Vec3f ParticleSystem::boundary_force(const Particle& p) {
 		F.z -= lennard_jones_force(size - p.position.z);
 
 	return F;
-}
-
-void ParticleSystem::randomize_particles() {
-	// Coefficients to normalize rand() to [0, size].
-	constexpr float
-		normalizing_coefx = (size / 2.0f) / RAND_MAX,
-		normalizing_coefy = size / RAND_MAX,
-		normalizing_coefz = size / RAND_MAX;
-
-	srand((unsigned int)time(NULL));
-	for (auto &particle : particles) {
-		particle.position.x = rand() * normalizing_coefx;
-		particle.position.y = rand() * normalizing_coefy;
-		particle.position.z = rand() * normalizing_coefz;
-	}
 }
 
 void ParticleSystem::simulation_step() {

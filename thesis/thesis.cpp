@@ -59,8 +59,6 @@ int main(int argc, char **argv) {
 		save_state.emplace(argv[2]);
 		save_state_pointer = save_state.get_ptr();
 	}
-		
-	ps.randomize_particles();
 
 	std::cout << glGetString(GL_VERSION) << std::endl;
 
