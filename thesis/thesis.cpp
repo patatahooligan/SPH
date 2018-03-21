@@ -31,15 +31,6 @@ void idle_func() {
 	}
 }
 
-boost::optional<SaveState> parse_arguments(int argc, char **argv) {
-	if (argc == 1)
-		return {};
-	else if (argc == 2)
-		return SaveState{ argv[1] };
-	else
-		throw std::runtime_error("Too many arguments");
-}
-
 int main(int argc, char **argv) {
 	omp_set_num_threads(5);
 
@@ -56,7 +47,7 @@ int main(int argc, char **argv) {
 
 	boost::optional<SaveState> save_state;
 	if (argc == 2) {
-		save_state.emplace(argv[2]);
+		save_state.emplace(argv[2], ps.num_of_particles());
 		save_state_pointer = save_state.get_ptr();
 	}
 

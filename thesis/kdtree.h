@@ -18,7 +18,7 @@ class ParticleAdaptor {
 			particles(target_array)
 			{};
 
-		inline size_t kdtree_get_point_count() const { return num_of_particles; }
+		inline size_t kdtree_get_point_count() const { return particles.size(); }
 
 		// This function should never be called with an invalid dim
 		// Because it is used in a heavy computational loop, we have to omit

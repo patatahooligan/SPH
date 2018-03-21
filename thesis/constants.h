@@ -21,7 +21,6 @@ constexpr int output_height = 800;
 constexpr float framerate = 30.0f;
 
 // Simulation parameters
-constexpr size_t num_of_particles = 500;
 constexpr float smoothing_length = 0.1f;
 constexpr float kernel_constant = 3.0f/359.0f * pi * smoothing_length * smoothing_length * smoothing_length;
 constexpr float particle_mass = 0.001f;

@@ -17,6 +17,8 @@ class LoadState {
 		{
 			if (!input_file.is_open())
 				throw std::runtime_error(std::string("Could not open file ") + input_filename);
+
+			input_file.read(reinterpret_cast<char*>(num_of_particles_m), sizeof(num_of_particles_m));
 		}
 
 		void load(ParticleContainer& target_array);
@@ -28,8 +30,11 @@ class LoadState {
 			return target_array;
 		}
 
+		auto num_of_particles() { return num_of_particles_m; }
+
 	private:
 		std::ifstream input_file;
+		size_t num_of_particles_m;
 
 		void load_particle(Particle& particle);
 };

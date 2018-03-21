@@ -69,6 +69,8 @@ class ParticleSystem {
 
 		float current_time() const {return simulation_time;}
 
+		auto num_of_particles() const { return particles.size(); }
+
 		// Update all derivatives and integrate a single step forward.
 		void simulation_step();
 };
