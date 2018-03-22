@@ -102,18 +102,18 @@ void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 	// Execute the commands
 	auto command_list = geometry.FirstChildElement("commands").FirstChildElement("mainlist");
-	while (auto command = command_list.FirstChildElement().ToElement()) {
 
-		// The nature of a box (fluid, boundary) is given in a separate command from the
-		// geometry of the box, so we have to store the vector in which it belongs
-		std::vector<CaseDef::Box>* target_boxes = nullptr;
+	// The nature of a box (fluid, boundary) is given in a separate command from the
+	// geometry of the box, so we have to store the vector in which it belongs
+	std::vector<CaseDef::Box>* target_boxes = nullptr;
 
-		if (std::strcmp(command->Name(), "setmkfluid"))
+	for (auto command = command_list.FirstChildElement().ToElement(); command;) {
+		if (!std::strcmp(command->Name(), "setmkfluid"))
 			target_boxes = &case_def.fluid_boxes;
-		else if (std::strcmp(command->Name(), "setmkbound"))
+		else if (!std::strcmp(command->Name(), "setmkbound"))
 			target_boxes = &case_def.bound_boxes;
 
-		else if (std::strcmp(command->Name(), "drawbox")) {
+		else if (!std::strcmp(command->Name(), "drawbox")) {
 			if (!target_boxes)
 				throw std::runtime_error("No setmkfluid or setmkbound command used before drawbox");
 			
