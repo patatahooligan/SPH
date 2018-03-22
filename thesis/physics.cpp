@@ -7,15 +7,9 @@
 #include <cfloat>
 #include <vector>
 
-#include "boost\geometry\geometry.hpp"
-#include "boost\numeric\ublas\matrix.hpp"
-
 #include "physics.h"
 #include "constants.h"
 #include "vec3f.h"
-
-
-namespace ublas = boost::numeric::ublas;
 
 
 float piecewise_smoothing_kernel(const Vec3f &r, const float h) {
