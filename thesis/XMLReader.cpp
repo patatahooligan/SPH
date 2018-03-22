@@ -65,7 +65,7 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	}
 
 	if (auto coefsound = constants.FirstChildElement("coefsound").ToElement())
-		case_def.coefsound = coefsound->FloatAttribute("value)");
+		case_def.coefsound = coefsound->FloatAttribute("value");
 
 	if (auto speedsound = constants.FirstChildElement("speedsound").ToElement()) {
 		if (speedsound->BoolAttribute("auto")) {
@@ -76,10 +76,10 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	}
 
 	if (auto coefh = constants.FirstChildElement("coefh").ToElement())
-		case_def.coefh = coefh->FloatAttribute("value)");
+		case_def.coefh = coefh->FloatAttribute("value");
 
 	if (auto cflnumber = constants.FirstChildElement("cflnumber").ToElement())
-		case_def.cflnumber = cflnumber->FloatAttribute("value)");
+		case_def.cflnumber = cflnumber->FloatAttribute("value");
 }
 
 void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
