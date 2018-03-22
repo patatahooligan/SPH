@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 	ps_pointer = &ps;
 
 	boost::optional<SaveState> save_state;
-	if (argc == 2) {
+	if (argc == 3) {
 		save_state.emplace(argv[2], ps.num_of_particles());
 		save_state_pointer = save_state.get_ptr();
 	}
