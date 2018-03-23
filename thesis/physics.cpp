@@ -125,9 +125,6 @@ void ParticleSystem::update_derivatives() {
 	// Calculate and update all derivatives of particle quantities needed to integrate
 	// TODO: consider the case for zero neighbors and figure out if it needs handling
 
-	// Save the results kd-tree searches here to re-use them in the second loop
-	auto indices_dists = std::make_unique<std::vector<std::pair<size_t, float>>[]>(fluid_particles.size());
-
 	// Calculate density
 	// This has to be done for every particle before acceleration can be calculated
 	#pragma omp parallel for
@@ -138,12 +135,13 @@ void ParticleSystem::update_derivatives() {
 
 		// Get a pair of <index, distance> for neighbors of pi
 		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
+		std::vector<std::pair<size_t, float>> indices_dists;
 		kd_tree.radiusSearch(
-			position, pow(smoothing_length, 2), indices_dists[i], { 32, 0.0f, false });
+			position, pow(smoothing_length, 2), indices_dists, { 32, 0.0f, false });
 		assert(indices_dists[i].size() > 0);
 
 		Pi.density = 0.0f;
-		for (auto indice_dist_pair : indices_dists[i]) {
+		for (auto indice_dist_pair : indices_dists) {
 			// This calculates the sum of the equation without the normalizing constant
 			auto distance_squared = indice_dist_pair.second;
 			Pi.density += pow((pow(smoothing_length, 2) - distance_squared), 3);
@@ -156,12 +154,20 @@ void ParticleSystem::update_derivatives() {
 	// Calculate acceleration
 	#pragma omp parallel for
 	for (int i = 0; i < fluid_particles.size(); ++i) {
+
+		// Get a pair of <index, distance> for neighbors of pi
+		auto& Pi = fluid_particles[i];
+		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
+		std::vector<std::pair<size_t, float>> indices_dists;
+		kd_tree.radiusSearch(
+			position, pow(smoothing_length, 2), indices_dists, { 32, 0.0f, false });
+		assert(indices_dists[i].size() > 0);
+
 		// Sum of interaction forces
 		Vec3f sumF{ 0.0f, 0.0f, 0.0f };
 		auto h4 = pow(smoothing_length, 4);
 
-		Particle& Pi = fluid_particles[i];
-		for (auto indice_dist_pair : indices_dists[i]) {
+		for (auto indice_dist_pair : indices_dists) {
 			// If pi is pj or they are at the exact same point, do not compute interaction forces
 			auto& Pj = fluid_particles[indice_dist_pair.first];
 			if (Pi.position == Pj.position) continue;
