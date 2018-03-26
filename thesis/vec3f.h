@@ -80,5 +80,5 @@ inline Vec3f operator/(Vec3f v, const float c) {
 }
 
 inline bool isfinite(Vec3f v) {
-	return isfinite(v.x) && isfinite(v.y) && isfinite(v.z);
+	return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z);
 }
