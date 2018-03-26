@@ -72,6 +72,20 @@ Vec3f piecewise_smoothing_kernel_derivative(const Vec3f &r, const float h) {
 	}
 }
 
+float cubic_spline(const Vec3f &r, const float h) {
+	assert(r >= 0.0f && h >= 0.0f);
+	const float
+		q = std::sqrt(r.length_squared()) / h,
+		a = (10.0f / 7.0f) * pi * h * h;
+
+	if (q < 1.0f)
+		return a * (1 - (3.0f / 2.0f) * (q*q) + (3.0f / 4.0f) * pow(q, 3));
+	else if (q < 2.0f)
+		return a * (pow(2 - q, 3) / 4.0f);
+	else
+		return 0.0f;
+}
+
 
 void ParticleSystem::generate_particles() {
 	auto fillbox = [](const CaseDef::Box &box, ParticleContainer &particles, float density) {
