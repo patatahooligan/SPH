@@ -8,7 +8,7 @@
 
 struct Particle {
 	// A single particle of the SPH simulation
-	Vec3f position, velocity, velocity_half, acceleration;
+	Vec3f position, velocity;
 	float density;
 };
 

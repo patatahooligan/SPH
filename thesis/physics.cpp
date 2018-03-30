@@ -73,7 +73,7 @@ Vec3f piecewise_smoothing_kernel_derivative(const Vec3f &r, const float h) {
 }
 
 float cubic_spline(const Vec3f &r, const float h) {
-	assert(r >= 0.0f && h >= 0.0f);
+	assert(h >= 0.0f);
 	const float
 		q = std::sqrt(r.length_squared()) / h,
 		a = (10.0f / 7.0f) * pi * h * h;
@@ -209,41 +209,35 @@ void ParticleSystem::update_derivatives() {
 	}
 }
 
-void ParticleSystem::integrate_step() {
-	// Integrate forward. Derivatives need to have already been updated through update_derivatives.
+void ParticleSystem::integrate_verlet(float dt) {
+	// How often to use the Verlet corrective step
+	// TODO: consider making this variable
+	constexpr int corrective_step_interval = 50;
 
-	// This function implements a leap-frog scheme where derivatives are calculated for midpoints between
-	// time steps, with the exclusion of acceleration (because it is 2nd order derivative). However, we
-	// use a crude approximation for velocity at integer multiples of time step because it is needed for
-	// the acceleration in update_derivatives().
-	const float time_step = calculate_time_step();
-	simulation_time += time_step;
+	// Using swap to move the current particles to prev maintains the vector size we need
+	prev_fluid_particles.swap(fluid_particles);
+	fluid_particles.swap(next_fluid_particles);
 
-	auto new_velocity_half = std::make_unique<Vec3f[]>(fluid_particles.size());
+	prev_boundary_particles.swap(boundary_particles);
+	boundary_particles.swap(next_boundary_particles);
 
-	#pragma omp parallel for
-	for (int i = 0; i < fluid_particles.size(); ++i) {
-		// Integrate velocity
-		new_velocity_half[i] = Vec3f(
-			fluid_particles[i].velocity_half.x + fluid_particles[i].acceleration.x * time_step,
-			fluid_particles[i].velocity_half.y + fluid_particles[i].acceleration.y * time_step,
-			fluid_particles[i].velocity_half.z + fluid_particles[i].acceleration.z * time_step);
+	if (verlet_step % corrective_step_interval) {
 
-		assert(isfinite(new_velocity_half[i]));
+	}
+	else {
+		for (int i = 0; i < fluid_particles.size(); ++i) {
+			auto
+				&pi = fluid_particles[i],
+				&pi_next = next_fluid_particles[i],
+				&pi_prev = prev_fluid_particles[i];
 
-		// Crude approximation for velocity at current time
-		fluid_particles[i].velocity = (fluid_particles[i].velocity_half + new_velocity_half[i]) / 2;
-
-		// Replace old velocity_half with new one
-		fluid_particles[i].velocity_half = new_velocity_half[i];
-
-		// Integrate position
-		fluid_particles[i].position += fluid_particles[i].velocity_half * time_step;
-		assert(isfinite(fluid_particles[i].position));
+			pi_next.velocity = pi_prev.velocity + 2 * dt * acceleration[i];
+			pi_next.position = pi.position + dt * pi.velocity + 0.5f * dt * dt * acceleration[i];
+			pi_next.density = pi_prev.density + 2 * dt * density_derivative[i];
+		}
 	}
 
-	// Handle particles that have clipped into wall
-	conflict_resolution();
+	++verlet_step;
 }
 
 void ParticleSystem::conflict_resolution() {

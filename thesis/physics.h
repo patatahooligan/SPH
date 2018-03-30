@@ -20,10 +20,16 @@ class ParticleSystem {
 
 	private:
 		float simulation_time;
-		ParticleContainer fluid_particles, boundary_particles;
+		ParticleContainer
+			fluid_particles, boundary_particles,
+			prev_fluid_particles, prev_boundary_particles,
+			next_fluid_particles, next_boundary_particles;
+		std::unique_ptr<Vec3f[]> acceleration;
+		std::unique_ptr<float[]> density_derivative;
 		ParticleAdaptor kd_tree_adaptor;
 		ParticleKDTree kd_tree;
 		const CaseDef case_def;
+		int verlet_step;
 
 		kernel_function_t &smoothing_kernel;
 		kernel_function_derivative_t &smoothing_kernel_derivative;
@@ -36,8 +42,8 @@ class ParticleSystem {
 
 		void update_derivatives();
 
-		// Integrate forward using leap-frog
-		void integrate_step();
+		// Integrate forward using verlet
+		void integrate_verlet(float dt);
 
 		// Handle particle-wall collision
 		void conflict_resolution();
@@ -56,9 +62,17 @@ class ParticleSystem {
 			kd_tree(3, kd_tree_adaptor),
 			case_def(case_def),
 			smoothing_kernel(smoothing_kernel),
-			smoothing_kernel_derivative(piecewise_smoothing_kernel_derivative)
+			smoothing_kernel_derivative(piecewise_smoothing_kernel_derivative),
+			verlet_step(0)
 		{
 			generate_particles();
+
+			prev_fluid_particles.resize(fluid_particles.size());
+			prev_boundary_particles.resize(boundary_particles.size());
+			next_fluid_particles.resize(fluid_particles.size());
+			next_boundary_particles.resize(boundary_particles.size());
+			acceleration = std::make_unique<Vec3f[]>(fluid_particles.size());
+			density_derivative = std::make_unique<float[]>(fluid_particles.size());
 		}
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
