@@ -76,7 +76,7 @@ float cubic_spline(const Vec3f &r, const float h) {
 	assert(h >= 0.0f);
 	const float
 		q = std::sqrt(r.length_squared()) / h,
-		a = (10.0f / 7.0f) * pi * h * h;
+		a = 1.0 / (pi * pow(h, 3));
 
 	if (q < 1.0f)
 		return a * (1 - (3.0f / 2.0f) * (q*q) + (3.0f / 4.0f) * pow(q, 3));
