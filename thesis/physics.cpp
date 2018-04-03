@@ -209,6 +209,59 @@ void ParticleSystem::update_derivatives() {
 	}
 }
 
+void ParticleSystem::compute_forces() {
+	for (int i = 0; i < fluid_particles.size(); ++i) {
+		const Particle& Pi = fluid_particles[i];
+
+		// Get neighbors of Pi
+		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
+		std::vector<std::pair<size_t, float>> indices_dists;
+		kd_tree.radiusSearch(
+			position, pow(2 * case_def.h, 2), indices_dists, { 32, 0.0f, false });
+
+		constexpr int gamma = 7;
+		const float
+			beta = (case_def.speedsound * case_def.speedsound * case_def.rhop0) / gamma,
+			Pi_pressure = beta * (std::pow(Pi.density / case_def.rhop0, gamma) - 1);
+
+		acceleration[i] = case_def.gravity;
+
+		for (const auto &index_distance: indices_dists) {
+			const Particle& Pj = fluid_particles[index_distance.first];
+
+			Vec3f
+				r_ij = Pi.position - Pj.position,
+				v_ij = Pi.velocity - Pj.velocity;
+
+			const float
+				&h = case_def.h,
+				&r2 = index_distance.second,                   // Squared distance
+				Pj_pressure = beta * (std::pow(Pj.density / case_def.rhop0, gamma) - 1),
+				vel_pos_dot_product = dot_product(v_ij, r_ij);
+
+			float
+				pi_ij = 0.0f;                                 // Viscosity factor
+
+			if (vel_pos_dot_product > 0.0f) {
+				constexpr float a = 0.01f;
+				const float
+					rho_ij = (Pi.density + Pj.density) / 2.0f,    // Mean density
+					mu = (h * vel_pos_dot_product) / (r2 + 0.01f * h * h);
+
+				pi_ij = -(a * case_def.speedsound * mu) / rho_ij;
+			}
+
+			const float
+				pressure_sum = Pj_pressure + Pi_pressure,
+				density_product = Pi.density * Pj.density;
+
+			acceleration[i] -=
+				case_def.particles.mass * ((pressure_sum / density_product) + pi_ij) *
+				smoothing_kernel_derivative(r_ij, case_def.h);
+		}
+	}
+}
+
 void ParticleSystem::integrate_verlet(float dt) {
 	// How often to use the Verlet corrective step
 	// TODO: consider making this variable
@@ -222,7 +275,7 @@ void ParticleSystem::integrate_verlet(float dt) {
 	boundary_particles.swap(next_boundary_particles);
 
 	if (verlet_step % corrective_step_interval) {
-
+		// TODO!
 	}
 	else {
 		for (int i = 0; i < fluid_particles.size(); ++i) {

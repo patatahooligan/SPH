@@ -42,6 +42,8 @@ class ParticleSystem {
 
 		void update_derivatives();
 
+		void compute_forces();
+
 		// Integrate forward using verlet
 		void integrate_verlet(float dt);
 

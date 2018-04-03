@@ -79,6 +79,10 @@ inline Vec3f operator/(Vec3f v, const float c) {
 	return v /= c;
 }
 
+inline float dot_product(const Vec3f& v1, const Vec3f& v2) {
+	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
+}
+
 inline bool isfinite(Vec3f v) {
 	return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z);
 }
