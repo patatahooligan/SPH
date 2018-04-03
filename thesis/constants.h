@@ -40,11 +40,11 @@ struct CaseDef {
 	float speedsystem;  // Maximum system speed (by default the dam-break propagation is used)
 	float coefsound;    // Coefficient to multiply speedsystem
 	float speedsound;   // Speed of sound to use in the simulation (by default speedofsound=coefsound*speedsystem)
-	float coefh;        // Coefficient to calculate the smoothing length (h=coefh*sqrt(3*dp^2) in 3D)
+	float h;            // Smoothing length
 	float cflnumber;    // Coefficient to multiply dt
 
 	struct {
-		float density;
+		float density, mass;
 		Vec3f point_min, point_max;
 	} particles;
 

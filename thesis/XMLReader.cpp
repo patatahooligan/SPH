@@ -76,7 +76,7 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	}
 
 	if (auto coefh = constants.FirstChildElement("coefh").ToElement())
-		case_def.coefh = coefh->FloatAttribute("value");
+		case_def.h = coefh->FloatAttribute("value") * std::sqrt(3) * case_def.particles.density;
 
 	if (auto cflnumber = constants.FirstChildElement("cflnumber").ToElement())
 		case_def.cflnumber = cflnumber->FloatAttribute("value");
@@ -90,6 +90,7 @@ void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	assert(definition);
 
 	case_def.particles.density = definition->FloatAttribute("dp");
+	case_def.particles.mass = 1.0 / std::pow(case_def.particles.density, 3);
 
 	// Minimum and maximum points of the domain, not the fluid
 	auto pointmin = definition->FirstChildElement("pointmin");
