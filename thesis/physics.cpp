@@ -198,13 +198,6 @@ void ParticleSystem::integrate_verlet(float dt) {
 	// TODO: consider making this variable
 	constexpr int corrective_step_interval = 50;
 
-	// Using swap to move the current particles to prev maintains the vector size we need
-	prev_fluid_particles.swap(fluid_particles);
-	fluid_particles.swap(next_fluid_particles);
-
-	prev_boundary_particles.swap(boundary_particles);
-	boundary_particles.swap(next_boundary_particles);
-
 	if (verlet_step % corrective_step_interval) {
 		// TODO!
 	}
@@ -280,6 +273,16 @@ Vec3f ParticleSystem::boundary_force(const Particle& p) {
 void ParticleSystem::simulation_step() {
 	kd_tree.buildIndex();
 
+	const float time_step = calculate_time_step();
+	simulation_time += time_step;
 	compute_derivatives();
-	integrate_step();
+	integrate_verlet(time_step);
+
+	// Move variables of next step to current and current to prev
+	// Using swap instead of move assignment retains the size of next_particles
+	prev_fluid_particles.swap(fluid_particles);
+	fluid_particles.swap(next_fluid_particles);
+
+	prev_boundary_particles.swap(boundary_particles);
+	boundary_particles.swap(next_boundary_particles);
 }
