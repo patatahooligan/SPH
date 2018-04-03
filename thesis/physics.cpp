@@ -135,7 +135,7 @@ float ParticleSystem::calculate_time_step() {
 		return t2/10.0f;
 }
 
-void ParticleSystem::compute_forces() {
+void ParticleSystem::compute_derivatives() {
 	for (int i = 0; i < fluid_particles.size(); ++i) {
 		const Particle& Pi = fluid_particles[i];
 
@@ -151,6 +151,7 @@ void ParticleSystem::compute_forces() {
 			Pi_pressure = beta * (std::pow(Pi.density / case_def.rhop0, gamma) - 1);
 
 		acceleration[i] = case_def.gravity;
+		density_derivative[i] = 0.0f;
 
 		for (const auto &index_distance: indices_dists) {
 			const Particle& Pj = fluid_particles[index_distance.first];
@@ -181,9 +182,13 @@ void ParticleSystem::compute_forces() {
 				pressure_sum = Pj_pressure + Pi_pressure,
 				density_product = Pi.density * Pj.density;
 
+			const Vec3f kernel_derivative_rij = smoothing_kernel_derivative(r_ij, case_def.h);
+
 			acceleration[i] -=
 				case_def.particles.mass * ((pressure_sum / density_product) + pi_ij) *
 				smoothing_kernel_derivative(r_ij, case_def.h);
+
+			density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_derivative_rij);
 		}
 	}
 }
@@ -275,6 +280,6 @@ Vec3f ParticleSystem::boundary_force(const Particle& p) {
 void ParticleSystem::simulation_step() {
 	kd_tree.buildIndex();
 
-	update_derivatives();
+	compute_derivatives();
 	integrate_step();
 }
