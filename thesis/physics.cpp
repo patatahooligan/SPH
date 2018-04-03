@@ -199,18 +199,25 @@ void ParticleSystem::integrate_verlet(float dt) {
 	constexpr int corrective_step_interval = 50;
 
 	if (verlet_step % corrective_step_interval) {
-		// TODO!
+		for (int i = 0; i < fluid_particles.size(); ++i) {
+			auto &Pi = fluid_particles[i];
+			auto &Pi_next = next_fluid_particles[i];
+
+			Pi_next.velocity = Pi.velocity + dt * acceleration[i];
+			Pi_next.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
+			Pi_next.density = Pi.density + dt * density_derivative[i];
+		}
 	}
 	else {
 		for (int i = 0; i < fluid_particles.size(); ++i) {
 			auto
-				&pi = fluid_particles[i],
-				&pi_next = next_fluid_particles[i],
-				&pi_prev = prev_fluid_particles[i];
+				&Pi = fluid_particles[i],
+				&Pi_next = next_fluid_particles[i],
+				&Pi_prev = prev_fluid_particles[i];
 
-			pi_next.velocity = pi_prev.velocity + 2 * dt * acceleration[i];
-			pi_next.position = pi.position + dt * pi.velocity + 0.5f * dt * dt * acceleration[i];
-			pi_next.density = pi_prev.density + 2 * dt * density_derivative[i];
+			Pi_next.velocity = Pi_prev.velocity + 2 * dt * acceleration[i];
+			Pi_next.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
+			Pi_next.density = Pi_prev.density + 2 * dt * density_derivative[i];
 		}
 	}
 
