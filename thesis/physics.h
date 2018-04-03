@@ -40,8 +40,6 @@ class ParticleSystem {
 		// Calculate a time step that is stable.
 		float calculate_time_step();
 
-		void update_derivatives();
-
 		void compute_forces();
 
 		// Integrate forward using verlet
