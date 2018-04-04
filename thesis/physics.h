@@ -62,7 +62,7 @@ class ParticleSystem {
 			kd_tree(3, kd_tree_adaptor),
 			case_def(case_def),
 			smoothing_kernel(smoothing_kernel),
-			smoothing_kernel_derivative(piecewise_smoothing_kernel_derivative),
+			smoothing_kernel_derivative(smoothing_kernel_derivative),
 			verlet_step(0)
 		{
 			generate_particles();
