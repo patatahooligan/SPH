@@ -20,10 +20,9 @@ class ParticleSystem {
 
 	private:
 		float simulation_time;
+		size_t num_of_fluid_particles;
 		ParticleContainer
-			fluid_particles, boundary_particles,
-			prev_fluid_particles, prev_boundary_particles,
-			next_fluid_particles, next_boundary_particles;
+			particles, prev_particles, next_particles;
 		std::unique_ptr<Vec3f[]> acceleration;
 		std::unique_ptr<float[]> density_derivative;
 		ParticleAdaptor kd_tree_adaptor;
@@ -58,7 +57,7 @@ class ParticleSystem {
 			kernel_function_derivative_t& smoothing_kernel_derivative = piecewise_smoothing_kernel_derivative
 		) :
 			simulation_time(0.0f),
-			kd_tree_adaptor(fluid_particles),
+			kd_tree_adaptor(particles),
 			kd_tree(3, kd_tree_adaptor),
 			case_def(case_def),
 			smoothing_kernel(smoothing_kernel),
@@ -67,23 +66,23 @@ class ParticleSystem {
 		{
 			generate_particles();
 
-			prev_fluid_particles.resize(fluid_particles.size());
-			prev_boundary_particles.resize(boundary_particles.size());
-			next_fluid_particles.resize(fluid_particles.size());
-			next_boundary_particles.resize(boundary_particles.size());
-			acceleration = std::make_unique<Vec3f[]>(fluid_particles.size());
-			density_derivative = std::make_unique<float[]>(fluid_particles.size());
+			prev_particles.resize(particles.size());
+			next_particles.resize(particles.size());
+
+			// Note: these need different sizes because acceleration is not needed for boundaries
+			acceleration = std::make_unique<Vec3f[]>(num_of_fluid_particles);
+			density_derivative = std::make_unique<float[]>(particles.size());
 		}
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
 		ParticleSystem(const ParticleSystem &other) = delete;
 		ParticleSystem& operator=(const ParticleSystem &other) = delete;
 
-		const ParticleContainer& get_particlearray() const { return fluid_particles; }
+		const ParticleContainer& get_particlearray() const { return particles; }
 
 		float current_time() const {return simulation_time;}
 
-		auto num_of_particles() const { return fluid_particles.size(); }
+		auto num_of_particles() const { return particles.size(); }
 
 		// Update all derivatives and integrate a single step forward.
 		void simulation_step();

@@ -110,16 +110,21 @@ void ParticleSystem::generate_particles() {
 	};
 
 	for (const auto& box : case_def.fluid_boxes)
-		fillbox(box, fluid_particles, case_def.particles.density);
+		fillbox(box, particles, case_def.particles.density);
+
+	// Storing fluid and bound particles in the same container greatly simplifies the iterative
+	// algorithms. For the parts that apply specifically to one type of particle, we need to keep
+	// track of the number of fluid particles and iterate accordingly.
+	num_of_fluid_particles = particles.size();
 
 	for (const auto& box : case_def.bound_boxes)
-		fillbox(box, boundary_particles, case_def.particles.density);
+		fillbox(box, particles, case_def.particles.density);
 }
 
 float ParticleSystem::calculate_time_step() {
 	float
 		max_velocity_magnitude_square = 0.0f;
-	for (const auto& particle : fluid_particles) {
+	for (const auto& particle : particles) {
 		const auto v2 = particle.velocity_half.length_squared();
 		if (v2 > max_velocity_magnitude_square) {
 			max_velocity_magnitude_square = v2;
@@ -136,8 +141,8 @@ float ParticleSystem::calculate_time_step() {
 }
 
 void ParticleSystem::compute_derivatives() {
-	for (int i = 0; i < fluid_particles.size(); ++i) {
-		const Particle& Pi = fluid_particles[i];
+	for (int i = 0; i < particles.size(); ++i) {
+		const Particle& Pi = particles[i];
 
 		// Get neighbors of Pi
 		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
@@ -154,11 +159,18 @@ void ParticleSystem::compute_derivatives() {
 		density_derivative[i] = 0.0f;
 
 		for (const auto &index_distance: indices_dists) {
-			const Particle& Pj = fluid_particles[index_distance.first];
+			const Particle& Pj = particles[index_distance.first];
 
-			Vec3f
+			const Vec3f
 				r_ij = Pi.position - Pj.position,
-				v_ij = Pi.velocity - Pj.velocity;
+				v_ij = Pi.velocity - Pj.velocity,
+				kernel_derivative_rij = smoothing_kernel_derivative(r_ij, case_def.h);
+
+			density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_derivative_rij);
+
+			// If this is a boundary particle skip the acceleration part
+			if (index_distance.first >= num_of_fluid_particles)
+				continue;
 
 			const float
 				&h = case_def.h,
@@ -182,13 +194,9 @@ void ParticleSystem::compute_derivatives() {
 				pressure_sum = Pj_pressure + Pi_pressure,
 				density_product = Pi.density * Pj.density;
 
-			const Vec3f kernel_derivative_rij = smoothing_kernel_derivative(r_ij, case_def.h);
-
 			acceleration[i] -=
 				case_def.particles.mass * ((pressure_sum / density_product) + pi_ij) *
 				smoothing_kernel_derivative(r_ij, case_def.h);
-
-			density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_derivative_rij);
 		}
 	}
 }
@@ -199,26 +207,33 @@ void ParticleSystem::integrate_verlet(float dt) {
 	constexpr int corrective_step_interval = 50;
 
 	if (verlet_step % corrective_step_interval) {
-		for (int i = 0; i < fluid_particles.size(); ++i) {
-			auto &Pi = fluid_particles[i];
-			auto &Pi_next = next_fluid_particles[i];
+		// Fluid particles
+		for (int i = 0; i < num_of_fluid_particles; ++i) {
+			auto &Pi = particles[i];
+			auto &Pi_next = next_particles[i];
 
 			Pi_next.velocity = Pi.velocity + dt * acceleration[i];
 			Pi_next.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
 			Pi_next.density = Pi.density + dt * density_derivative[i];
 		}
+
+		// Boundary particles
+		for (int i = num_of_fluid_particles; i < particles.size(); ++i)
+			next_particles[i].density = particles[i].density + dt * density_derivative[i];
 	}
 	else {
-		for (int i = 0; i < fluid_particles.size(); ++i) {
+		for (int i = 0; i < particles.size(); ++i) {
 			auto
-				&Pi = fluid_particles[i],
-				&Pi_next = next_fluid_particles[i],
-				&Pi_prev = prev_fluid_particles[i];
+				&Pi = particles[i],
+				&Pi_next = next_particles[i],
+				&Pi_prev = prev_particles[i];
 
 			Pi_next.velocity = Pi_prev.velocity + 2 * dt * acceleration[i];
 			Pi_next.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
 			Pi_next.density = Pi_prev.density + 2 * dt * density_derivative[i];
 		}
+		for (int i = num_of_fluid_particles; i < particles.size(); ++i)
+			next_particles[i].density = prev_particles[i].density + 2 * dt * density_derivative[i];
 	}
 
 	++verlet_step;
@@ -231,15 +246,15 @@ void ParticleSystem::conflict_resolution() {
 	// calculated when calculating forces & acceleration.
 
 	#pragma omp parallel for
-	for (int i = 0; i < fluid_particles.size(); ++i) {
-		fluid_particles[i].position.x = std::max(fluid_particles[i].position.x, 0.0f);
-		fluid_particles[i].position.x = std::min(fluid_particles[i].position.x, size);
+	for (int i = 0; i < particles.size(); ++i) {
+		particles[i].position.x = std::max(particles[i].position.x, 0.0f);
+		particles[i].position.x = std::min(particles[i].position.x, size);
 
-		fluid_particles[i].position.y = std::max(fluid_particles[i].position.y, 0.0f);
-		fluid_particles[i].position.y = std::min(fluid_particles[i].position.y, size);
+		particles[i].position.y = std::max(particles[i].position.y, 0.0f);
+		particles[i].position.y = std::min(particles[i].position.y, size);
 
-		fluid_particles[i].position.z = std::max(fluid_particles[i].position.z, 0.0f);
-		fluid_particles[i].position.z = std::min(fluid_particles[i].position.z, size);
+		particles[i].position.z = std::max(particles[i].position.z, 0.0f);
+		particles[i].position.z = std::min(particles[i].position.z, size);
 	}
 }
 
@@ -287,9 +302,6 @@ void ParticleSystem::simulation_step() {
 
 	// Move variables of next step to current and current to prev
 	// Using swap instead of move assignment retains the size of next_particles
-	prev_fluid_particles.swap(fluid_particles);
-	fluid_particles.swap(next_fluid_particles);
-
-	prev_boundary_particles.swap(boundary_particles);
-	boundary_particles.swap(next_boundary_particles);
+	prev_particles.swap(particles);
+	particles.swap(next_particles);
 }
