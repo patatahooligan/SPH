@@ -176,19 +176,19 @@ void ParticleSystem::compute_derivatives() {
 				&h = case_def.h,
 				&r2 = index_distance.second,                   // Squared distance
 				Pj_pressure = beta * (std::pow(Pj.density / case_def.rhop0, gamma) - 1),
-				vel_pos_dot_product = dot_product(v_ij, r_ij);
+				vel_pos_dot_product = dot_product(v_ij, r_ij),
+				pi_ij = [&]() {
+					if (vel_pos_dot_product > 0.0f) {
+						constexpr float a = 0.01f;
+						const float
+							rho_ij = (Pi.density + Pj.density) / 2.0f,    // Mean density
+							mu = (h * vel_pos_dot_product) / (r2 + 0.01f * h * h);
 
-			float
-				pi_ij = 0.0f;                                 // Viscosity factor
-
-			if (vel_pos_dot_product > 0.0f) {
-				constexpr float a = 0.01f;
-				const float
-					rho_ij = (Pi.density + Pj.density) / 2.0f,    // Mean density
-					mu = (h * vel_pos_dot_product) / (r2 + 0.01f * h * h);
-
-				pi_ij = -(a * case_def.speedsound * mu) / rho_ij;
-			}
+						return -(a * case_def.speedsound * mu) / rho_ij;
+					}
+					else
+						return 0.0f;
+				}();
 
 			const float
 				pressure_sum = Pj_pressure + Pi_pressure,
