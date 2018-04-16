@@ -11,6 +11,13 @@
 #include "constants.h"
 #include "vec3f.h"
 
+auto radius_search(const ParticleKDTree &kd_tree, const Vec3f &center, const float radius) {
+	float position[3] = { center.x, center.y, center.z };
+	std::vector<std::pair<size_t, float>> indices_dists;
+	kd_tree.radiusSearch(
+		position, pow(2 * radius, 2), indices_dists, { 32, 0.0f, false });
+	return indices_dists;
+}
 
 float piecewise_smoothing_kernel(const Vec3f &r, const float h) {
 	// Piecewise quintic smoothing kernel.
@@ -122,22 +129,43 @@ void ParticleSystem::generate_particles() {
 }
 
 float ParticleSystem::calculate_time_step() const {
-	float
-		max_velocity_magnitude_square = 0.0f;
-	for (const auto& particle : particles) {
-		const auto v2 = particle.velocity_half.length_squared();
-		if (v2 > max_velocity_magnitude_square) {
-			max_velocity_magnitude_square = v2;
-		}
-	}
 	const float
-		t1 = smoothing_length / (sqrt(max_velocity_magnitude_square) + speed_of_sound * speed_of_sound),
-		t2 = (smoothing_length * smoothing_length) / (6 * viscocity);
+		&h = case_def.h,
+		&c = case_def.speedsound;
 
-	if (t1 < t2) 
-		return t1/10.0f;
-	else
-		return t2/10.0f;
+	float
+		acceleration2_max = 0.0f,
+		dt_cv = std::numeric_limits<float>::max();
+
+	for (int i = 0; i < num_of_fluid_particles; ++i) {
+		const Particle& Pi = particles[i];
+		const auto indices_dists = radius_search(kd_tree, Pi.position, case_def.h);
+
+		float sigma = 0.0f;
+		for (const auto &index_distance : indices_dists) {
+			const Particle& Pj = particles[index_distance.first];
+			const Vec3f
+				v_ij = Pj.velocity - Pi.velocity,
+				r_ij = Pj.position - Pi.position;
+
+			const float
+				r2 = r_ij.length_squared();
+
+			sigma = std::max(
+				sigma,
+				std::abs((case_def.h * dot_product(v_ij, r_ij)) / (r2 + 0.01f * h * h)));
+		}
+
+		acceleration2_max = std::max(acceleration2_max, acceleration[i].length_squared());
+
+		dt_cv = std::min(
+			dt_cv,
+			h / (c + sigma));
+	}
+
+	const float dt_f = std::sqrt(h / std::sqrt(acceleration2_max * case_def.particles.mass));
+
+	return case_def.cflnumber * std::min(dt_cv, dt_f);
 }
 
 void ParticleSystem::compute_derivatives() {
@@ -146,9 +174,7 @@ void ParticleSystem::compute_derivatives() {
 
 		// Get neighbors of Pi
 		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
-		std::vector<std::pair<size_t, float>> indices_dists;
-		kd_tree.radiusSearch(
-			position, pow(2 * case_def.h, 2), indices_dists, { 32, 0.0f, false });
+		const auto indices_dists = radius_search(kd_tree, Pi.position, case_def.h);
 
 		constexpr int gamma = 7;
 		const float
