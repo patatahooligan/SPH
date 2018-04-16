@@ -88,7 +88,7 @@ float cubic_spline(const Vec3f &r, const float h) {
 
 
 void ParticleSystem::generate_particles() {
-	auto fillbox = [](const CaseDef::Box &box, ParticleContainer &particles, float density) {
+	auto fillbox = [](const CaseDef::Box &box, ParticleContainer &particles, const float density) {
 		int
 			x_increments = int(box.size.x / density) + 1,
 			y_increments = int(box.size.y / density) + 1,
@@ -121,7 +121,7 @@ void ParticleSystem::generate_particles() {
 		fillbox(box, particles, case_def.particles.density);
 }
 
-float ParticleSystem::calculate_time_step() {
+float ParticleSystem::calculate_time_step() const {
 	float
 		max_velocity_magnitude_square = 0.0f;
 	for (const auto& particle : particles) {
@@ -201,7 +201,7 @@ void ParticleSystem::compute_derivatives() {
 	}
 }
 
-void ParticleSystem::integrate_verlet(float dt) {
+void ParticleSystem::integrate_verlet(const float dt) {
 	// How often to use the Verlet corrective step
 	// TODO: consider making this variable
 	constexpr int corrective_step_interval = 50;

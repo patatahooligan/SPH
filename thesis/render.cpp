@@ -12,7 +12,8 @@ constexpr double particle_display_size = 0.01;
 constexpr double fov = 60.0;
 
 
-void render_init(int *argc, char **argv, GlutCallbackType *render_function, GlutCallbackType *idle_callback) {
+void render_init(int *argc, char **argv,
+	GlutCallbackType* const render_function, GlutCallbackType* const idle_callback) {
 	// Initialize glut and create the window
 	glutInit(argc, argv);
 	glutInitWindowPosition(-1, -1);
@@ -67,7 +68,7 @@ void render_particles(const ParticleContainer &particles) {
 	glutSwapBuffers();
 }
 
-void keyboardfunc(unsigned char key, int x, int y) {
+void keyboardfunc(const unsigned char key, const int x, const int y) {
 	switch (key) {
 	case 27:
 		glutLeaveMainLoop();

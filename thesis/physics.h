@@ -37,7 +37,7 @@ class ParticleSystem {
 		void generate_particles();
 
 		// Calculate a time step that is stable.
-		float calculate_time_step();
+		float calculate_time_step() const;
 
 		void compute_derivatives();
 
