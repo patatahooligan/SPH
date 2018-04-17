@@ -34,7 +34,7 @@ class LoadState {
 
 	private:
 		std::ifstream input_file;
-		size_t num_of_particles_m;
+		int num_of_particles_m;
 
 		void load_particle(Particle& particle);
 };
