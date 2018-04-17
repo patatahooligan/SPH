@@ -83,7 +83,7 @@ float cubic_spline(const Vec3f &r, const float h) {
 	assert(h >= 0.0f);
 	const float
 		q = std::sqrt(r.length_squared()) / h,
-		a = 1.0 / (pi * pow(h, 3));
+		a = 1.0f / (pi * pow(h, 3));
 
 	if (q < 1.0f)
 		return a * (1 - (3.0f / 2.0f) * (q*q) + (3.0f / 4.0f) * pow(q, 3));
@@ -169,7 +169,7 @@ float ParticleSystem::calculate_time_step() const {
 }
 
 void ParticleSystem::compute_derivatives() {
-	for (int i = 0; i < particles.size(); ++i) {
+	for (int i = 0, size = particles.size(); i < size; ++i) {
 		const Particle& Pi = particles[i];
 
 		// Get neighbors of Pi
@@ -195,7 +195,7 @@ void ParticleSystem::compute_derivatives() {
 			density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_derivative_rij);
 
 			// If this is a boundary particle skip the acceleration part
-			if (index_distance.first >= num_of_fluid_particles)
+			if (index_distance.first >= size_t(num_of_fluid_particles))
 				continue;
 
 			const float
@@ -244,11 +244,11 @@ void ParticleSystem::integrate_verlet(const float dt) {
 		}
 
 		// Boundary particles
-		for (int i = num_of_fluid_particles; i < particles.size(); ++i)
+		for (int i = num_of_fluid_particles, size = particles.size(); i < size; ++i)
 			next_particles[i].density = particles[i].density + dt * density_derivative[i];
 	}
 	else {
-		for (int i = 0; i < particles.size(); ++i) {
+		for (int i = 0; i < num_of_fluid_particles; ++i) {
 			auto
 				&Pi = particles[i],
 				&Pi_next = next_particles[i],
@@ -258,7 +258,7 @@ void ParticleSystem::integrate_verlet(const float dt) {
 			Pi_next.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
 			Pi_next.density = Pi_prev.density + 2 * dt * density_derivative[i];
 		}
-		for (int i = num_of_fluid_particles; i < particles.size(); ++i)
+		for (int i = num_of_fluid_particles, size = particles.size(); i < size; ++i)
 			next_particles[i].density = prev_particles[i].density + 2 * dt * density_derivative[i];
 	}
 
@@ -272,7 +272,7 @@ void ParticleSystem::conflict_resolution() {
 	// calculated when calculating forces & acceleration.
 
 	#pragma omp parallel for
-	for (int i = 0; i < particles.size(); ++i) {
+	for (int i = 0; i < num_of_fluid_particles; ++i) {
 		particles[i].position.x = std::max(particles[i].position.x, 0.0f);
 		particles[i].position.x = std::min(particles[i].position.x, size);
 

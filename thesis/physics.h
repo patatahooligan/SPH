@@ -20,7 +20,7 @@ class ParticleSystem {
 
 	private:
 		float simulation_time;
-		size_t num_of_fluid_particles;
+		int num_of_fluid_particles;
 		ParticleContainer
 			particles, prev_particles, next_particles;
 		std::unique_ptr<Vec3f[]> acceleration;
