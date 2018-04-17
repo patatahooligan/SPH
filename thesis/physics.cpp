@@ -181,7 +181,8 @@ void ParticleSystem::compute_derivatives() {
 			beta = (case_def.speedsound * case_def.speedsound * case_def.rhop0) / gamma,
 			Pi_pressure = beta * (std::pow(Pi.density / case_def.rhop0, gamma) - 1);
 
-		acceleration[i] = case_def.gravity;
+		if (i < num_of_fluid_particles)
+			acceleration[i] = case_def.gravity;
 		density_derivative[i] = 0.0f;
 
 		for (const auto &index_distance: indices_dists) {
