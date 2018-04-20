@@ -1,5 +1,9 @@
 #pragma once
 
+// Two declarations to resolve the circular dependency issue between class methods and free functions
+class Vec3f;
+inline Vec3f operator/(Vec3f v, const float c);
+
 class Vec3f {
 	public:
 		float x, y, z;
@@ -56,6 +60,10 @@ class Vec3f {
 		
 		float length() const {
 			return sqrt(length_squared());
+		}
+
+		Vec3f unit_vector() const {
+			return *this / this->length();
 		}
 };
 

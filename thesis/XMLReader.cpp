@@ -28,9 +28,9 @@ CaseDef get_case_from_XML(const char * xml_filename) {
 	XMLHandle root(case_XML.RootElement());
 	assert(root.ToNode());
 
-	get_constants_from_XML(root, case_def);
-
 	get_geometry_from_XML(root, case_def);
+
+	get_constants_from_XML(root, case_def);
 
 	return case_def;
 }
@@ -47,7 +47,12 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 	if (auto hswl = constants.FirstChildElement("hswl").ToElement()) {
 		if (hswl->BoolAttribute("auto")) {
-			// TODO
+			case_def.hswl = 0.0f;
+			const Vec3f down_unit_vector = case_def.gravity.unit_vector();
+			for (auto &box : case_def.fluid_boxes)
+				case_def.hswl = std::max(
+					std::abs(dot_product(box.size, down_unit_vector)),
+					case_def.hswl);
 		}
 		else
 			case_def.hswl = hswl->FloatAttribute("value");
@@ -58,7 +63,7 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 	if (auto speedsystem = constants.FirstChildElement("speedsystem").ToElement()) {
 		if (speedsystem->BoolAttribute("auto")) {
-			// TODO
+			case_def.speedsystem = std::sqrt(case_def.gravity.length() * case_def.hswl);
 		}
 		else
 			case_def.speedsystem = speedsystem->FloatAttribute("value");
