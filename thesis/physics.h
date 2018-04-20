@@ -12,9 +12,6 @@
 using kernel_function_t = float(const Vec3f&, const float);
 using kernel_function_derivative_t = Vec3f(const Vec3f&, const float);
 
-float piecewise_smoothing_kernel(const Vec3f &r, const float h);
-Vec3f piecewise_smoothing_kernel_derivative(const Vec3f &r, const float h);
-
 class ParticleSystem {
 	// Holds the particles and handles the physics simulation
 
@@ -43,9 +40,6 @@ class ParticleSystem {
 
 		// Integrate forward using verlet
 		void integrate_verlet(float dt);
-
-		// Handle particle-wall collision
-		void conflict_resolution();
 
 	public:
 		ParticleSystem(

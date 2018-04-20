@@ -12,10 +12,10 @@
 #include "vec3f.h"
 
 auto radius_search(const ParticleKDTree &kd_tree, const Vec3f &center, const float radius) {
-	float position[3] = { center.x, center.y, center.z };
+	const float position[3] = { center.x, center.y, center.z };
 	std::vector<std::pair<size_t, float>> indices_dists;
 	kd_tree.radiusSearch(
-		position, pow(2 * radius, 2), indices_dists, { 32, 0.0f, false });
+		position, std::pow(2 * radius, 2), indices_dists, { 32, 0.0f, false });
 	return indices_dists;
 }
 
@@ -23,12 +23,12 @@ float cubic_spline(const Vec3f &r, const float h) {
 	assert(h >= 0.0f);
 	const float
 		q = std::sqrt(r.length_squared()) / h,
-		a = 1.0f / (pi * pow(h, 3));
+		a = 1.0f / (pi * std::pow(h, 3));
 
 	if (q < 1.0f)
-		return a * (1 - (3.0f / 2.0f) * (q*q) + (3.0f / 4.0f) * pow(q, 3));
+		return a * (1 - (3.0f / 2.0f) * (q*q) + (3.0f / 4.0f) * std::pow(q, 3));
 	else if (q < 2.0f)
-		return a * (pow(2 - q, 3) / 4.0f);
+		return a * (std::pow(2 - q, 3) / 4.0f);
 	else
 		return 0.0f;
 }
@@ -115,7 +115,6 @@ void ParticleSystem::compute_derivatives() {
 		const Particle& Pi = particles[i];
 
 		// Get neighbors of Pi
-		float position[3] = { Pi.position.x, Pi.position.y, Pi.position.z };
 		const auto indices_dists = radius_search(kd_tree, Pi.position, case_def.h);
 
 		constexpr int gamma = 7;
@@ -210,25 +209,6 @@ void ParticleSystem::integrate_verlet(const float dt) {
 	}
 
 	++verlet_step;
-}
-
-void ParticleSystem::conflict_resolution() {
-	// If particles have intersected the wall, bring them back out to the surface.
-	// Note that this does not implement a boundary condition because it is intented
-	// to be called when integration position, whereas boundary conditions should be
-	// calculated when calculating forces & acceleration.
-
-	#pragma omp parallel for
-	for (int i = 0; i < num_of_fluid_particles; ++i) {
-		particles[i].position.x = std::max(particles[i].position.x, 0.0f);
-		particles[i].position.x = std::min(particles[i].position.x, size);
-
-		particles[i].position.y = std::max(particles[i].position.y, 0.0f);
-		particles[i].position.y = std::min(particles[i].position.y, size);
-
-		particles[i].position.z = std::max(particles[i].position.z, 0.0f);
-		particles[i].position.z = std::min(particles[i].position.z, size);
-	}
 }
 
 void ParticleSystem::simulation_step() {

@@ -20,6 +20,8 @@ constexpr int output_width = 800;
 constexpr int output_height = 800;
 constexpr float framerate = 30.0f;
 
+// Constants for the simulation, but intended to be read from a case file at run-time
+// as they may vary from case to case.
 struct CaseDef {
 	Vec3f gravity;      // Gravitational acceleration
 	float rhop0;        // reference density of the fluid

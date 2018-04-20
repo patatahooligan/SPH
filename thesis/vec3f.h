@@ -59,7 +59,7 @@ class Vec3f {
 		}
 		
 		float length() const {
-			return sqrt(length_squared());
+			return std::sqrt(length_squared());
 		}
 
 		Vec3f unit_vector() const {
