@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
 	// TODO: full command line argument parsing
 	// For now 1st argument is case XML, 2nd is output file
 
-	ParticleSystem ps(get_case_from_XML(argv[1]));
+	ParticleSystem ps(get_case_from_XML(argv[1]), cubic_spline, cubic_spline_gradient);
 	ps_pointer = &ps;
 
 	boost::optional<SaveState> save_state;

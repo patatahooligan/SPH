@@ -33,6 +33,24 @@ float cubic_spline(const Vec3f &r, const float h) {
 		return 0.0f;
 }
 
+Vec3f cubic_spline_gradient(const Vec3f &r, const float h) {
+	assert(h >= 0.0f);
+	const float
+		q = std::sqrt(r.length_squared()) / h,
+		a = 1.0f / (pi * std::pow(h, 3)),
+		dq = 1 / (2.0f * h * h * q),
+		dw = [&]() {
+		if (q < 1.0f)
+			return (-3.0f * q + 9.0f / 4.0f * q * q) * a;
+		else if (q < 2.0f)
+			return (3.0f * a * std::pow(1.0f - q, 2)) / 4.0f;
+		else
+			return 0.0f;
+	}();
+
+	return dw * dq * Vec3f{ 2 * r.x, 2 * r.y, 2 * r.z };
+}
+
 
 void ParticleSystem::generate_particles() {
 	auto fillbox = [](const CaseDef::Box &box, ParticleContainer &particles, const float density) {

@@ -12,6 +12,9 @@
 using kernel_function_t = float(const Vec3f&, const float);
 using kernel_function_derivative_t = Vec3f(const Vec3f&, const float);
 
+float cubic_spline(const Vec3f &r, const float h);
+Vec3f cubic_spline_gradient(const Vec3f &r, const float h);
+
 class ParticleSystem {
 	// Holds the particles and handles the physics simulation
 
