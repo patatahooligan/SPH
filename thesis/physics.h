@@ -47,14 +47,11 @@ class ParticleSystem {
 		// Handle particle-wall collision
 		void conflict_resolution();
 
-		Vec3f boundary_force(const Particle& p);
-
-
 	public:
 		ParticleSystem(
 			const CaseDef &case_def,
-			kernel_function_t& smoothing_kernel = piecewise_smoothing_kernel,
-			kernel_function_derivative_t& smoothing_kernel_derivative = piecewise_smoothing_kernel_derivative
+			kernel_function_t& smoothing_kernel,
+			kernel_function_derivative_t& smoothing_kernel_derivative
 		) :
 			simulation_time(0.0f),
 			kd_tree_adaptor(particles),

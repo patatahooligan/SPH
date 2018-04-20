@@ -20,18 +20,6 @@ constexpr int output_width = 800;
 constexpr int output_height = 800;
 constexpr float framerate = 30.0f;
 
-// Simulation parameters
-constexpr float smoothing_length = 0.1f;
-constexpr float kernel_constant = 3.0f/359.0f * pi * smoothing_length * smoothing_length * smoothing_length;
-constexpr float particle_mass = 0.001f;
-constexpr float visc_a = 1.0f; // Bulk viscocity
-constexpr float visc_b = 1.0f; // von Neumann-Ritchmyer viscocity
-constexpr float viscocity = 0.0007978f;
-constexpr float speed_of_sound = 140.0f;
-constexpr float gravity_constant = 10.0f;
-constexpr float reference_density = 1.0f;
-constexpr float bulk_modulus = speed_of_sound / reference_density;
-
 struct CaseDef {
 	Vec3f gravity;      // Gravitational acceleration
 	float rhop0;        // reference density of the fluid
