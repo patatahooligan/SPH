@@ -136,7 +136,8 @@ float ParticleSystem::calculate_time_step() const {
 	float
 		acceleration2_max = 0.0f,
 		dt_cv = std::numeric_limits<float>::max();
-
+	
+	#pragma omp parallel for
 	for (int i = 0; i < num_of_fluid_particles; ++i) {
 		const Particle& Pi = particles[i];
 		const auto indices_dists = radius_search(kd_tree, Pi.position, case_def.h);
@@ -169,7 +170,8 @@ float ParticleSystem::calculate_time_step() const {
 }
 
 void ParticleSystem::compute_derivatives() {
-	for (int i = 0, size = particles.size(); i < size; ++i) {
+	#pragma omp parallel for
+	for (int i = 0; size_t(i) < particles.size(); ++i) {
 		const Particle& Pi = particles[i];
 
 		// Get neighbors of Pi
@@ -235,6 +237,7 @@ void ParticleSystem::integrate_verlet(const float dt) {
 
 	if (verlet_step % corrective_step_interval) {
 		// Fluid particles
+		#pragma omp parallel for
 		for (int i = 0; i < num_of_fluid_particles; ++i) {
 			auto &Pi = particles[i];
 			auto &Pi_next = next_particles[i];
@@ -245,10 +248,12 @@ void ParticleSystem::integrate_verlet(const float dt) {
 		}
 
 		// Boundary particles
-		for (int i = num_of_fluid_particles, size = particles.size(); i < size; ++i)
+		#pragma omp parallel for
+		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i)
 			next_particles[i].density = particles[i].density + dt * density_derivative[i];
 	}
 	else {
+		#pragma omp parallel for
 		for (int i = 0; i < num_of_fluid_particles; ++i) {
 			auto
 				&Pi = particles[i],
@@ -259,7 +264,8 @@ void ParticleSystem::integrate_verlet(const float dt) {
 			Pi_next.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
 			Pi_next.density = Pi_prev.density + 2 * dt * density_derivative[i];
 		}
-		for (int i = num_of_fluid_particles, size = particles.size(); i < size; ++i)
+		#pragma omp parallel for
+		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i)
 			next_particles[i].density = prev_particles[i].density + 2 * dt * density_derivative[i];
 	}
 
