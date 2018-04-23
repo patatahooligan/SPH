@@ -53,7 +53,8 @@ Vec3f cubic_spline_gradient(const Vec3f &r, const float h) {
 
 
 void ParticleSystem::generate_particles() {
-	auto fillbox = [](const CaseDef::Box &box, ParticleContainer &particles, const float density) {
+	auto fillbox = [&](const CaseDef::Box &box) {
+		const float& density = case_def.particles.density;
 		int
 			x_increments = int(box.size.x / density) + 1,
 			y_increments = int(box.size.y / density) + 1,
@@ -68,6 +69,7 @@ void ParticleSystem::generate_particles() {
 				for (int z = 0; z < z_increments; ++z) {
 					Particle p;
 					p.position = box.origin + Vec3f{ x * density, y * density, z * density };
+					p.density = case_def.rhop0;
 					particles.emplace_back(p);
 				}
 			}
@@ -75,7 +77,7 @@ void ParticleSystem::generate_particles() {
 	};
 
 	for (const auto& box : case_def.fluid_boxes)
-		fillbox(box, particles, case_def.particles.density);
+		fillbox(box);
 
 	// Storing fluid and bound particles in the same container greatly simplifies the iterative
 	// algorithms. For the parts that apply specifically to one type of particle, we need to keep
@@ -83,7 +85,7 @@ void ParticleSystem::generate_particles() {
 	num_of_fluid_particles = particles.size();
 
 	for (const auto& box : case_def.bound_boxes)
-		fillbox(box, particles, case_def.particles.density);
+		fillbox(box);
 }
 
 float ParticleSystem::calculate_time_step() const {
@@ -180,9 +182,10 @@ void ParticleSystem::compute_derivatives() {
 				pressure_sum = Pj_pressure + Pi_pressure,
 				density_product = Pi.density * Pj.density;
 
-			acceleration[i] -=
-				case_def.particles.mass * ((pressure_sum / density_product) + pi_ij) *
-				smoothing_kernel_derivative(r_ij, case_def.h);
+			if (i < num_of_fluid_particles)
+				acceleration[i] -=
+					case_def.particles.mass * ((pressure_sum / density_product) + pi_ij) *
+					smoothing_kernel_derivative(r_ij, case_def.h);
 		}
 	}
 }
