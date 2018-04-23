@@ -32,6 +32,8 @@ CaseDef get_case_from_XML(const char * xml_filename) {
 
 	get_constants_from_XML(root, case_def);
 
+	case_def.particles.mass = case_def.rhop0 * std::pow(case_def.particles.density, 3);
+
 	return case_def;
 }
 
@@ -95,7 +97,6 @@ void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	assert(definition);
 
 	case_def.particles.density = definition->FloatAttribute("dp");
-	case_def.particles.mass = 1.0f / std::pow(case_def.particles.density, 3);
 
 	// Minimum and maximum points of the domain, not the fluid
 	auto pointmin = definition->FirstChildElement("pointmin");
