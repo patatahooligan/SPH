@@ -48,6 +48,9 @@
     <ClInclude Include="XMLReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="searchgrid.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

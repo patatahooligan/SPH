@@ -167,6 +167,7 @@
     <ClInclude Include="physics.h" />
     <ClInclude Include="render.h" />
     <ClInclude Include="savestate.h" />
+    <ClInclude Include="searchgrid.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="vec3f.h" />

@@ -50,6 +50,21 @@ class Vec3f {
 			return *this;
 		}
 
+		const float& operator[](size_t i) const {
+			switch (i) {
+			case 0:
+				return x;
+			case 1:
+				return y;
+			case 2:
+				return z;
+			}
+		}
+
+		float& operator[](size_t i) {
+			return const_cast<float&>(const_cast<const Vec3f&>(*this)[i]);
+		}
+
 		float dot_product(const Vec3f &other) const {
 			return x*other.x + y * other.y + z * other.z;
 		}
