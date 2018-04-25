@@ -17,14 +17,19 @@ struct ParticleProxy {
 };
 
 class SearchGrid {
+	public:
+		using iter = ParticleContainer::iterator;
+		using cell_indices_container = std::vector<std::pair<int, int>>;
+
 	private:
 		std::vector<ParticleProxy> proxies;
 		const Vec3f point_min, point_max, size;
 		const float h;
 		const std::array<int, 3> grid_cells;
+		cell_indices_container cell_indices;
 
 		std::array<int, 3> determine_number_of_cells(
-			const Vec3f &size, const float h)
+			const Vec3f &size, const float h) const
 		{
 			const Vec3f size = point_max - point_min;
 			assert(size.x >= 0.0f, size.y >= 0.0f, z >= 0.0f);
@@ -36,7 +41,7 @@ class SearchGrid {
 			};
 		}
 
-		int determine_cell(const Vec3f &position) {
+		std::array<int, 3> determine_cell(const Vec3f &position) const {
 			std::array<int, 3> cell;
 			const Vec3f relative_position = position - size;
 
@@ -48,18 +53,16 @@ class SearchGrid {
 				cell[i] = std::min(cell[i], grid_cells[i] - 1);
 			}
 
+			return cell;
+		}
+
+		int cell_coordinates_to_index(const std::array<int, 3> &cell) const {
+			// Map cell's 3D position to a 1D index
 			return
 				cell[0] +
 				cell[1] * grid_cells[0] +
 				cell[2] * grid_cells[0] * grid_cells[1];
 		}
-
-	public:
-		using iter = ParticleContainer::iterator;
-
-		SearchGrid(const Vec3f &point_min, const Vec3f &point_max, const float h) :
-			point_min(point_min), point_max(point_max), size (point_max - point_min), h(h),
-			grid_cells(determine_number_of_cells(size, h)) {}
 
 		void determine_order(iter begin, iter end) {
 			int size = std::distance(begin, end);
@@ -67,19 +70,40 @@ class SearchGrid {
 
 			#pragma omp parallel for
 			for (int i = 0; i < size; ++i)
-				proxies[i] = ParticleProxy(i, determine_cell(begin[i].position));
+				proxies[i] = ParticleProxy(
+					i,
+					cell_coordinates_to_index(determine_cell(begin[i].position)));
 
-			// Get the proxies in proper order
+			// Sort only the proxies, not the actual Particles
 			std::sort(begin, end);
 		}
 
-		void sort_containers(std::array<iter, 3> begin_it) {
-			// Sort the containers in place
-			// Precondition: determine_order() has been called to sort proxies
-			// proxies[i] holds the index of the item that needs to be in i-th place
+		void determine_cell_indices() {
+			auto num_of_cells = grid_cells[0] * grid_cells[1] * grid_cells[2];
+			cell_indices.resize(num_of_cells);
 
-			// IMPORTANT: this destroys the proxies vector including the cell information
-			//            indices that point to the cells must have been created before this call
+			cell_indices.front().first = 0;
+			size_t proxy = 0;
+			for (int cell = 0; cell < num_of_cells; ++cell) {
+				cell_indices[cell].first = 0;
+				while (proxy < proxies.size() && proxies[proxy].cell == cell) {
+					++proxy;
+				}
+				cell_indices[cell].second = proxy;
+			}
+		}
+
+	public:
+		SearchGrid(const Vec3f &point_min, const Vec3f &point_max, const float h) :
+			point_min(point_min), point_max(point_max), size (point_max - point_min), h(h),
+			grid_cells(determine_number_of_cells(size, h)) {}
+
+		void sort_containers(std::array<iter, 3> begin_it, iter end) {
+			// Sort the containers in place based on [beg_it[0], end)
+
+			determine_order(begin_it[0], end);
+
+			determine_cell_indices();
 
 			for (int i = 0; size_t(i) < proxies.size(); ++i) {
 				// Keep a copy of [i]
@@ -116,6 +140,31 @@ class SearchGrid {
 					(begin_it[j])[current] = current_vec[j];
 
 				proxies[current].index = current;
+			}
+		}
+
+		cell_indices_container get_neighbor_indices(const Vec3f position) const {
+			cell_indices_container neighbor_indices;
+
+			const auto target_cell = determine_cell(position);
+			const auto
+				&x = target_cell[0],
+				&y = target_cell[1],
+				&z = target_cell[2];
+
+			for (int curr_x = x - 1; curr_x <= x + 1; ++curr_x) {
+				for (int curr_y = y - 1; curr_y <= y + 1; ++curr_y) {
+					for (int curr_z = z - 1; curr_z <= z + 1; ++curr_z) {
+						// If current cell is valid, add it to neighbors
+						if (
+							curr_x >= 0 && curr_x <= grid_cells[0] &&
+							curr_y >= 0 && curr_y <= grid_cells[1] &&
+							curr_z >= 0 && curr_z <= grid_cells[1]
+							)
+							neighbor_indices.emplace_back(
+								cell_indices[cell_coordinates_to_index({ curr_x, curr_y, curr_z })]);
+					}
+				}
 			}
 		}
 };
