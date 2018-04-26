@@ -8,9 +8,9 @@ class Vec3f {
 	public:
 		float x, y, z;
 
-		Vec3f(float x = 0.0f, float y = 0.0f, float z = 0.0f) : x(x), y(y), z(z) {}
+		constexpr Vec3f(float x = 0.0f, float y = 0.0f, float z = 0.0f) : x(x), y(y), z(z) {}
 
-		Vec3f(const Vec3f &other) = default;
+		constexpr Vec3f(const Vec3f &other) = default;
 
 		Vec3f& operator=(const Vec3f &other) = default;
 

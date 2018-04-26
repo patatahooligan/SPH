@@ -7,6 +7,8 @@
 
 struct ParticleProxy {
 	int index, cell;
+
+	ParticleProxy() = default;
 	ParticleProxy(size_t index, size_t cell) :
 		index(index),
 		cell(cell) {}
@@ -31,8 +33,7 @@ class SearchGrid {
 		std::array<int, 3> determine_number_of_cells(
 			const Vec3f &size, const float h) const
 		{
-			const Vec3f size = point_max - point_min;
-			assert(size.x >= 0.0f, size.y >= 0.0f, z >= 0.0f);
+			assert(size.x >= 0.0f && size.y >= 0.0f && size.z >= 0.0f);
 			
 			return {
 				int(size.x / h) + 1,
@@ -75,17 +76,16 @@ class SearchGrid {
 					cell_coordinates_to_index(determine_cell(begin[i].position)));
 
 			// Sort only the proxies, not the actual Particles
-			std::sort(begin, end);
+			std::sort(proxies.begin(), proxies.end());
 		}
 
 		void determine_cell_indices() {
 			auto num_of_cells = grid_cells[0] * grid_cells[1] * grid_cells[2];
 			cell_indices.resize(num_of_cells);
 
-			cell_indices.front().first = 0;
 			size_t proxy = 0;
 			for (int cell = 0; cell < num_of_cells; ++cell) {
-				cell_indices[cell].first = 0;
+				cell_indices[cell].first = proxy;
 				while (proxy < proxies.size() && proxies[proxy].cell == cell) {
 					++proxy;
 				}
@@ -127,7 +127,7 @@ class SearchGrid {
 
 					// Now that [current] is occupied by the correct value,
 					// make proxies[current] point to it
-					proxies[current].index = proxies[next].index;
+					proxies[current].index = current;
 
 					// We've left a hole in [next], so that's the next index
 					// we should handle
@@ -152,19 +152,15 @@ class SearchGrid {
 				&y = target_cell[1],
 				&z = target_cell[2];
 
-			for (int curr_x = x - 1; curr_x <= x + 1; ++curr_x) {
-				for (int curr_y = y - 1; curr_y <= y + 1; ++curr_y) {
-					for (int curr_z = z - 1; curr_z <= z + 1; ++curr_z) {
-						// If current cell is valid, add it to neighbors
-						if (
-							curr_x >= 0 && curr_x <= grid_cells[0] &&
-							curr_y >= 0 && curr_y <= grid_cells[1] &&
-							curr_z >= 0 && curr_z <= grid_cells[1]
-							)
-							neighbor_indices.emplace_back(
-								cell_indices[cell_coordinates_to_index({ curr_x, curr_y, curr_z })]);
+			for (int curr_x = std::max(x - 1, 0); curr_x <= std::min(x + 1, grid_cells[0]); ++curr_x) {
+				for (int curr_y = std::max(y - 1, 0); curr_y <= std::min(y + 1, grid_cells[1]); ++curr_y) {
+					for (int curr_z = std::max(z - 1, 0); curr_z <= std::min(z + 1, grid_cells[1]); ++curr_z) {
+						// If current cell is valid (potentially empty), add it to neighbors
+						neighbor_indices.emplace_back(
+							cell_indices[cell_coordinates_to_index({ curr_x, curr_y, curr_z })]);
 					}
 				}
 			}
+			return neighbor_indices;
 		}
 };
