@@ -24,7 +24,7 @@ namespace gridsearchtest {
 				point_min{ dimension_min, dimension_min, dimension_min },
 				point_max{ dimension_max, dimension_max, dimension_max };
 			constexpr size_t
-				num_of_particles = 500;
+				num_of_particles = 10000;
 
 			std::random_device rd;
 			std::mt19937 gen(rd());
@@ -42,6 +42,9 @@ namespace gridsearchtest {
 					particle_container.emplace_back(p);
 			}
 
+			// Keep a copy to test whether the output is a permutation of the input
+			auto unsorted = particles[0];
+
 			SearchGrid grid{ point_min, point_max, h };
 
 			std::array<SearchGrid::iter, 3> begin_it{
@@ -49,6 +52,11 @@ namespace gridsearchtest {
 				particles[1].begin(),
 				particles[2].begin() };
 			grid.sort_containers(begin_it, particles[0].end());
+
+			Assert::IsTrue(std::is_permutation(unsorted.begin(), unsorted.end(), particles[0].begin(),
+				[](const Particle &lhs, const Particle &rhs) {
+					return lhs.position == rhs.position;
+				}));
 
 			size_t neighbors = 0;
 			for (int i = 0; i < num_of_particles; ++i) {
@@ -69,8 +77,6 @@ namespace gridsearchtest {
 					}
 				}
 			}
-
-			std::cout << "Number of neighbors found: " << neighbors << '\n';
 		}
 	};
 }
