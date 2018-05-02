@@ -8,6 +8,7 @@
 #include "particle.h"
 #include "Vec3f.h"
 #include "kdtree.h"
+#include "searchgrid.h"
 
 using kernel_function_t = float(const Vec3f&, const float);
 using kernel_function_derivative_t = Vec3f(const Vec3f&, const float);
@@ -25,9 +26,8 @@ class ParticleSystem {
 			particles, prev_particles, next_particles;
 		std::unique_ptr<Vec3f[]> acceleration;
 		std::unique_ptr<float[]> density_derivative;
-		ParticleAdaptor kd_tree_adaptor;
-		ParticleKDTree kd_tree;
 		const CaseDef case_def;
+		SearchGrid search_grid_fluid, search_grid_boundary;
 		int verlet_step;
 
 		kernel_function_t &smoothing_kernel;
@@ -44,6 +44,8 @@ class ParticleSystem {
 		// Integrate forward using verlet
 		void integrate_verlet(float dt);
 
+		SearchGrid::cell_indices_container get_all_neighbors(Vec3f position) const;
+
 	public:
 		ParticleSystem(
 			const CaseDef &case_def,
@@ -51,9 +53,9 @@ class ParticleSystem {
 			kernel_function_derivative_t& smoothing_kernel_derivative
 		) :
 			simulation_time(0.0f),
-			kd_tree_adaptor(particles),
-			kd_tree(3, kd_tree_adaptor),
 			case_def(case_def),
+			search_grid_fluid(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
+			search_grid_boundary(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
 			smoothing_kernel(smoothing_kernel),
 			smoothing_kernel_derivative(smoothing_kernel_derivative),
 			verlet_step(0)

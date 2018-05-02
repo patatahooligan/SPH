@@ -50,6 +50,9 @@ class Vec3f {
 			return *this;
 		}
 
+		// Calling this with out of range i is undefined behavior
+		// Ignore the warning that not all control paths return a value
+		#pragma warning(suppress: 4715)
 		const float& operator[](size_t i) const {
 			switch (i) {
 			case 0:

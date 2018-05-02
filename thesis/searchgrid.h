@@ -143,9 +143,7 @@ class SearchGrid {
 			}
 		}
 
-		cell_indices_container get_neighbor_indices(const Vec3f position) const {
-			cell_indices_container neighbor_indices;
-
+		void get_neighbor_indices(const Vec3f &position, cell_indices_container container) const {
 			const auto target_cell = determine_cell(position);
 			const auto
 				&x = target_cell[0],
@@ -154,13 +152,19 @@ class SearchGrid {
 
 			for (int curr_x = std::max(x - 1, 0); curr_x <= std::min(x + 1, grid_cells[0]); ++curr_x) {
 				for (int curr_y = std::max(y - 1, 0); curr_y <= std::min(y + 1, grid_cells[1]); ++curr_y) {
-					for (int curr_z = std::max(z - 1, 0); curr_z <= std::min(z + 1, grid_cells[1]); ++curr_z) {
+					for (int curr_z = std::max(z - 1, 0); curr_z <= std::min(z + 1, grid_cells[2]); ++curr_z) {
 						// If current cell is valid (potentially empty), add it to neighbors
-						neighbor_indices.emplace_back(
+						container.push_back(
 							cell_indices[cell_coordinates_to_index({ curr_x, curr_y, curr_z })]);
 					}
 				}
 			}
+		}
+
+		cell_indices_container get_neighbor_indices(const Vec3f &position) const {
+			cell_indices_container neighbor_indices;
+
+			get_neighbor_indices(position, neighbor_indices);
 			return neighbor_indices;
 		}
 };

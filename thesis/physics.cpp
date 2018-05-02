@@ -11,13 +11,6 @@
 #include "constants.h"
 #include "vec3f.h"
 
-auto radius_search(const ParticleKDTree &kd_tree, const Vec3f &center, const float radius) {
-	const float position[3] = { center.x, center.y, center.z };
-	std::vector<std::pair<size_t, float>> indices_dists;
-	kd_tree.radiusSearch(
-		position, std::pow(2 * radius, 2), indices_dists, { 32, 0.0f, false });
-	return indices_dists;
-}
 
 float cubic_spline(const Vec3f &r, const float h) {
 	assert(h >= 0.0f);
@@ -100,21 +93,24 @@ float ParticleSystem::calculate_time_step() const {
 	#pragma omp parallel for
 	for (int i = 0; i < num_of_fluid_particles; ++i) {
 		const Particle& Pi = particles[i];
-		const auto indices_dists = radius_search(kd_tree, Pi.position, case_def.h);
+
+		const auto index_ranges = get_all_neighbors(Pi.position);
 
 		float sigma = 0.0f;
-		for (const auto &index_distance : indices_dists) {
-			const Particle& Pj = particles[index_distance.first];
-			const Vec3f
-				v_ij = Pj.velocity - Pi.velocity,
-				r_ij = Pj.position - Pi.position;
+		for (const auto index_pair : index_ranges) {
+			for (int j = index_pair.first; j < index_pair.second; ++j) {
+				const Particle& Pj = particles[j];
+				const Vec3f
+					v_ij = Pj.velocity - Pi.velocity,
+					r_ij = Pj.position - Pi.position;
 
-			const float
-				r2 = r_ij.length_squared();
+				const float
+					r2 = r_ij.length_squared();
 
-			sigma = std::max(
-				sigma,
-				std::abs((case_def.h * dot_product(v_ij, r_ij)) / (r2 + 0.01f * h * h)));
+				sigma = std::max(
+					sigma,
+					std::abs((case_def.h * dot_product(v_ij, r_ij)) / (r2 + 0.01f * h * h)));
+			}
 		}
 
 		acceleration2_max = std::max(acceleration2_max, acceleration[i].length_squared());
@@ -135,7 +131,7 @@ void ParticleSystem::compute_derivatives() {
 		const Particle& Pi = particles[i];
 
 		// Get neighbors of Pi
-		const auto indices_dists = radius_search(kd_tree, Pi.position, case_def.h);
+		const auto index_ranges = get_all_neighbors(Pi.position);
 
 		constexpr int gamma = 7;
 		const float
@@ -146,26 +142,27 @@ void ParticleSystem::compute_derivatives() {
 			acceleration[i] = case_def.gravity;
 		density_derivative[i] = 0.0f;
 
-		for (const auto &index_distance: indices_dists) {
-			const Particle& Pj = particles[index_distance.first];
+		for (const auto index_pair : index_ranges) {
+			for (int j = index_pair.first; j < index_pair.second; ++j) {
+				const Particle& Pj = particles[j];
 
-			const Vec3f
-				r_ij = Pi.position - Pj.position,
-				v_ij = Pi.velocity - Pj.velocity,
-				kernel_derivative_rij = smoothing_kernel_derivative(r_ij, case_def.h);
+				const Vec3f
+					r_ij = Pi.position - Pj.position,
+					v_ij = Pi.velocity - Pj.velocity,
+					kernel_derivative_rij = smoothing_kernel_derivative(r_ij, case_def.h);
 
-			density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_derivative_rij);
+				density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_derivative_rij);
 
-			// If this is a boundary particle skip the acceleration part
-			if (index_distance.first >= size_t(num_of_fluid_particles))
-				continue;
+				// If this is a boundary particle skip the acceleration part
+				if (i >= num_of_fluid_particles)
+					continue;
 
-			const float
-				&h = case_def.h,
-				&r2 = index_distance.second,                   // Squared distance
-				Pj_pressure = beta * (std::pow(Pj.density / case_def.rhop0, gamma) - 1),
-				vel_pos_dot_product = dot_product(v_ij, r_ij),
-				pi_ij = [&]() {
+				const float
+					&h = case_def.h,
+					r2 = r_ij.length_squared(),                           // Squared distance
+					Pj_pressure = beta * (std::pow(Pj.density / case_def.rhop0, gamma) - 1),
+					vel_pos_dot_product = dot_product(v_ij, r_ij),
+					pi_ij = [&]() {
 					if (vel_pos_dot_product > 0.0f) {
 						constexpr float a = 0.01f;
 						const float
@@ -178,14 +175,15 @@ void ParticleSystem::compute_derivatives() {
 						return 0.0f;
 				}();
 
-			const float
-				pressure_sum = Pj_pressure + Pi_pressure,
-				density_product = Pi.density * Pj.density;
+				const float
+					pressure_sum = Pj_pressure + Pi_pressure,
+					density_product = Pi.density * Pj.density;
 
-			if (i < num_of_fluid_particles)
-				acceleration[i] -=
+				if (i < num_of_fluid_particles)
+					acceleration[i] -=
 					case_def.particles.mass * ((pressure_sum / density_product) + pi_ij) *
 					smoothing_kernel_derivative(r_ij, case_def.h);
+			}
 		}
 	}
 }
@@ -232,8 +230,31 @@ void ParticleSystem::integrate_verlet(const float dt) {
 	++verlet_step;
 }
 
+SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(Vec3f position) const {
+	SearchGrid::cell_indices_container neighbors;
+	neighbors.reserve(54);
+
+	search_grid_fluid.get_neighbor_indices(position, neighbors);
+	search_grid_boundary.get_neighbor_indices(position, neighbors);
+
+	return neighbors;
+}
+
 void ParticleSystem::simulation_step() {
-	kd_tree.buildIndex();
+	// Sort fluid and boundary particles separately
+	search_grid_fluid.sort_containers(
+		std::array<SearchGrid::iter, 3>{particles.begin(), prev_particles.begin(), next_particles.begin()},
+		particles.begin() + num_of_fluid_particles
+	);
+
+	search_grid_boundary.sort_containers(
+		std::array<SearchGrid::iter, 3>{
+			particles.begin() + num_of_fluid_particles,
+			prev_particles.begin() + num_of_fluid_particles,
+			next_particles.begin() + num_of_fluid_particles
+		},
+		particles.end()
+	);
 
 	const float time_step = calculate_time_step();
 	simulation_time += time_step;
