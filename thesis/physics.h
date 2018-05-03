@@ -7,7 +7,6 @@
 #include "constants.h"
 #include "particle.h"
 #include "Vec3f.h"
-#include "kdtree.h"
 #include "searchgrid.h"
 
 using kernel_function_t = float(const Vec3f&, const float);

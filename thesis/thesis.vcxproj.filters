@@ -39,9 +39,6 @@
     <ClInclude Include="particle.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="kdtree.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="savestate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
