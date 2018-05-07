@@ -30,7 +30,7 @@ class SearchGrid {
 		const std::array<int, 3> grid_cells;
 		cell_indices_container cell_indices;
 
-		std::array<int, 3> determine_number_of_cells(
+		std::array<int, 3> determine_number_of_cells (
 			const Vec3f &size, const float h) const
 		{
 			assert(size.x >= 0.0f && size.y >= 0.0f && size.z >= 0.0f);
@@ -150,9 +150,9 @@ class SearchGrid {
 				&y = target_cell[1],
 				&z = target_cell[2];
 
-			for (int curr_x = std::max(x - 1, 0); curr_x <= std::min(x + 1, grid_cells[0]); ++curr_x) {
+			for (int curr_z = std::max(z - 1, 0); curr_z <= std::min(z + 1, grid_cells[2]); ++curr_z) {
 				for (int curr_y = std::max(y - 1, 0); curr_y <= std::min(y + 1, grid_cells[1]); ++curr_y) {
-					for (int curr_z = std::max(z - 1, 0); curr_z <= std::min(z + 1, grid_cells[2]); ++curr_z) {
+					for (int curr_x = std::max(x - 1, 0); curr_x <= std::min(x + 1, grid_cells[0]); ++curr_x) {
 						// If current cell is valid (potentially empty), add it to neighbors
 						container.push_back(
 							cell_indices[cell_coordinates_to_index({ curr_x, curr_y, curr_z })]);
