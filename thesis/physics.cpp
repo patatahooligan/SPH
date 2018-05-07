@@ -230,12 +230,19 @@ void ParticleSystem::integrate_verlet(const float dt) {
 	++verlet_step;
 }
 
-SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(Vec3f position) const {
+SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(const Vec3f &position) const {
 	SearchGrid::cell_indices_container neighbors;
 	neighbors.reserve(54);
 
 	search_grid_fluid.get_neighbor_indices(position, neighbors);
+	const auto num_of_fluid_pairs = neighbors.size();
 	search_grid_boundary.get_neighbor_indices(position, neighbors);
+
+	// Apply offset to boundary particles
+	for (auto i = num_of_fluid_pairs; i < neighbors.size(); ++i) {
+		neighbors[i].first += num_of_fluid_particles;
+		neighbors[i].second += num_of_fluid_particles;
+	}
 
 	return neighbors;
 }

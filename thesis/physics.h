@@ -43,7 +43,7 @@ class ParticleSystem {
 		// Integrate forward using verlet
 		void integrate_verlet(float dt);
 
-		SearchGrid::cell_indices_container get_all_neighbors(Vec3f position) const;
+		SearchGrid::cell_indices_container get_all_neighbors(const Vec3f &position) const;
 
 	public:
 		ParticleSystem(

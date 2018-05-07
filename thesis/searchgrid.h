@@ -143,7 +143,7 @@ class SearchGrid {
 			}
 		}
 
-		void get_neighbor_indices(const Vec3f &position, cell_indices_container container) const {
+		void get_neighbor_indices(const Vec3f &position, cell_indices_container &container) const {
 			const auto target_cell = determine_cell(position);
 			const auto
 				&x = target_cell[0],
