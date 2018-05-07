@@ -8,12 +8,12 @@
 #include "constants.h"
 
 
-constexpr double particle_display_size = 0.01;
-constexpr double fov = 60.0;
-
+constexpr double particle_display_size = 0.01f;
 
 void render_init(int *argc, char **argv,
-	GlutCallbackType* const render_function, GlutCallbackType* const idle_callback) {
+	GlutCallbackType* const render_function, GlutCallbackType* const idle_callback,
+	const Vec3f &point_min, const Vec3f &point_max, const Vec3f &up_vector)
+{
 	// Initialize glut and create the window
 	glutInit(argc, argv);
 	glutInitWindowPosition(-1, -1);
@@ -33,35 +33,49 @@ void render_init(int *argc, char **argv,
 	glutKeyboardFunc(keyboardfunc);
 	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE,GLUT_ACTION_CONTINUE_EXECUTION);
 
-	// Define the projection of the world onto the camera
-	// Arguments are fov(degrees), aspect ratio, near clipping plane, far clipping plane.
-	// To ensure that no polygon is clipped, the clipping planes extend outside of the walls
-	// of the container by a bit more than the particle display size.
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(fov, 1.0, offsetz - 1.1 * particle_display_size, offsetz + size + 1.1 * particle_display_size);
-
-	// Define the camera position and orientation
-	// The arguments are as follows
-	// x, y, z of camera position
-	// x, y, z of point the camera is lookit towards
-	// x, y, z of camera's up vector
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(size / 2, size / 2, -offsetz, size / 2, size / 2, size / 2, 0.0, 1.0, 0.0);
+	set_camera(point_min, point_max, up_vector);
 }
 
-void render_particles(const ParticleContainer &particles) {
+void set_camera(const Vec3f &point_min, const Vec3f &point_max, const Vec3f &up_vector) {
+	const Vec3f
+		center = (point_max + point_min) / 2,
+		size = point_max - point_min,
+		camera_relative_position = -dot_product(size, { 1.0f, 0.0f, 0.0f }),
+		camera_position = center - camera_relative_position;
+
+	// Use an offset such that a particle on the edge of the simulation space is not
+	// clipped off
+	constexpr float
+		fov = 90.0f,
+		offset = (float(particle_display_size) / 2.0f) * (1.0f + std::numeric_limits<float>::round_error());
+
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(fov, 1.0f, camera_relative_position.length() / 2.0f - offset, 
+		camera_relative_position.length() * 1.5f + offset);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(
+		camera_position.x, camera_position.y, camera_position.z,
+		center.x, center.y, center.z,
+		up_vector.x, up_vector.y, up_vector.z
+	);
+}
+
+void render_particles(
+	const ParticleContainer::const_iterator begin, const ParticleContainer::const_iterator end)
+{
 	// Draws the particles of ps as small spheres.
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
-	for (auto &particle : particles) {
+	for (auto particle_iterator = begin; particle_iterator != end; ++particle_iterator) {
 		glPushMatrix();
 		glTranslatef(
-			particle.position.x,
-			particle.position.y,
-			particle.position.z);
+			particle_iterator->position.x,
+			particle_iterator->position.y,
+			particle_iterator->position.z);
 		glutSolidSphere(particle_display_size, 10, 10);
 		glPopMatrix();
 	}

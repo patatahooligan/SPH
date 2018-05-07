@@ -17,7 +17,8 @@ static ParticleSystem *ps_pointer = nullptr;
 static SaveState *save_state_pointer = nullptr;
 
 void render_func() {
-	render_particles(ps_pointer->get_particlearray());
+	const auto particles_begin = ps_pointer->get_particlearray().begin();
+	render_particles(particles_begin, particles_begin + ps_pointer->get_num_of_fluid_particles());
 }
 
 void idle_func() {
@@ -34,20 +35,18 @@ void idle_func() {
 int main(int argc, char **argv) {
 	omp_set_num_threads(5);
 
-	render_init(&argc, argv, render_func, idle_func);
-
-	// Because glut might parse some of the arguments, we have to parse our own
-	// after render_init
-
 	// TODO: full command line argument parsing
 	// For now 1st argument is case XML, 2nd is output file
-
-	ParticleSystem ps(get_case_from_XML(argv[1]), cubic_spline, cubic_spline_gradient);
+	const auto case_def = get_case_from_XML(argv[1]);
+	ParticleSystem ps(case_def, cubic_spline, cubic_spline_gradient);
 	ps_pointer = &ps;
+
+	render_init(&argc, argv, render_func, idle_func,
+		case_def.particles.point_min, case_def.particles.point_max, -case_def.gravity);
 
 	boost::optional<SaveState> save_state;
 	if (argc == 3) {
-		save_state.emplace(argv[2], ps.num_of_particles());
+		save_state.emplace(argv[2], ps.get_num_of_particles());
 		save_state_pointer = save_state.get_ptr();
 	}
 

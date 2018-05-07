@@ -93,6 +93,10 @@ inline Vec3f operator-(Vec3f v1, const Vec3f &v2) {
 	return v1 -= v2;
 }
 
+inline Vec3f operator-(const Vec3f &v) {
+	return Vec3f{ 0.0f, 0.0f, 0.0f } - v;
+}
+
 inline Vec3f operator*(Vec3f v, const float c) {
 	return v *= c;
 }
