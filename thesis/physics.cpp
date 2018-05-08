@@ -199,7 +199,8 @@ void ParticleSystem::integrate_verlet(const float dt) {
 	// TODO: consider making this variable
 	constexpr int corrective_step_interval = 50;
 
-	if (verlet_step % corrective_step_interval) {
+	if (verlet_step % corrective_step_interval == 0) {
+		// Corrective step
 		// Fluid particles
 		#pragma omp parallel for
 		for (int i = 0; i < num_of_fluid_particles; ++i) {
@@ -217,6 +218,7 @@ void ParticleSystem::integrate_verlet(const float dt) {
 			next_particles[i].density = particles[i].density + dt * density_derivative[i];
 	}
 	else {
+		// Predictor step
 		#pragma omp parallel for
 		for (int i = 0; i < num_of_fluid_particles; ++i) {
 			auto
