@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 	// TODO: full command line argument parsing
 	// For now 1st argument is case XML, 2nd is output file
 	const auto case_def = get_case_from_XML(argv[1]);
-	ParticleSystem ps(case_def, cubic_spline, cubic_spline_gradient);
+	ParticleSystem ps(case_def);
 	ps_pointer = &ps;
 
 	render_init(&argc, argv, render_func, idle_func,

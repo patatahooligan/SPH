@@ -11,12 +11,12 @@
 #include "constants.h"
 #include "vec3f.h"
 
+CubicSpline::CubicSpline(const float h):
+	h(h), a(1.0f / (pi * std::pow(h, 3))) {}
 
-float cubic_spline(const Vec3f &r, const float h) {
-	assert(h >= 0.0f);
+float CubicSpline::operator()(const Vec3f &r) const {
 	const float
-		q = std::sqrt(r.length_squared()) / h,
-		a = 1.0f / (pi * std::pow(h, 3));
+		q = r.length() / h;
 
 	if (q < 1.0f)
 		return a * (1 - (3.0f / 2.0f) * (q*q) + (3.0f / 4.0f) * std::pow(q, 3));
@@ -26,17 +26,15 @@ float cubic_spline(const Vec3f &r, const float h) {
 		return 0.0f;
 }
 
-Vec3f cubic_spline_gradient(const Vec3f &r, const float h) {
-	assert(h >= 0.0f);
+Vec3f CubicSpline::gradient(const Vec3f &r) const {
 	const float
 		q = r.length() / h;
 
 	// It is easier and faster to handle these edge cases separately
-	if (q == 0 || q > 2.0f)
+	if (q == 0.0f || q > 2.0f)
 		return { 0.0f, 0.0f, 0.0f };
 
 	const float
-		a = 1.0f / (pi * std::pow(h, 3)),
 		dq = 1 / (h * h * q),
 		dw = [&]() {
 		if (q < 1.0f)
@@ -155,7 +153,7 @@ void ParticleSystem::compute_derivatives() {
 				const Vec3f
 					r_ij = Pi.position - Pj.position,
 					v_ij = Pi.velocity - Pj.velocity,
-					kernel_derivative_rij = smoothing_kernel_derivative(r_ij, case_def.h);
+					kernel_derivative_rij = cubic_spline.gradient(r_ij);
 
 				density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_derivative_rij);
 
@@ -188,7 +186,7 @@ void ParticleSystem::compute_derivatives() {
 				if (i < num_of_fluid_particles)
 					acceleration[i] -=
 					case_def.particles.mass * ((pressure_sum / density_product) + pi_ij) *
-					smoothing_kernel_derivative(r_ij, case_def.h);
+					cubic_spline.gradient(r_ij);
 			}
 		}
 	}

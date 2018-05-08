@@ -9,11 +9,17 @@
 #include "Vec3f.h"
 #include "searchgrid.h"
 
-using kernel_function_t = float(const Vec3f&, const float);
-using kernel_function_derivative_t = Vec3f(const Vec3f&, const float);
 
-float cubic_spline(const Vec3f &r, const float h);
-Vec3f cubic_spline_gradient(const Vec3f &r, const float h);
+class CubicSpline {
+	private:
+		const float h, a;
+
+	public:
+		CubicSpline(const float h);
+
+		float operator()(const Vec3f &r) const;
+		Vec3f gradient(const Vec3f &r) const;
+};
 
 class ParticleSystem {
 	// Holds the particles and handles the physics simulation
@@ -27,10 +33,8 @@ class ParticleSystem {
 		std::unique_ptr<float[]> density_derivative;
 		const CaseDef case_def;
 		SearchGrid search_grid_fluid, search_grid_boundary;
+		CubicSpline cubic_spline;
 		int verlet_step;
-
-		kernel_function_t &smoothing_kernel;
-		kernel_function_derivative_t &smoothing_kernel_derivative;
 
 		// Generate particles for the geomtery specified in the case_def member
 		void generate_particles();
@@ -46,17 +50,12 @@ class ParticleSystem {
 		SearchGrid::cell_indices_container get_all_neighbors(const Vec3f &position) const;
 
 	public:
-		ParticleSystem(
-			const CaseDef &case_def,
-			kernel_function_t& smoothing_kernel,
-			kernel_function_derivative_t& smoothing_kernel_derivative
-		) :
+		ParticleSystem(const CaseDef &case_def) :
 			simulation_time(0.0f),
 			case_def(case_def),
 			search_grid_fluid(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
 			search_grid_boundary(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
-			smoothing_kernel(smoothing_kernel),
-			smoothing_kernel_derivative(smoothing_kernel_derivative),
+			cubic_spline(CubicSpline(case_def.h)),
 			verlet_step(0)
 		{
 			generate_particles();
