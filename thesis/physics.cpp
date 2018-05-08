@@ -29,9 +29,15 @@ float cubic_spline(const Vec3f &r, const float h) {
 Vec3f cubic_spline_gradient(const Vec3f &r, const float h) {
 	assert(h >= 0.0f);
 	const float
-		q = std::sqrt(r.length_squared()) / h,
+		q = r.length() / h;
+
+	// It is easier and faster to handle these edge cases separately
+	if (q == 0 || q > 2.0f)
+		return { 0.0f, 0.0f, 0.0f };
+
+	const float
 		a = 1.0f / (pi * std::pow(h, 3)),
-		dq = 1 / (2.0f * h * h * q),
+		dq = 1 / (h * h * q),
 		dw = [&]() {
 		if (q < 1.0f)
 			return (-3.0f * q + 9.0f / 4.0f * q * q) * a;
@@ -41,7 +47,7 @@ Vec3f cubic_spline_gradient(const Vec3f &r, const float h) {
 			return 0.0f;
 	}();
 
-	return dw * dq * Vec3f{ 2 * r.x, 2 * r.y, 2 * r.z };
+	return dw * dq * r;
 }
 
 
