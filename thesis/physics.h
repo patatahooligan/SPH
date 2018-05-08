@@ -61,8 +61,11 @@ class ParticleSystem {
 		{
 			generate_particles();
 
-			prev_particles.resize(particles.size());
-			next_particles.resize(particles.size());
+			// We need to ensure that all particle arrays are the same size. We also
+			// want the boundary positions to be set here so we don't have to copy
+			// them every time. Simply copying the whole vector is fast enough.
+			prev_particles = particles;
+			next_particles = particles;
 
 			// Note: these need different sizes because acceleration is not needed for boundaries
 			acceleration = std::make_unique<Vec3f[]>(num_of_fluid_particles);
