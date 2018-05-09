@@ -25,7 +25,7 @@ class ParticleSystem {
 	// Holds the particles and handles the physics simulation
 
 	private:
-		float simulation_time;
+		float simulation_time = 0.0f;
 		int num_of_fluid_particles;
 		ParticleContainer
 			particles, prev_particles, next_particles;
@@ -34,7 +34,7 @@ class ParticleSystem {
 		const CaseDef case_def;
 		SearchGrid search_grid_fluid, search_grid_boundary;
 		CubicSpline cubic_spline;
-		int verlet_step;
+		int verlet_step = 0;
 
 		// Generate particles for the geomtery specified in the case_def member
 		void generate_particles();
@@ -51,12 +51,10 @@ class ParticleSystem {
 
 	public:
 		ParticleSystem(const CaseDef &case_def) :
-			simulation_time(0.0f),
 			case_def(case_def),
 			search_grid_fluid(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
 			search_grid_boundary(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
-			cubic_spline(CubicSpline(case_def.h)),
-			verlet_step(0)
+			cubic_spline(CubicSpline(case_def.h))
 		{
 			generate_particles();
 

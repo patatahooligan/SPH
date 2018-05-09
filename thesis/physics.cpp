@@ -52,12 +52,12 @@ Vec3f CubicSpline::gradient(const Vec3f &r) const {
 void ParticleSystem::generate_particles() {
 	auto fillbox = [&](const CaseDef::Box &box) {
 		const float& density = case_def.particles.density;
-		int
+		const int
 			x_increments = int(box.size.x / density) + 1,
 			y_increments = int(box.size.y / density) + 1,
 			z_increments = int(box.size.z / density) + 1;
 
-		size_t num_of_particles = x_increments + y_increments + z_increments;
+		const size_t num_of_particles = x_increments + y_increments + z_increments;
 
 		particles.reserve(particles.size() + num_of_particles);
 

@@ -2,7 +2,7 @@
 
 // Two declarations to resolve the circular dependency issue between class methods and free functions
 class Vec3f;
-inline Vec3f operator/(Vec3f v, const float c);
+constexpr inline Vec3f operator/(Vec3f v, const float c);
 
 class Vec3f {
 	public:
@@ -14,36 +14,36 @@ class Vec3f {
 
 		Vec3f& operator=(const Vec3f &other) = default;
 
-		bool operator==(const Vec3f &other) const {
+		constexpr bool operator==(const Vec3f &other) const {
 			return x == other.x && y == other.y && z == other.z;
 		}
 
-		bool operator!=(const Vec3f &other) const {
+		constexpr bool operator!=(const Vec3f &other) const {
 			return !(*this == other);
 		}
 
-		Vec3f& operator+=(const Vec3f &other) {
+		constexpr Vec3f& operator+=(const Vec3f &other) {
 			x += other.x;
 			y += other.y;
 			z += other.z;
 			return *this;
 		}
 
-		Vec3f& operator-=(const Vec3f &other) {
+		constexpr Vec3f& operator-=(const Vec3f &other) {
 			x -= other.x;
 			y -= other.y;
 			z -= other.z;
 			return *this;
 		}
 
-		Vec3f& operator*=(const float c) {
+		constexpr Vec3f& operator*=(const float c) {
 			x *= c;
 			y *= c;
 			z *= c;
 			return *this;
 		}
 
-		Vec3f& operator/=(const float c) {
+		constexpr Vec3f& operator/=(const float c) {
 			x /= c;
 			y /= c;
 			z /= c;
@@ -68,11 +68,11 @@ class Vec3f {
 			return const_cast<float&>(const_cast<const Vec3f&>(*this)[i]);
 		}
 
-		float dot_product(const Vec3f &other) const {
+		constexpr float dot_product(const Vec3f &other) const {
 			return x*other.x + y * other.y + z * other.z;
 		}
 
-		float length_squared() const {
+		constexpr float length_squared() const {
 			return x*x + y*y + z*z;
 		}
 		
@@ -85,31 +85,31 @@ class Vec3f {
 		}
 };
 
-inline Vec3f operator+(Vec3f v1, const Vec3f &v2) {
+constexpr inline Vec3f operator+(Vec3f v1, const Vec3f &v2) {
 	return v1 += v2;
 }
 
-inline Vec3f operator-(Vec3f v1, const Vec3f &v2) {
+constexpr inline Vec3f operator-(Vec3f v1, const Vec3f &v2) {
 	return v1 -= v2;
 }
 
-inline Vec3f operator-(const Vec3f &v) {
+constexpr inline Vec3f operator-(const Vec3f &v) {
 	return Vec3f{ 0.0f, 0.0f, 0.0f } - v;
 }
 
-inline Vec3f operator*(Vec3f v, const float c) {
+constexpr inline Vec3f operator*(Vec3f v, const float c) {
 	return v *= c;
 }
 
-inline Vec3f operator*(const float c, Vec3f v) {
+constexpr inline Vec3f operator*(const float c, Vec3f v) {
 	return v *= c;
 }
 
-inline Vec3f operator/(Vec3f v, const float c) {
+constexpr inline Vec3f operator/(Vec3f v, const float c) {
 	return v /= c;
 }
 
-inline float dot_product(const Vec3f& v1, const Vec3f& v2) {
+constexpr inline float dot_product(const Vec3f& v1, const Vec3f& v2) {
 	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
