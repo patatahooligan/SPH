@@ -76,7 +76,7 @@ class SearchGrid {
 					cell_coordinates_to_index(determine_cell(begin[i].position)));
 
 			// Sort only the proxies, not the actual Particles
-			std::sort(proxies.begin(), proxies.end());
+			std::sort(std::execution::par, proxies.begin(), proxies.end());
 		}
 
 		void determine_cell_indices() {
