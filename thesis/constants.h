@@ -39,8 +39,30 @@ struct CaseDef {
 	} particles;
 
 	struct Box {
+		enum class Type{
+			Void,
+			Fluid,
+			Boundary
+		} type = Type::Void;
+		struct {
+			bool
+				solid = false,
+				bottom = false,
+				top = false,
+				right = false,
+				left = false,
+				front = false,
+				back = false;
+		} fillmode;
 		Vec3f origin, size;
+
+		bool contains(const Vec3f &position) const {
+			return
+				position.x >= origin.x && position.x <= origin.x + size.x &&
+				position.y >= origin.y && position.y <= origin.y + size.y &&
+				position.z >= origin.z && position.z <= origin.z + size.z;
+		}
 	};
 
-	std::vector<Box> fluid_boxes, bound_boxes;
+	std::vector<Box> particle_boxes;
 };

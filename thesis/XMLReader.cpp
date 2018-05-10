@@ -51,10 +51,11 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 		if (hswl->BoolAttribute("auto")) {
 			case_def.hswl = 0.0f;
 			const Vec3f down_unit_vector = case_def.gravity.unit_vector();
-			for (auto &box : case_def.fluid_boxes)
-				case_def.hswl = std::max(
-					std::abs(dot_product(box.size, down_unit_vector)),
-					case_def.hswl);
+			for (auto &box : case_def.particle_boxes)
+				if (box.type == CaseDef::Box::Type::Fluid)
+					case_def.hswl = std::max(
+						std::abs(dot_product(box.size, down_unit_vector)),
+						case_def.hswl);
 		}
 		else
 			case_def.hswl = hswl->FloatAttribute("value");
@@ -110,32 +111,43 @@ void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	// Execute the commands
 	auto command_list = geometry.FirstChildElement("commands").FirstChildElement("mainlist");
 
-	// The nature of a box (fluid, boundary) is given in a separate command from the
-	// geometry of the box, so we have to store the vector in which it belongs
-	std::vector<CaseDef::Box>* target_boxes = nullptr;
+	// The type of a box (fluid, boundary, void) is given in a separate command from the
+	// geometry of the box, so we have to store its type
+	using Type = CaseDef::Box::Type;
+	auto box_type = Type::Void;
 
 	for (auto command = command_list.FirstChildElement().ToElement(); command;) {
 		if (!std::strcmp(command->Name(), "setmkfluid"))
-			target_boxes = &case_def.fluid_boxes;
+			box_type = Type::Fluid;
 		else if (!std::strcmp(command->Name(), "setmkbound"))
-			target_boxes = &case_def.bound_boxes;
+			box_type = Type::Boundary;
+		else if (!std::strcmp(command->Name(), "setmkvoid"))
+			box_type = Type::Void;
 
-		else if (!std::strcmp(command->Name(), "drawbox")) {
-			if (!target_boxes)
-				throw std::runtime_error("No setmkfluid or setmkbound command used before drawbox");
-			
+		else if (!std::strcmp(command->Name(), "drawbox")) {			
 			auto
 				point = command->FirstChildElement("point"),
-				size = command->FirstChildElement("size");
+				size = command->FirstChildElement("size"),
+				boxfill = command->FirstChildElement("boxfill");
 
 			if (!point) throw std::runtime_error("No point given for drawbox");
 			if (!size) throw std::runtime_error("No size given for drawbox");
+			if (!boxfill) throw std::runtime_error("No boxfill mode given for drawbox");
 
 			CaseDef::Box box;
 			box.origin = get_vec3f_from_element(*point);
 			box.size = get_vec3f_from_element(*size);
+			box.type = box_type;
+			std::string_view boxfill_text(boxfill->GetText());
+			if (boxfill_text.find("solid") != std::string_view::npos) box.fillmode.solid = true;
+			if (boxfill_text.find("bottom") != std::string_view::npos) box.fillmode.bottom = true;
+			if (boxfill_text.find("top") != std::string_view::npos) box.fillmode.top = true;
+			if (boxfill_text.find("front") != std::string_view::npos) box.fillmode.front = true;
+			if (boxfill_text.find("back") != std::string_view::npos) box.fillmode.back = true;
+			if (boxfill_text.find("right") != std::string_view::npos) box.fillmode.right = true;
+			if (boxfill_text.find("left") != std::string_view::npos) box.fillmode.left = true;
 
-			target_boxes->emplace_back(box);
+			case_def.particle_boxes.emplace_back(box);
 		}
 
 		command = command->NextSiblingElement();
