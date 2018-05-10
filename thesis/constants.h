@@ -18,7 +18,7 @@ constexpr float
 // Display window (and video output) dimensions
 constexpr int output_width = 800;
 constexpr int output_height = 800;
-constexpr float framerate = 30.0f;
+constexpr float framerate = 60.0f;
 
 // Constants for the simulation, but intended to be read from a case file at run-time
 // as they may vary from case to case.

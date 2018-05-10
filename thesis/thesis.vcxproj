@@ -170,7 +170,6 @@
     <ClInclude Include="constants.h" />
     <ClInclude Include="particle.h" />
     <ClInclude Include="physics.h" />
-    <ClInclude Include="render.h" />
     <ClInclude Include="savestate.h" />
     <ClInclude Include="searchgrid.h" />
     <ClInclude Include="stdafx.h" />
@@ -180,7 +179,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="physics.cpp" />
-    <ClCompile Include="render.cpp" />
     <ClCompile Include="savestate.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>

@@ -21,8 +21,11 @@ class SaveState {
 
 		void save(const ParticleContainer &data);
 
+		int get_step() { return step; }
+
 	private:
 		std::ofstream output_file;
+		int step = 0;
 
 		void save_particle(const Particle& particle);
 };

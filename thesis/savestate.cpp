@@ -5,6 +5,8 @@
 void SaveState::save(const ParticleContainer &data) {
 	for (auto& particle : data)
 		save_particle(particle);
+
+	++step;
 }
 
 void SaveState::save_particle(const Particle& particle) {
