@@ -178,63 +178,72 @@ float ParticleSystem::calculate_time_step() const {
 }
 
 void ParticleSystem::compute_derivatives() {
-	#pragma omp parallel for
-	for (int i = 0; size_t(i) < particles.size(); ++i) {
-		const Particle& Pi = particles[i];
+	#pragma omp parallel
+	{
+		#pragma omp for
+		for (int i = 0; size_t(i) < particles.size(); ++i) {
+			constexpr int gamma = 7;
+			const float
+				beta = (case_def.speedsound * case_def.speedsound * case_def.rhop0) / gamma;
 
-		// Get neighbors of Pi
-		const auto index_ranges = get_all_neighbors(Pi.position);
+			pressure[i] = beta * (std::pow(particles[i].density / case_def.rhop0, gamma) - 1);
 
-		constexpr int gamma = 7;
-		const float
-			beta = (case_def.speedsound * case_def.speedsound * case_def.rhop0) / gamma,
-			Pi_pressure = beta * (std::pow(Pi.density / case_def.rhop0, gamma) - 1);
+		}
 
-		if (i < num_of_fluid_particles)
-			acceleration[i] = case_def.gravity;
-		density_derivative[i] = 0.0f;
+		#pragma omp for
+		for (int i = 0; size_t(i) < particles.size(); ++i) {
+			const Particle& Pi = particles[i];
 
-		for (const auto index_pair : index_ranges) {
-			for (int j = index_pair.first; j < index_pair.second; ++j) {
-				const Particle& Pj = particles[j];
+			// Get neighbors of Pi
+			const auto index_ranges = get_all_neighbors(Pi.position);
 
-				const Vec3f
-					r_ij = Pi.position - Pj.position,
-					v_ij = Pi.velocity - Pj.velocity,
-					kernel_gradient_rij = cubic_spline.gradient(r_ij);
+			if (i < num_of_fluid_particles)
+				acceleration[i] = case_def.gravity;
+			density_derivative[i] = 0.0f;
 
-				density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_gradient_rij);
+			for (const auto index_pair : index_ranges) {
+				for (int j = index_pair.first; j < index_pair.second; ++j) {
+					const Particle& Pj = particles[j];
 
-				// If this is a boundary particle skip the acceleration part
-				if (i >= num_of_fluid_particles)
-					continue;
+					const Vec3f
+						r_ij = Pi.position - Pj.position,
+						v_ij = Pi.velocity - Pj.velocity,
+						kernel_gradient_rij = cubic_spline.gradient(r_ij);
 
-				const float
-					&h = case_def.h,
-					r2 = r_ij.length_squared(),                           // Squared distance
-					Pj_pressure = beta * (std::pow(Pj.density / case_def.rhop0, gamma) - 1),
-					vel_pos_dot_product = dot_product(v_ij, r_ij),
-					pi_ij = [&]() {
-					if (vel_pos_dot_product > 0.0f) {
-						constexpr float a = 0.01f;
-						const float
-							rho_ij = (Pi.density + Pj.density) / 2.0f,    // Mean density
-							mu = (h * vel_pos_dot_product) / (r2 + 0.01f * h * h);
+					density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_gradient_rij);
 
-						return -(a * case_def.speedsound * mu) / rho_ij;
-					}
-					else
-						return 0.0f;
-				}();
+					// If this is a boundary particle skip the acceleration part
+					if (i >= num_of_fluid_particles)
+						continue;
 
-				const float
-					pressure_sum = Pj_pressure + Pi_pressure,
-					density_product = Pi.density * Pj.density;
+					const float
+						&h = case_def.h,
+						r2 = r_ij.length_squared(),                           // Squared distance
+						vel_pos_dot_product = dot_product(v_ij, r_ij),
+						pi_ij = [&]() {
+						if (vel_pos_dot_product > 0.0f) {
+							constexpr float a = 0.01f;
+							const float
+								rho_ij = (Pi.density + Pj.density) / 2.0f,    // Mean density
+								mu = (h * vel_pos_dot_product) / (r2 + 0.01f * h * h);
 
-				if (i < num_of_fluid_particles)
-					acceleration[i] -=
-					case_def.particles.mass * ((pressure_sum / density_product) + pi_ij) *
-					kernel_gradient_rij;
+							return -(a * case_def.speedsound * mu) / rho_ij;
+						}
+						else
+							return 0.0f;
+					}();
+
+					const float
+						&Pi_pressure = pressure[i],
+						&Pj_pressure = pressure[j],
+						pressure_sum = Pj_pressure + Pi_pressure,
+						density_product = Pi.density * Pj.density;
+
+					if (i < num_of_fluid_particles)
+						acceleration[i] -=
+						case_def.particles.mass * ((pressure_sum / density_product) + pi_ij) *
+						kernel_gradient_rij;
+				}
 			}
 		}
 	}

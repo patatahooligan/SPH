@@ -30,7 +30,7 @@ class ParticleSystem {
 		ParticleContainer
 			particles, prev_particles, next_particles;
 		std::unique_ptr<Vec3f[]> acceleration;
-		std::unique_ptr<float[]> density_derivative;
+		std::unique_ptr<float[]> density_derivative, pressure;
 		const CaseDef case_def;
 		SearchGrid search_grid_fluid, search_grid_boundary;
 		CubicSpline cubic_spline;
@@ -67,6 +67,7 @@ class ParticleSystem {
 			// Note: these need different sizes because acceleration is not needed for boundaries
 			acceleration = std::make_unique<Vec3f[]>(num_of_fluid_particles);
 			density_derivative = std::make_unique<float[]>(particles.size());
+			pressure = std::make_unique<float[]>(particles.size());
 		}
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
