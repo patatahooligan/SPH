@@ -21,7 +21,9 @@ struct ParticleProxy {
 class SearchGrid {
 	public:
 		using iter = ParticleContainer::iterator;
-		using cell_indices_container = std::vector<std::pair<int, int>>;
+		using index_pair = std::pair<int, int>;
+		using cell_indices_container = std::vector<index_pair>;
+		using static_cell_indices_container = boost::container::static_vector<index_pair, 54>;
 
 	private:
 		std::vector<ParticleProxy> proxies;
@@ -143,7 +145,7 @@ class SearchGrid {
 			}
 		}
 
-		void get_neighbor_indices(const Vec3f &position, cell_indices_container &container) const {
+		void get_neighbor_indices(const Vec3f &position, static_cell_indices_container &container) const {
 			const auto target_cell = determine_cell(position);
 			const auto
 				&x = target_cell[0],
@@ -161,8 +163,8 @@ class SearchGrid {
 			}
 		}
 
-		cell_indices_container get_neighbor_indices(const Vec3f &position) const {
-			cell_indices_container neighbor_indices;
+		static_cell_indices_container get_neighbor_indices(const Vec3f &position) const {
+			static_cell_indices_container neighbor_indices;
 
 			get_neighbor_indices(position, neighbor_indices);
 			return neighbor_indices;
