@@ -254,10 +254,11 @@ void ParticleSystem::integrate_verlet(const float dt) {
 	// TODO: consider making this variable
 	constexpr int corrective_step_interval = 50;
 
+	#pragma omp parallel
 	if (verlet_step % corrective_step_interval == 0) {
 		// Corrective step
 		// Fluid particles
-		#pragma omp parallel for
+		#pragma omp for
 		for (int i = 0; i < num_of_fluid_particles; ++i) {
 			auto &Pi = particles[i];
 			auto &Pi_next = next_particles[i];
@@ -268,13 +269,13 @@ void ParticleSystem::integrate_verlet(const float dt) {
 		}
 
 		// Boundary particles
-		#pragma omp parallel for
+		#pragma omp for
 		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i)
 			next_particles[i].density = particles[i].density + dt * density_derivative[i];
 	}
 	else {
 		// Predictor step
-		#pragma omp parallel for
+		#pragma omp for
 		for (int i = 0; i < num_of_fluid_particles; ++i) {
 			auto
 				&Pi = particles[i],
@@ -285,7 +286,7 @@ void ParticleSystem::integrate_verlet(const float dt) {
 			Pi_next.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
 			Pi_next.density = Pi_prev.density + 2 * dt * density_derivative[i];
 		}
-		#pragma omp parallel for
+		#pragma omp for
 		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i)
 			next_particles[i].density = prev_particles[i].density + 2 * dt * density_derivative[i];
 	}
