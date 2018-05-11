@@ -36,6 +36,13 @@ class ParticleSystem {
 		CubicSpline cubic_spline;
 		int verlet_step = 0;
 
+		void allocate_memory_for_verlet_variables() {
+			// Note: these need different sizes because acceleration is not needed for boundaries
+			acceleration = std::make_unique<Vec3f[]>(num_of_fluid_particles);
+			density_derivative = std::make_unique<float[]>(particles.size());
+			pressure = std::make_unique<float[]>(particles.size());
+		}
+
 		// Generate particles for the geomtery specified in the case_def member
 		void generate_particles();
 
@@ -64,10 +71,22 @@ class ParticleSystem {
 			prev_particles = particles;
 			next_particles = particles;
 
-			// Note: these need different sizes because acceleration is not needed for boundaries
-			acceleration = std::make_unique<Vec3f[]>(num_of_fluid_particles);
-			density_derivative = std::make_unique<float[]>(particles.size());
-			pressure = std::make_unique<float[]>(particles.size());
+			allocate_memory_for_verlet_variables();
+		}
+
+		ParticleSystem(const CaseDef &case_def,
+			ParticleContainer previous, ParticleContainer current,
+			size_t num_of_fluid_particles) :
+			case_def(case_def),
+			search_grid_fluid(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
+			search_grid_boundary(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
+			cubic_spline(CubicSpline(case_def.h)),
+			num_of_fluid_particles(num_of_fluid_particles)
+		{
+			prev_particles = std::move(previous);
+			particles = std::move(current);
+
+			allocate_memory_for_verlet_variables();
 		}
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
@@ -75,6 +94,7 @@ class ParticleSystem {
 		ParticleSystem& operator=(const ParticleSystem &other) = delete;
 
 		const ParticleContainer& get_particlearray() const { return particles; }
+		const ParticleContainer& get_previous_particlearray() const { return prev_particles; }
 
 		float current_time() const {return simulation_time;}
 

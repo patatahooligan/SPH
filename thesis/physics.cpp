@@ -330,7 +330,8 @@ void ParticleSystem::simulation_step() {
 	integrate_verlet(time_step);
 
 	// Move variables of next step to current and current to prev
-	// Using swap instead of move assignment retains the size of next_particles
+	// Using swap instead of move assignment retains the size of next_particles\
+	// next_particles practically holds garbage values after this
 	prev_particles.swap(particles);
 	particles.swap(next_particles);
 }

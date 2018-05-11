@@ -21,6 +21,7 @@
 #include <limits>
 #include <execution>
 #include <optional>
+#include <conio.h>
 
 #include "tinyxml2.h"
 #include "boost/container/static_vector.hpp"

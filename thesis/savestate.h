@@ -6,6 +6,11 @@
 
 class SaveState {
 	public:
+		enum class Mode {
+			Full,
+			Position
+		};
+
 		// Disallow construction without a file to open, and copy-construction
 		SaveState() = delete;
 		SaveState(SaveState&) = delete;
@@ -19,13 +24,13 @@ class SaveState {
 			output_file.write(reinterpret_cast<const char*>(&num_of_particles), sizeof(num_of_particles));
 		}
 
-		void save(const ParticleContainer &data);
+		SaveState& save(const ParticleContainer &data, const Mode mode);
 
-		int get_step() { return step; }
+		int get_step() const { return step; }
 
 	private:
 		std::ofstream output_file;
 		int step = 0;
 
-		void save_particle(const Particle& particle);
+		void save_particle(const Particle& particle, const Mode mode);
 };
