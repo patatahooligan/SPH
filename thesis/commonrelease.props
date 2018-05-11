@@ -4,12 +4,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup />
   <ItemDefinitionGroup>
-    <Link>
-      <AdditionalDependencies>tinyxml2-x64.lib;%(AdditionalDependencies)</AdditionalDependencies>
-    </Link>
-    <ClCompile />
     <ClCompile>
-      <EnableEnhancedInstructionSet>AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
   </ItemDefinitionGroup>
