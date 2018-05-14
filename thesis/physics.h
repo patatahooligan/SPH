@@ -90,7 +90,7 @@ class ParticleSystem {
 		}
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
-		ParticleSystem(const ParticleSystem &other) = delete;
+		ParticleSystem(ParticleSystem &&) = default;
 		ParticleSystem& operator=(const ParticleSystem &other) = delete;
 
 		const ParticleContainer& get_particlearray() const { return particles; }

@@ -25,6 +25,7 @@
 
 #include "tinyxml2.h"
 #include "boost/container/static_vector.hpp"
+#include "cxxopts.hpp"
 
 
 // TODO: reference additional headers your program requires here

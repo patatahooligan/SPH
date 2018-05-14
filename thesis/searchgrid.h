@@ -9,7 +9,7 @@ struct ParticleProxy {
 	int index, cell;
 
 	ParticleProxy() = default;
-	ParticleProxy(size_t index, size_t cell) :
+	ParticleProxy(int index, int cell) :
 		index(index),
 		cell(cell) {}
 
@@ -99,6 +99,8 @@ class SearchGrid {
 		SearchGrid(const Vec3f &point_min, const Vec3f &point_max, const float h) :
 			point_min(point_min), point_max(point_max), size (point_max - point_min), h(h),
 			grid_cells(determine_number_of_cells(size, h)) {}
+
+		SearchGrid(SearchGrid&&) = default;
 
 		void sort_containers(std::array<iter, 3> begin_it, iter end) {
 			// Sort the containers in place based on [beg_it[0], end)

@@ -14,14 +14,14 @@ Vec3f get_vec3f_from_element(XMLElement& elem) {
 	return { elem.FloatAttribute("x"), elem.FloatAttribute("y"), elem.FloatAttribute("z") };
 }
 
-CaseDef get_case_from_XML(const char * xml_filename) {
+CaseDef get_case_from_XML(const std::string_view xml_filename) {
 	CaseDef case_def;
 	XMLDocument case_XML;
 
 	// TODO: Consider how to implement error handling
 	//       For now just throw the return value for debugging
 
-	auto error = case_XML.LoadFile(xml_filename);
+	auto error = case_XML.LoadFile(xml_filename.data());
 	if (error != XML_SUCCESS)
 		throw error;
 

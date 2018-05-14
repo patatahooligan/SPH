@@ -16,10 +16,10 @@ class SaveState {
 		SaveState(SaveState&) = delete;
 		SaveState(SaveState&&) = default;
 
-		SaveState(std::string output_filename, size_t num_of_particles) :
-			output_file(output_filename, std::ofstream::binary | std::ofstream::trunc) {
+		SaveState(std::string_view output_filename, size_t num_of_particles) :
+			output_file(output_filename.data(), std::ofstream::binary | std::ofstream::trunc) {
 			if (!output_file.is_open())
-				throw std::runtime_error(std::string("Could not open file ") + output_filename);
+				throw std::runtime_error(std::string("Could not open file ") + output_filename.data());
 
 			output_file.write(reinterpret_cast<const char*>(&num_of_particles), sizeof(num_of_particles));
 		}
