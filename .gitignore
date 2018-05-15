@@ -213,5 +213,5 @@ ModelManifest.xml
 
 thesis.VC.opendb
 
-# Output file
-output*
+# Binary output files
+*.bin
