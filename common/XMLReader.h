@@ -1,6 +1,6 @@
 #pragma once
 
-#include "stdafx.h"
+#include <string_view>
 
 #include "constants.h"
 

@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
 #include "vec3f.h"
+#include "constants.h"
 #include "XMLReader.h"
 
 using namespace tinyxml2;
