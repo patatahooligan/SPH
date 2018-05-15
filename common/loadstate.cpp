@@ -5,6 +5,7 @@
 #include "loadstate.h"
 
 void LoadState::load(ParticleContainer& target_array) {
+	target_array.resize(num_of_fluid_particles);
 	for (auto& particle : target_array) {
 		load_particle(particle);
 	}

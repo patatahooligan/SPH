@@ -170,6 +170,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\constants.h" />
+    <ClInclude Include="..\common\loadstate.h" />
     <ClInclude Include="..\common\particle.h" />
     <ClInclude Include="..\common\stdafx.h" />
     <ClInclude Include="..\common\targetver.h" />
@@ -180,6 +181,7 @@
     <ClInclude Include="searchgrid.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\loadstate.cpp" />
     <ClCompile Include="..\common\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>

@@ -155,12 +155,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\common\loadstate.h" />
     <ClInclude Include="..\common\stdafx.h" />
     <ClInclude Include="..\common\targetver.h" />
     <ClInclude Include="..\common\XMLReader.h" />
-    <ClInclude Include="loadstate.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\common\loadstate.cpp" />
     <ClCompile Include="..\common\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -168,7 +169,6 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="..\common\XMLReader.cpp" />
-    <ClCompile Include="loadstate.cpp" />
     <ClCompile Include="render.cpp" />
     <ClCompile Include="replay.cpp" />
   </ItemGroup>

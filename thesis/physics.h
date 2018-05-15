@@ -76,7 +76,7 @@ class ParticleSystem {
 
 		ParticleSystem(const CaseDef &case_def,
 			ParticleContainer previous, ParticleContainer current,
-			size_t num_of_fluid_particles) :
+			int num_of_fluid_particles) :
 			case_def(case_def),
 			search_grid_fluid(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
 			search_grid_boundary(case_def.particles.point_min, case_def.particles.point_max, case_def.h),

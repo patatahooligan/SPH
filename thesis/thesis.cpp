@@ -5,6 +5,7 @@
 #include "physics.h"
 #include "savestate.h"
 #include "XMLReader.h"
+#include "loadstate.h"
 
 struct RunOptions {
 	std::string output_filename, case_filename, snapshot_filename;
@@ -78,9 +79,25 @@ int main(int argc, char **argv) {
 
 	const auto options = get_options(argc, argv);
 
-	ParticleSystem ps(get_case_from_XML(options.case_filename));
+	const auto case_def = get_case_from_XML(options.case_filename);
 
-	SaveState save_state(options.output_filename, ps.get_num_of_particles());
+	auto ps = [&]() {
+		if (options.input) {
+			LoadState load_state{ *options.input };
+			ParticleContainer previous_particles, current_particles;
+
+			load_state.load(previous_particles);
+			load_state.load(current_particles);
+
+			return ParticleSystem{
+				case_def, previous_particles, current_particles,
+				load_state.get_num_of_fluid_particles() };
+		}
+		else
+			return ParticleSystem{ case_def };
+	} ();
+
+	SaveState save_state(options.output_filename, ps.get_num_of_fluid_particles(), ps.get_num_of_particles());
 
 	bool user_exit = false;
 	auto& now = std::chrono::steady_clock::now;
@@ -116,7 +133,7 @@ int main(int argc, char **argv) {
 	std::cout << "Saving snapshot of particles at moment of termination\n"
 			<< "Saved in order (previous step, current step)\n\n";
 
-	SaveState(options.snapshot_filename, ps.get_num_of_particles())
+	SaveState(options.snapshot_filename, ps.get_num_of_fluid_particles(), ps.get_num_of_particles())
 		.save(ps.get_previous_particlearray(), SaveState::Mode::Full)
 		.save(ps.get_particlearray(), SaveState::Mode::Full);
 
