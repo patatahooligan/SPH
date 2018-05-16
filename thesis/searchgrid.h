@@ -107,18 +107,19 @@ class SearchGrid {
 
 		SearchGrid(SearchGrid&&) = default;
 
-		void sort_containers(std::array<iter, 3> begin_it, iter end) {
+		void sort_containers(iter target_begin, iter target_end, iter parallel_begin) {
 			// Sort the containers in place based on [beg_it[0], end)
 
-			determine_order(begin_it[0], end);
+			determine_order(target_begin, target_end);
 
 			determine_cell_indices();
 
 			for (int i = 0; size_t(i) < proxies.size(); ++i) {
 				// Keep a copy of [i]
-				std::array<Particle, begin_it.size()> current_vec;
-				for (size_t j = 0; j < begin_it.size(); ++j)
-					current_vec[j] = (begin_it[j])[i];
+				std::array<Particle, 2> current_vec;
+				const Particle
+					target_temp = target_begin[i],
+					parallel_temp = parallel_begin[i];
 
 				// Start by filling [i]
 				auto current = i;
@@ -131,8 +132,8 @@ class SearchGrid {
 					int next = proxies[current].index;
 
 					// Move the elements that belong to it[current]
-					for (auto& it : begin_it)
-						it[current] = it[next];
+					target_begin[current] = target_begin[next];
+					parallel_begin[current] = parallel_begin[next];
 
 					// Now that [current] is occupied by the correct value,
 					// make proxies[current] point to it
@@ -143,10 +144,10 @@ class SearchGrid {
 					current = next;
 				}
 
-				// When i == current, we've iterated to the index that current_vec
+				// When i == current, we've iterated to the index that the temp particles
 				// should be placed in
-				for (size_t j = 0; j < begin_it.size(); ++j)
-					(begin_it[j])[current] = current_vec[j];
+				target_begin[current] = target_temp;
+				parallel_begin[current] = parallel_temp;
 
 				proxies[current].index = current;
 			}

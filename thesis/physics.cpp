@@ -311,17 +311,14 @@ SearchGrid::static_cell_indices_container ParticleSystem::get_all_neighbors(cons
 void ParticleSystem::simulation_step() {
 	// Sort fluid and boundary particles separately
 	search_grid_fluid.sort_containers(
-		std::array<SearchGrid::iter, 3>{particles.begin(), prev_particles.begin(), next_particles.begin()},
-		particles.begin() + num_of_fluid_particles
+		particles.begin(), particles.begin() + num_of_fluid_particles,
+		prev_particles.begin()
 	);
 
 	search_grid_boundary.sort_containers(
-		std::array<SearchGrid::iter, 3>{
-			particles.begin() + num_of_fluid_particles,
-			prev_particles.begin() + num_of_fluid_particles,
-			next_particles.begin() + num_of_fluid_particles
-		},
-		particles.end()
+		particles.begin() + num_of_fluid_particles,
+		particles.end(),
+		prev_particles.begin() + num_of_fluid_particles
 	);
 
 	const float time_step = calculate_time_step();

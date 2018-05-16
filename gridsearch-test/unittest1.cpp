@@ -30,30 +30,24 @@ namespace gridsearchtest {
 			std::mt19937 gen(rd());
 			std::uniform_real_distribution<> dist(dimension_min, dimension_max);
 			
-			std::array<ParticleContainer, 3> particles;
-			for (auto& container : particles)
-				container.reserve(num_of_particles);
+			ParticleContainer particles, prev_particles;
 
 			for (int i = 0; i < num_of_particles; ++i) {
-				// Create three identical particle arrays (only position matters)
+				// Create two identical particle arrays (only position matters)
 				Particle p;
 				p.position = { float(dist(gen)), float(dist(gen)), float(dist(gen)) };
-				for (auto& particle_container : particles)
-					particle_container.emplace_back(p);
+				particles.emplace_back(p);
+				prev_particles.emplace_back(p);
 			}
 
 			// Keep a copy to test whether the output is a permutation of the input
-			auto unsorted = particles[0];
+			const auto unsorted = particles;
 
 			SearchGrid grid{ point_min, point_max, h };
 
-			std::array<SearchGrid::iter, 3> begin_it{
-				particles[0].begin(),
-				particles[1].begin(),
-				particles[2].begin() };
-			grid.sort_containers(begin_it, particles[0].end());
+			grid.sort_containers(particles.begin(), particles.end(), prev_particles.begin());
 
-			Assert::IsTrue(std::is_permutation(unsorted.begin(), unsorted.end(), particles[0].begin(),
+			Assert::IsTrue(std::is_permutation(unsorted.begin(), unsorted.end(), particles.begin(),
 				[](const Particle &lhs, const Particle &rhs) {
 					return lhs.position == rhs.position;
 				}));
@@ -61,16 +55,15 @@ namespace gridsearchtest {
 			size_t neighbors = 0;
 			for (int i = 0; i < num_of_particles; ++i) {
 				// Assert that the arrays have been sorted in parallel
-				Assert::IsTrue(particles[0][i].position == particles[1][i].position);
-				Assert::IsTrue(particles[0][i].position == particles[2][i].position);
+				Assert::IsTrue(particles[i].position == prev_particles[i].position);
 
 				// Assert that every neighbor returned is in the proximity of the current particle
-				auto neighbor_indices = grid.get_neighbor_indices(particles[0][i].position);
+				const auto neighbor_indices = grid.get_neighbor_indices(particles[i].position);
 				for (const auto& index_pair : neighbor_indices) {
 					for (int j = index_pair.first; j < index_pair.second; ++j) {
 						++neighbors;
 						Vec3f relative_position =
-							particles[0][i].position - particles[0][j].position;
+							particles[i].position - particles[j].position;
 						Assert::IsTrue(std::abs(relative_position.x) <= 2 * h);
 						Assert::IsTrue(std::abs(relative_position.y) <= 2 * h);
 						Assert::IsTrue(std::abs(relative_position.z) <= 2 * h);
