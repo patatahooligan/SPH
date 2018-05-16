@@ -2,6 +2,11 @@
 
 #include "stdafx.h"
 
+#include <algorithm>
+#include <execution>
+
+#include "boost/container/static_vector.hpp"
+
 #include "particle.h"
 #include "vec3f.h"
 

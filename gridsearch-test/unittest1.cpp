@@ -7,7 +7,7 @@
 
 #include "vec3f.h"
 #include "particle.h"
-#include "searchgrid.h"
+#include "../thesis/searchgrid.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
