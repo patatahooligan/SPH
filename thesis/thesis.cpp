@@ -86,8 +86,8 @@ int main(int argc, char **argv) {
 			LoadState load_state{ *options.input };
 			ParticleContainer previous_particles, current_particles;
 
-			load_state.load(previous_particles);
-			load_state.load(current_particles);
+			load_state.load(previous_particles, LoadState::Mode::Full);
+			load_state.load(current_particles, LoadState::Mode::Full);
 
 			return ParticleSystem{
 				case_def, previous_particles, current_particles,

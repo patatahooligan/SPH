@@ -3,13 +3,11 @@
 #include <fstream>
 
 #include "particle.h"
+#include "loadstate.h"
 
 class SaveState {
 	public:
-		enum class Mode {
-			Full,
-			Position
-		};
+		using Mode = LoadState::Mode;
 
 		// Disallow construction without a file to open, and copy-construction
 		SaveState() = delete;

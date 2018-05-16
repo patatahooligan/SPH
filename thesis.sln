@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "replay", "replay\replay.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gridsearch-test", "gridsearch-test\gridsearch-test.vcxproj", "{6EFB0B6F-D9B2-4EB3-9C81-2EC5578398A0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "savestate-loadstate-test", "savestate-loadstate-test\savestate-loadstate-test.vcxproj", "{18471431-AEFF-4592-BC00-653F73268E74}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,14 @@ Global
 		{6EFB0B6F-D9B2-4EB3-9C81-2EC5578398A0}.Release|x64.Build.0 = Release|x64
 		{6EFB0B6F-D9B2-4EB3-9C81-2EC5578398A0}.Release|x86.ActiveCfg = Release|Win32
 		{6EFB0B6F-D9B2-4EB3-9C81-2EC5578398A0}.Release|x86.Build.0 = Release|Win32
+		{18471431-AEFF-4592-BC00-653F73268E74}.Debug|x64.ActiveCfg = Debug|x64
+		{18471431-AEFF-4592-BC00-653F73268E74}.Debug|x64.Build.0 = Debug|x64
+		{18471431-AEFF-4592-BC00-653F73268E74}.Debug|x86.ActiveCfg = Debug|Win32
+		{18471431-AEFF-4592-BC00-653F73268E74}.Debug|x86.Build.0 = Debug|Win32
+		{18471431-AEFF-4592-BC00-653F73268E74}.Release|x64.ActiveCfg = Release|x64
+		{18471431-AEFF-4592-BC00-653F73268E74}.Release|x64.Build.0 = Release|x64
+		{18471431-AEFF-4592-BC00-653F73268E74}.Release|x86.ActiveCfg = Release|Win32
+		{18471431-AEFF-4592-BC00-653F73268E74}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
