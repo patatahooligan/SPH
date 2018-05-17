@@ -4,8 +4,7 @@
 
 #include <algorithm>
 #include <execution>
-
-#include "boost/container/static_vector.hpp"
+#include <cassert>
 
 #include "particle.h"
 #include "vec3f.h"
@@ -28,7 +27,6 @@ class SearchGrid {
 		using iter = ParticleContainer::iterator;
 		using index_pair = std::pair<int, int>;
 		using cell_indices_container = std::vector<index_pair>;
-		using static_cell_indices_container = boost::container::static_vector<index_pair, 54>;
 
 	private:
 		std::vector<ParticleProxy> proxies;
@@ -51,7 +49,7 @@ class SearchGrid {
 
 		std::array<int, 3> determine_cell(const Vec3f &position) const {
 			std::array<int, 3> cell;
-			const Vec3f relative_position = position - size;
+			const Vec3f relative_position = position - point_min;
 
 			for (size_t i = 0; i < 3; ++i) {
 				// To robustly handle (slightly) out of bounds particles
@@ -67,14 +65,14 @@ class SearchGrid {
 		int cell_coordinates_to_index(const std::array<int, 3> &cell) const {
 			// Map cell's 3D position to a 1D index
 			return
-				cell[0] +
-				cell[1] * grid_cells[0] +
-				cell[2] * grid_cells[0] * grid_cells[1];
+				cell[2] +
+				cell[1] * grid_cells[2] +
+				cell[0] * grid_cells[1] * grid_cells[2];
 		}
 
 		void determine_order(iter begin, iter end) {
-			int size = std::distance(begin, end);
-			proxies.resize(std::distance(begin, end));
+			const int size = std::distance(begin, end);
+			proxies.resize(size);
 
 			#pragma omp parallel for
 			for (int i = 0; i < size; ++i)
@@ -87,10 +85,10 @@ class SearchGrid {
 		}
 
 		void determine_cell_indices() {
-			auto num_of_cells = grid_cells[0] * grid_cells[1] * grid_cells[2];
+			const auto num_of_cells = grid_cells[0] * grid_cells[1] * grid_cells[2];
 			cell_indices.resize(num_of_cells);
 
-			size_t proxy = 0;
+			int proxy = 0;
 			for (int cell = 0; cell < num_of_cells; ++cell) {
 				cell_indices[cell].first = proxy;
 				while (proxy < proxies.size() && proxies[proxy].cell == cell) {
@@ -153,26 +151,30 @@ class SearchGrid {
 			}
 		}
 
-		void get_neighbor_indices(const Vec3f &position, static_cell_indices_container &container) const {
+		void get_neighbor_indices(const Vec3f &position, cell_indices_container &container) const {
 			const auto target_cell = determine_cell(position);
 			const auto
-				&x = target_cell[0],
-				&y = target_cell[1],
-				&z = target_cell[2];
+				min_x = std::max(target_cell[0] - 1, 0),
+				min_y = std::max(target_cell[1] - 1, 0),
+				min_z = std::max(target_cell[2] - 1, 0),
 
-			for (int curr_z = std::max(z - 1, 0); curr_z <= std::min(z + 1, grid_cells[2]); ++curr_z) {
-				for (int curr_y = std::max(y - 1, 0); curr_y <= std::min(y + 1, grid_cells[1]); ++curr_y) {
-					for (int curr_x = std::max(x - 1, 0); curr_x <= std::min(x + 1, grid_cells[0]); ++curr_x) {
+				max_x = std::min(target_cell[0] + 1, grid_cells[0]),
+				max_y = std::min(target_cell[1] + 1, grid_cells[1]),
+				max_z = std::min(target_cell[2] + 1, grid_cells[2]);
+
+			for (int curr_x = min_x; curr_x <= max_x; ++curr_x) {
+				for (int curr_y = min_y; curr_y <= max_y; ++curr_y) {
+					for (int curr_z = min_z; curr_z <= max_z; ++curr_z) {
 						// If current cell is valid (potentially empty), add it to neighbors
-						container.push_back(
+						container.emplace_back(
 							cell_indices[cell_coordinates_to_index({ curr_x, curr_y, curr_z })]);
 					}
 				}
 			}
 		}
 
-		static_cell_indices_container get_neighbor_indices(const Vec3f &position) const {
-			static_cell_indices_container neighbor_indices;
+		cell_indices_container get_neighbor_indices(const Vec3f &position) const {
+			cell_indices_container neighbor_indices;
 
 			get_neighbor_indices(position, neighbor_indices);
 			return neighbor_indices;

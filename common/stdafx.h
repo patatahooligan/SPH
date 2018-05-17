@@ -25,7 +25,6 @@
 #include <chrono>
 
 #include "tinyxml2.h"
-#include "boost/container/static_vector.hpp"
 #include "cxxopts.hpp"
 #include "GL\freeglut.h"
 

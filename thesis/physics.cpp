@@ -294,8 +294,10 @@ void ParticleSystem::integrate_verlet(const float dt) {
 	++verlet_step;
 }
 
-SearchGrid::static_cell_indices_container ParticleSystem::get_all_neighbors(const Vec3f &position) const {
-	auto neighbors = search_grid_fluid.get_neighbor_indices(position);
+SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(const Vec3f &position) const {
+	SearchGrid::cell_indices_container neighbors;
+	neighbors.reserve(54);
+	search_grid_fluid.get_neighbor_indices(position, neighbors);
 	const auto boundary_start = neighbors.size();
 	search_grid_boundary.get_neighbor_indices(position, neighbors);
 
