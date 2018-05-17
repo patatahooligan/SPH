@@ -86,6 +86,8 @@ class ParticleSystem {
 			prev_particles = std::move(previous);
 			particles = std::move(current);
 
+			next_particles.resize(particles.size());
+
 			allocate_memory_for_verlet_variables();
 		}
 
