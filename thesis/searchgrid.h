@@ -158,9 +158,9 @@ class SearchGrid {
 				min_y = std::max(target_cell[1] - 1, 0),
 				min_z = std::max(target_cell[2] - 1, 0),
 
-				max_x = std::min(target_cell[0] + 1, grid_cells[0]),
-				max_y = std::min(target_cell[1] + 1, grid_cells[1]),
-				max_z = std::min(target_cell[2] + 1, grid_cells[2]);
+				max_x = std::min(target_cell[0] + 1, grid_cells[0] - 1),
+				max_y = std::min(target_cell[1] + 1, grid_cells[1] - 1),
+				max_z = std::min(target_cell[2] + 1, grid_cells[2] - 1);
 
 			for (int curr_x = min_x; curr_x <= max_x; ++curr_x) {
 				for (int curr_y = min_y; curr_y <= max_y; ++curr_y) {
