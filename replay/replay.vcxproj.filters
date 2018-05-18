@@ -27,6 +27,9 @@
     <ClInclude Include="..\common\loadstate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="render.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="replay.cpp">

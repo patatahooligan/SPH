@@ -12,7 +12,11 @@ class Vec3f {
 
 		constexpr Vec3f(const Vec3f &other) = default;
 
-		Vec3f& operator=(const Vec3f &other) = default;
+		static constexpr Vec3f x_unit() { return { 1.0f, 0.0f, 0.0f }; }
+		static constexpr Vec3f y_unit() { return { 0.0f, 1.0f, 0.0f }; }
+		static constexpr Vec3f z_unit() { return { 0.0f, 0.0f, 1.0f }; }
+
+		constexpr Vec3f& operator=(const Vec3f &other) = default;
 
 		constexpr bool operator==(const Vec3f &other) const {
 			return x == other.x && y == other.y && z == other.z;

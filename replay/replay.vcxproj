@@ -159,6 +159,7 @@
     <ClInclude Include="..\common\stdafx.h" />
     <ClInclude Include="..\common\targetver.h" />
     <ClInclude Include="..\common\XMLReader.h" />
+    <ClInclude Include="render.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\common\loadstate.cpp" />

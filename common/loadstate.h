@@ -12,11 +12,6 @@ class LoadState {
 			Position
 		};
 
-		// Disallow construction without a file to open, and copy-construction
-		LoadState() = delete;
-		LoadState(LoadState&) = delete;
-		LoadState(LoadState&&) = default;
-
 		LoadState(std::string input_filename) :
 			input_file(input_filename, std::ios_base::binary)
 		{
@@ -26,6 +21,8 @@ class LoadState {
 			input_file.read(reinterpret_cast<char*>(&num_of_fluid_particles), sizeof(num_of_fluid_particles));
 			input_file.read(reinterpret_cast<char*>(&num_of_particles), sizeof(num_of_particles));
 		}
+
+		LoadState(LoadState&&) = default;
 
 		void load(ParticleContainer& target_array, const Mode mode);
 
