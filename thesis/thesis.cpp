@@ -117,7 +117,7 @@ int main(int argc, char **argv) {
 	while (
 		ps.current_time() < options.time &&
 		!user_exit &&
-		options.max_run_time && now() - start_time < std::chrono::seconds{ *(options.max_run_time) })
+		(!options.max_run_time || now() - start_time < std::chrono::seconds{ *(options.max_run_time) }))
 	{
 		ps.simulation_step();
 
