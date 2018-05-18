@@ -10,6 +10,7 @@
 struct RunOptions {
 	std::string output_filename, case_filename, snapshot_filename;
 	float time, output_period;
+	SaveState::WriteMode write_mode;
 
 	std::optional<int> max_run_time;
 	std::optional<std::string> input;
@@ -22,6 +23,8 @@ auto get_options(int argc, char **argv) {
 	cxx_options.add_options()
 		("o, output", "Binary file to hold the result of the simulation",
 			cxxopts::value<std::string>())
+		("overwrite", "Overwrite the binary output file if it exists (ignored if --append)")
+		("append", "Append to binary output file if it exists (disables --overwrite)")
 		("t, time", "Time of simulation run in seconds",
 			cxxopts::value<float>())
 		("c, case", "XML file that defines the case",
@@ -43,6 +46,13 @@ auto get_options(int argc, char **argv) {
 		throw std::runtime_error(std::string("No option specified for output"));
 	else
 		run_options.output_filename = result["output"].as<std::string>();
+
+	if (result.count("append") > 0)
+		run_options.write_mode = SaveState::WriteMode::Append;
+	else if (result.count("overwrite") > 0)
+		run_options.write_mode = SaveState::WriteMode::Overwrite;
+	else
+		run_options.write_mode = SaveState::WriteMode::DontModify;
 
 	if (result.count("case") == 0)
 		throw std::runtime_error(std::string("No option specified for case"));
@@ -97,7 +107,9 @@ int main(int argc, char **argv) {
 			return ParticleSystem{ case_def };
 	} ();
 
-	SaveState save_state(options.output_filename, ps.get_num_of_fluid_particles(), ps.get_num_of_particles());
+	SaveState save_state(
+		options.output_filename, options.write_mode,
+		ps.get_num_of_fluid_particles(), ps.get_num_of_particles());
 
 	bool user_exit = false;
 	auto& now = std::chrono::steady_clock::now;
@@ -133,7 +145,9 @@ int main(int argc, char **argv) {
 	std::cout << "Saving snapshot of particles at moment of termination\n"
 			<< "Saved in order (previous step, current step)\n\n";
 
-	SaveState(options.snapshot_filename, ps.get_num_of_fluid_particles(), ps.get_num_of_particles())
+	SaveState(
+			options.snapshot_filename, SaveState::WriteMode::Overwrite,
+			ps.get_num_of_fluid_particles(), ps.get_num_of_particles())
 		.save(ps.get_previous_particlearray(), SaveState::Mode::Full)
 		.save(ps.get_particlearray(), SaveState::Mode::Full);
 

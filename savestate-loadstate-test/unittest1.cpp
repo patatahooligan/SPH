@@ -45,8 +45,10 @@ namespace savestateloadstatetest
 			SaveState::Mode modes[] = { SaveState::Mode::Full, SaveState::Mode::Position };
 			for (const auto mode : modes) {
 				const auto filename = "savestate-loadstate-test.bin";
+				std::remove(filename);
 				{
-					SaveState save_state{ filename, num_of_fluid_particles, num_of_particles };
+					SaveState save_state{
+						filename, SaveState::WriteMode::Overwrite, num_of_fluid_particles, num_of_particles };
 					for (const auto& snapshot : to_save)
 						save_state.save(snapshot, mode);
 				}
