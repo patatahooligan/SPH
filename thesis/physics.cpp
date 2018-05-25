@@ -50,24 +50,41 @@ Vec3f CubicSpline::gradient(const Vec3f &r) const {
 
 
 void ParticleSystem::generate_particles() {
+	struct TargetBox {
+		Vec3f origin, size;
+
+		bool contains(const Vec3f &position) const {
+			return
+				position.x >= origin.x && position.x <= origin.x + size.x &&
+				position.y >= origin.y && position.y <= origin.y + size.y &&
+				position.z >= origin.z && position.z <= origin.z + size.z;
+		}
+	};
+
+	ParticleContainer fluid_particles, boundary_particles;
+
+	auto remove_particles = [&](const TargetBox &box) {
+		auto predicate = [&box](const Particle& p) {
+			return box.contains(p.position);
+		};
+		fluid_particles.erase(
+			std::remove_if(fluid_particles.begin(), fluid_particles.end(), predicate),
+			fluid_particles.end());
+		boundary_particles.erase(
+			std::remove_if(boundary_particles.begin(), boundary_particles.end(), predicate),
+			boundary_particles.end());
+	};
+
 	auto fillbox = [&](const CaseDef::Box &box, ParticleContainer& target_container) {
 		// Because we might need to fill any combination of faces of a box, break it down
-		struct TargetBox { Vec3f origin; int x_increments, y_increments, z_increments; };
-
 		const float& density = case_def.particles.density;
 
 		const std::vector<TargetBox> targets = [&]() {
-			const int
-				x_increments = int(box.size.x / density) + 1,
-				y_increments = int(box.size.y / density) + 1,
-				z_increments = int(box.size.z / density) + 1;
-			constexpr int thickness = 1;
-
 			std::vector<TargetBox> targets;
 
 			if (box.fillmode.solid) {
 				// If box is solid, skip all other checks and return just this
-				targets.push_back({ box.origin, x_increments, y_increments, z_increments });
+				targets.push_back({ box.origin, box.size });
 				return targets;
 			}
 
@@ -75,22 +92,28 @@ void ParticleSystem::generate_particles() {
 			const Vec3f
 				right_origin = box.origin + Vec3f{ box.size.x, 0.0f, 0.0f },
 				back_origin = box.origin + Vec3f{ 0.0f, box.size.y, 0.0f },
-				top_origin = box.origin + Vec3f{ 0.0f, 0.0f, box.size.z };
-			if (box.fillmode.left) targets.push_back({ box.origin, thickness, y_increments, z_increments });
-			if (box.fillmode.right) targets.push_back({ right_origin, thickness, y_increments, z_increments });
-			if (box.fillmode.front) targets.push_back({ box.origin, x_increments, thickness, z_increments });
-			if (box.fillmode.back) targets.push_back({ back_origin, x_increments, thickness, z_increments });
-			if (box.fillmode.bottom) targets.push_back({ box.origin, x_increments, y_increments, thickness });
-			if (box.fillmode.top) targets.push_back({ top_origin, x_increments, y_increments, thickness });
+				top_origin = box.origin + Vec3f{ 0.0f, 0.0f, box.size.z },
+				
+				x_size = { density, box.size.y, box.size.z },
+				y_size = { box.size.x, density, box.size.z },
+				z_size = { box.size.x, box.size.y, density };
+
+			if (box.fillmode.left) targets.push_back({ box.origin, x_size });
+			if (box.fillmode.right) targets.push_back({ right_origin, x_size });
+			if (box.fillmode.front) targets.push_back({ box.origin, y_size });
+			if (box.fillmode.back) targets.push_back({ back_origin, y_size });
+			if (box.fillmode.bottom) targets.push_back({ box.origin, z_size });
+			if (box.fillmode.top) targets.push_back({ top_origin, z_size });
 			return targets;
 		} ();
 
 		for (const auto& target : targets) {
-			for (int x = 0; x < target.x_increments; ++x) {
-				for (int y = 0; y < target.y_increments; ++y) {
-					for (int z = 0; z < target.z_increments; ++z) {
+			remove_particles(target);
+			for (float x = target.origin.x; x < target.size.x; x += density) {
+				for (float y = target.origin.y; y < target.size.y; y += density) {
+					for (float z = target.origin.z; z < target.size.z; z += density) {
 						Particle p;
-						p.position = box.origin + Vec3f{ x * density, y * density, z * density };
+						p.position = { x, y, z };
 						p.density = case_def.rhop0;
 						target_container.emplace_back(p);
 					}
@@ -98,15 +121,6 @@ void ParticleSystem::generate_particles() {
 			}
 		}
 	};
-
-	auto remove_particles = [this](const CaseDef::Box &box, ParticleContainer& target_container) {
-		target_container.erase(std::remove_if(target_container.begin(), target_container.end(),
-			[&box](const Particle& p) {
-				return box.contains(p.position);
-			}), target_container.end());
-	};
-
-	ParticleContainer fluid_particles, boundary_particles;
 
 	for (const auto& box : case_def.particle_boxes) {
 		using Type = CaseDef::Box::Type;
@@ -118,8 +132,7 @@ void ParticleSystem::generate_particles() {
 			fillbox(box, boundary_particles);
 			break;
 		case Type::Void:
-			remove_particles(box, fluid_particles);
-			remove_particles(box, boundary_particles);
+			remove_particles({ box.origin, box.size });
 			break;
 		}
 	}
