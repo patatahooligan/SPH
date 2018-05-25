@@ -87,6 +87,14 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	if (auto coefh = constants.FirstChildElement("coefh").ToElement())
 		case_def.h = coefh->FloatAttribute("value") * float(std::sqrt(3)) * case_def.particles.density;
 
+	const float
+		deltap = 1.0f / 1.5f,
+		w_deltap =
+			(1.0f - 1.5f * deltap * deltap + 0.75f * deltap * deltap* deltap) /
+			(pi * std::pow(case_def.h, 3));
+
+	case_def.tensile_coef = 1.0f / w_deltap;
+
 	if (auto cflnumber = constants.FirstChildElement("cflnumber").ToElement())
 		case_def.cflnumber = cflnumber->FloatAttribute("value");
 }

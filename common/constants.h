@@ -33,6 +33,7 @@ struct CaseDef {
 	float speedsound;   // Speed of sound to use in the simulation (by default speedofsound=coefsound*speedsystem)
 	float h;            // Smoothing length
 	float cflnumber;    // Coefficient to multiply dt
+	float tensile_coef; // Coefficient to use in tensile correction method
 
 	struct {
 		float density, mass;

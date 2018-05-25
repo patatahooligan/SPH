@@ -36,11 +36,11 @@ Vec3f CubicSpline::gradient(const Vec3f &r) const {
 
 	const float
 		dq = 1 / (h * h * q),
-		dw = [&]() {
+		dw = a * [&]() {
 		if (q < 1.0f)
-			return (-3.0f * q + 9.0f / 4.0f * q * q) * a;
+			return (9.0f / 4.0f) * q * q - 3.0f * q;
 		else if (q < 2.0f)
-			return (3.0f * a * std::pow(1.0f - q, 2)) / 4.0f;
+			return -(3.0f / 4.0f) * (2.0f - q) * (2.0f - q);
 		else
 			return 0.0f;
 	}();
@@ -50,7 +50,7 @@ Vec3f CubicSpline::gradient(const Vec3f &r) const {
 
 
 void ParticleSystem::generate_particles() {
-	auto fillbox = [this](const CaseDef::Box &box, ParticleContainer& target_container) {
+	auto fillbox = [&](const CaseDef::Box &box, ParticleContainer& target_container) {
 		// Because we might need to fill any combination of faces of a box, break it down
 		struct TargetBox { Vec3f origin; int x_increments, y_increments, z_increments; };
 
@@ -153,15 +153,15 @@ float ParticleSystem::calculate_time_step() const {
 			for (int j = index_pair.first; j < index_pair.second; ++j) {
 				const Particle& Pj = particles[j];
 				const Vec3f
-					v_ij = Pj.velocity - Pi.velocity,
-					r_ij = Pj.position - Pi.position;
+					v_ij = Pi.velocity - Pj.velocity,
+					r_ij = Pi.position - Pj.position;
 
 				const float
 					r2 = r_ij.length_squared();
 
 				sigma = std::max(
 					sigma,
-					std::abs((case_def.h * dot_product(v_ij, r_ij)) / (r2 + 0.01f * h * h)));
+					std::abs((h * dot_product(v_ij, r_ij)) / (r2 + 0.01f * h * h)));
 			}
 		}
 
@@ -187,7 +187,6 @@ void ParticleSystem::compute_derivatives() {
 				beta = (case_def.speedsound * case_def.speedsound * case_def.rhop0) / gamma;
 
 			pressure[i] = beta * (std::pow(particles[i].density / case_def.rhop0, gamma) - 1);
-
 		}
 
 		#pragma omp for
@@ -206,7 +205,15 @@ void ParticleSystem::compute_derivatives() {
 					const Particle& Pj = particles[j];
 
 					const Vec3f
-						r_ij = Pi.position - Pj.position,
+						r_ij = Pi.position - Pj.position;
+					const float
+						&h = case_def.h,
+						r2 = r_ij.length_squared();                           // Squared distance
+
+					if (i == j || r2 == 0.0f || r2 > 2 * h)
+						continue;
+
+					const Vec3f
 						v_ij = Pi.velocity - Pj.velocity,
 						kernel_gradient_rij = cubic_spline.gradient(r_ij);
 
@@ -217,31 +224,38 @@ void ParticleSystem::compute_derivatives() {
 						continue;
 
 					const float
-						&h = case_def.h,
-						r2 = r_ij.length_squared(),                           // Squared distance
 						vel_pos_dot_product = dot_product(v_ij, r_ij),
-						pi_ij = [&]() {
-						if (vel_pos_dot_product > 0.0f) {
-							constexpr float a = 0.01f;
-							const float
-								rho_ij = (Pi.density + Pj.density) / 2.0f,    // Mean density
-								mu = (h * vel_pos_dot_product) / (r2 + 0.01f * h * h);
-
-							return -(a * case_def.speedsound * mu) / rho_ij;
-						}
-						else
-							return 0.0f;
-					}();
-
-					const float
 						&Pi_pressure = pressure[i],
 						&Pj_pressure = pressure[j],
 						pressure_sum = Pj_pressure + Pi_pressure,
-						density_product = Pi.density * Pj.density;
+						density_product = Pi.density * Pj.density,
+						pi_ij = [&]() {
+							if (vel_pos_dot_product < 0.0f) {
+								constexpr float a = 0.01f;
+								const float
+									rho_ij = (Pi.density + Pj.density) / 2.0f,    // Mean density
+									mu = (h * vel_pos_dot_product) / (r2 + 0.01f * h * h);
+
+								return -(a * case_def.speedsound * mu) / rho_ij;
+							}
+							else
+								return 0.0f;
+							}(),
+						tensile_correction_term = [&]() {
+								const float
+									f_ij = cubic_spline(r_ij) * case_def.tensile_coef,
+									coef_i = Pi_pressure > 0 ? 0.01f : -0.2f,
+									coef_j = Pj_pressure > 0 ? 0.01f : -0.2f,
+									tensile_i = coef_i * (Pi_pressure / (Pi.density * Pi.density)),
+									tensile_j = coef_j * (Pj_pressure / (Pj.density * Pj.density));
+
+								return std::pow(f_ij, 4) * (tensile_i + tensile_j);
+							} ();
 
 					if (i < num_of_fluid_particles)
 						acceleration[i] -=
-						case_def.particles.mass * ((pressure_sum / density_product) + pi_ij) *
+						case_def.particles.mass *
+						((pressure_sum / density_product) + pi_ij + tensile_correction_term) *
 						kernel_gradient_rij;
 				}
 			}
@@ -252,7 +266,7 @@ void ParticleSystem::compute_derivatives() {
 void ParticleSystem::integrate_verlet(const float dt) {
 	// How often to use the Verlet corrective step
 	// TODO: consider making this variable
-	constexpr int corrective_step_interval = 50;
+	constexpr int corrective_step_interval = 40;
 
 	#pragma omp parallel
 	if (verlet_step % corrective_step_interval == 0) {
