@@ -89,14 +89,16 @@ void ParticleSystem::generate_particles() {
 			}
 
 			// Otherwise, define a box for every face needed
+			const float thickness = density;
+
 			const Vec3f
-				right_origin = box.origin + Vec3f{ box.size.x, 0.0f, 0.0f },
-				back_origin = box.origin + Vec3f{ 0.0f, box.size.y, 0.0f },
-				top_origin = box.origin + Vec3f{ 0.0f, 0.0f, box.size.z },
+				right_origin = box.origin + Vec3f{ box.size.x - thickness, 0.0f, 0.0f },
+				back_origin = box.origin + Vec3f{ 0.0f, box.size.y - thickness, 0.0f },
+				top_origin = box.origin + Vec3f{ 0.0f, 0.0f, box.size.z - thickness },
 				
-				x_size = { density, box.size.y, box.size.z },
-				y_size = { box.size.x, density, box.size.z },
-				z_size = { box.size.x, box.size.y, density };
+				x_size = { thickness, box.size.y, box.size.z },
+				y_size = { box.size.x, thickness, box.size.z },
+				z_size = { box.size.x, box.size.y, thickness };
 
 			if (box.fillmode.left) targets.push_back({ box.origin, x_size });
 			if (box.fillmode.right) targets.push_back({ right_origin, x_size });
