@@ -56,7 +56,9 @@ namespace savestateloadstatetest
 				Assert::AreEqual(load_state.get_num_of_fluid_particles(), num_of_fluid_particles);
 				Assert::AreEqual(load_state.get_num_of_particles(), num_of_particles);
 				for (int i = 0; i < num_of_snapshots; ++i) {
-					auto snapshot = load_state.load(mode);
+					const auto load_result = load_state.load(mode);
+					Assert::IsTrue(load_result.has_value());
+					const auto snapshot = *load_result;
 					Assert::AreEqual(snapshot.size(), size_t(num_of_particles));
 
 					for (int j = 0; j < num_of_particles; ++j) {

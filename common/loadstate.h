@@ -24,14 +24,9 @@ class LoadState {
 
 		LoadState(LoadState&&) = default;
 
-		void load(ParticleContainer& target_array, const Mode mode);
+		bool load(ParticleContainer& target_array, const Mode mode);
 
-		ParticleContainer load(const Mode mode) {
-			// Same functionality as the other load, to offer a choice on return method
-			ParticleContainer target_array;
-			load(target_array, mode);
-			return target_array;
-		}
+		std::optional<ParticleContainer> load(const Mode mode);
 
 		auto get_num_of_fluid_particles() { return num_of_fluid_particles; }
 		auto get_num_of_particles() { return num_of_particles; }

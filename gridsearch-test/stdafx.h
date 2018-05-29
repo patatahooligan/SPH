@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "../common/stdafx.h"
+
 #include "targetver.h"
 
 // Headers for CppUnitTest
