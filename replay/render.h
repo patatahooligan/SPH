@@ -9,11 +9,22 @@ class Renderer {
 	private:
 		inline static Renderer* global_renderer_pointer = nullptr;
 		LoadState load_state;
+
 		const Vec3f point_min, point_max;
 		const float time_step;
-		float camera_angle = 0.0f;
-		int previous_mouse_x, previous_mouse_y;
-		ParticleContainer particles;
+
+		float
+			camera_distance_coef = 1.0f,
+			camera_angle = 0.0f;
+		int
+			previous_mouse_x, previous_mouse_y,
+			step = 0;
+
+		using clock = std::chrono::steady_clock;
+		std::chrono::time_point<clock> playback_starting_time;
+		bool play = false;
+		
+		std::vector<ParticleContainer> snapshots;
 
 		void render_fluid_particles();
 

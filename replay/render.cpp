@@ -24,6 +24,13 @@ Renderer::Renderer(int &argc, char **argv,
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
 	glutCreateWindow("SPH");
 
+	// Pre-load file to memory
+	auto snapshot = this->load_state.load(LoadState::Mode::Position);
+	while (snapshot) {
+		snapshots.emplace_back(std::move(*snapshot));
+		snapshot = this->load_state.load(LoadState::Mode::Position);
+	}
+
 	// Register callbacks
 	global_renderer_pointer = this;
 	glutDisplayFunc([]() {
@@ -76,7 +83,7 @@ void Renderer::update_camera_position() {
 	const Vec3f
 		camera_relative_position =
 			Vec3f{ -std::cos(camera_angle), std::sin(camera_angle), 0.0f } * camera_distance_from_center,
-		camera_position = center + camera_relative_position;
+		camera_position = center + camera_distance_coef * camera_relative_position;
 
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -89,8 +96,6 @@ void Renderer::update_camera_position() {
 		center.x, center.y, center.z,
 		up_vector.x, up_vector.y, up_vector.z
 	);
-
-	load_state.load(particles, LoadState::Mode::Position);
 }
 
 void Renderer::render_fluid_particles() {
@@ -98,8 +103,8 @@ void Renderer::render_fluid_particles() {
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glMatrixMode(GL_MODELVIEW);
-	for (auto particle_iterator = particles.begin();
-		particle_iterator!=particles.begin() + load_state.get_num_of_fluid_particles();
+	for (auto particle_iterator = snapshots[step].begin();
+		particle_iterator!= snapshots[step].begin() + load_state.get_num_of_fluid_particles();
 		++particle_iterator)
 	{
 		glPushMatrix();
@@ -114,13 +119,21 @@ void Renderer::render_fluid_particles() {
 }
 
 void Renderer::idle_func() {
-	auto& now = std::chrono::steady_clock::now;
-	static auto starting_time = now();
-	static int step = 1;
+	if (!play) return;
 
-	if (now() - starting_time > std::chrono::milliseconds{ int(step * time_step) }) {
-		load_state.load(particles, LoadState::Mode::Position);
-		++step;
+	const auto elapsed_time_ms =
+		std::chrono::duration_cast<std::chrono::milliseconds>
+		(clock::now() - playback_starting_time).count();
+
+	const auto new_step = int(elapsed_time_ms / (1000.0f * time_step));
+
+	if (new_step != step) {
+		if (new_step >= snapshots.size()) {
+			step = snapshots.size() - 1;
+			play = false;
+		}
+		else
+			step = new_step;
 
 		glutPostRedisplay();
 	}
@@ -128,6 +141,16 @@ void Renderer::idle_func() {
 
 void Renderer::keyboard_func(const unsigned char key, const int x, const int y) {
 	switch (key) {
+	case ' ':
+		if (play) {
+			step = 0;
+			play = false;
+		}
+		else {
+			play = true;
+			playback_starting_time = clock::now();
+		}
+		break;
 	case 27:
 		glutLeaveMainLoop();
 		break;
@@ -135,14 +158,29 @@ void Renderer::keyboard_func(const unsigned char key, const int x, const int y) 
 }
 
 void Renderer::mouse_func(const int button, const int state, const int x, const int y) {
+	constexpr float zoom_factor = 0.05f;
+
+	// Constants that glut doesn't name
+	enum class Mouse : int {
+		ScrollUp = 3,
+		ScrollDown = 4
+	};
+
 	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
 		previous_mouse_x = x;
 		previous_mouse_y = y;
 	}
+	else if (button == int(Mouse::ScrollUp)) {
+		camera_distance_coef /= (1.0f + zoom_factor);
+	}
+	else if (button == int(Mouse::ScrollDown)) {
+		camera_distance_coef *= (1.0f + zoom_factor);
+	}
+	update_camera_position();
 }
 
 void Renderer::mouse_motion_func(const int x, const int y) {
-	constexpr float sensitivity = 0.05f;
+	constexpr float sensitivity = 0.01f;
 
 	camera_angle += sensitivity * (x - previous_mouse_x);
 	camera_angle = std::fmod(camera_angle, 2 * pi);
