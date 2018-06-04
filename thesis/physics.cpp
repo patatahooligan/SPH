@@ -63,16 +63,13 @@ void ParticleSystem::generate_particles() {
 
 	ParticleContainer fluid_particles, boundary_particles;
 
-	auto remove_particles = [&](const TargetBox &box) {
+	auto remove_particles = [&](const TargetBox &box, ParticleContainer &target_container) {
 		auto predicate = [&box](const Particle& p) {
 			return box.contains(p.position);
 		};
-		fluid_particles.erase(
+		target_container.erase(
 			std::remove_if(fluid_particles.begin(), fluid_particles.end(), predicate),
 			fluid_particles.end());
-		boundary_particles.erase(
-			std::remove_if(boundary_particles.begin(), boundary_particles.end(), predicate),
-			boundary_particles.end());
 	};
 
 	auto fillbox = [&](const CaseDef::Box &box, ParticleContainer& target_container) {
@@ -110,10 +107,19 @@ void ParticleSystem::generate_particles() {
 		} ();
 
 		for (const auto& target : targets) {
-			remove_particles(target);
-			for (float x = target.origin.x; x < target.size.x; x += density) {
-				for (float y = target.origin.y; y < target.size.y; y += density) {
-					for (float z = target.origin.z; z < target.size.z; z += density) {
+			const Vec3f
+				fluid_offset = { density, density, density },
+				boundary_offset = 0.5f * Vec3f{ density, density, density };
+			remove_particles(
+				{target.origin - fluid_offset, target.size + 3.0f * fluid_offset },
+				fluid_particles);
+			remove_particles(
+				{ target.origin - boundary_offset, target.size + 3.0f * boundary_offset },
+				boundary_particles);
+			const auto target_end = target.origin + target.size;
+			for (float x = target.origin.x; x < target_end.x; x += density) {
+				for (float y = target.origin.y; y < target_end.y; y += density) {
+					for (float z = target.origin.z; z < target_end.z; z += density) {
 						Particle p;
 						p.position = { x, y, z };
 						p.density = case_def.rhop0;
@@ -134,7 +140,8 @@ void ParticleSystem::generate_particles() {
 			fillbox(box, boundary_particles);
 			break;
 		case Type::Void:
-			remove_particles({ box.origin, box.size });
+			remove_particles({ box.origin, box.size }, fluid_particles);
+			remove_particles({ box.origin, box.size }, boundary_particles);
 			break;
 		}
 	}
