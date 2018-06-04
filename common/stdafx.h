@@ -27,6 +27,9 @@
 #include "tinyxml2.h"
 #include "cxxopts.hpp"
 #include "GL\freeglut.h"
+#include "vtkPolyData.h"
+#include "vtkXMLPolyDataWriter.h"
+#include "vtkSmartPointer.h"
 
 
 // TODO: reference additional headers your program requires here

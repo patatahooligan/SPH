@@ -8,12 +8,13 @@
 #include "loadstate.h"
 
 struct RunOptions {
-	std::string output_filename, case_filename, snapshot_filename;
+	std::string case_filename, snapshot_filename;
 	float time, output_period;
 	SaveState::WriteMode write_mode;
 
 	std::optional<int> max_run_time;
 	std::optional<std::string> input;
+	std::optional<std::string> binary_output_filename, vtk_output_filename;
 };
 
 auto get_options(int argc, char **argv) {
@@ -21,7 +22,9 @@ auto get_options(int argc, char **argv) {
 	RunOptions run_options;
 
 	cxx_options.add_options()
-		("o, output", "Binary file to hold the result of the simulation",
+		("b, binary-output", "Binary file to hold the result of the simulation",
+			cxxopts::value<std::string>())
+		("vtk-output", "Prefix for group of vtk files to hold the result of the simulation",
 			cxxopts::value<std::string>())
 		("overwrite", "Overwrite the binary output file if it exists (ignored if --append)")
 		("append", "Append to binary output file if it exists (disables --overwrite)")
@@ -42,11 +45,6 @@ auto get_options(int argc, char **argv) {
 	const auto result = cxx_options.parse(argc, const_argv);
 
 	// Mandatory options
-	if (result.count("output") == 0)
-		throw std::runtime_error(std::string("No option specified for output"));
-	else
-		run_options.output_filename = result["output"].as<std::string>();
-
 	if (result.count("append") > 0)
 		run_options.write_mode = SaveState::WriteMode::Append;
 	else if (result.count("overwrite") > 0)
@@ -65,11 +63,20 @@ auto get_options(int argc, char **argv) {
 		run_options.time = result["time"].as<float>();
 
 	if (result.count("output-period") == 0)
-		throw std::runtime_error(std::string("No options specified for output-period"));
+		run_options.output_period = 0;
 	else
 		run_options.output_period = result["output-period"].as<float>();
 
 	// Optional
+	if (result.count("binary-output") != 0)
+		run_options.binary_output_filename = result["binary-output"].as<std::string>();
+
+	if (result.count("vtk-output") != 0)
+		run_options.vtk_output_filename = result["vtk-output"].as<std::string>();
+
+	if (!run_options.binary_output_filename && !run_options.vtk_output_filename)
+		throw std::runtime_error(std::string("No option specified for output"));
+
 	if (result.count("snapshot") == 0)
 		run_options.snapshot_filename = "snapshot.bin";
 	else
@@ -107,13 +114,17 @@ int main(int argc, char **argv) {
 			return ParticleSystem{ case_def };
 	} ();
 
-	SaveState save_state(
-		options.output_filename, options.write_mode,
-		ps.get_num_of_fluid_particles(), ps.get_num_of_particles());
-
+	std::optional<SaveBinary> save_binary;
+	if (options.binary_output_filename) {
+		save_binary.emplace(
+			*options.binary_output_filename, options.write_mode,
+			ps.get_num_of_fluid_particles(), ps.get_num_of_particles());
+	}
+	
 	bool user_exit = false;
 	auto& now = std::chrono::steady_clock::now;
 	const auto start_time = now();
+	int output_step = 0;
 	while (
 		ps.current_time() < options.time &&
 		!user_exit &&
@@ -121,9 +132,20 @@ int main(int argc, char **argv) {
 	{
 		ps.simulation_step();
 
-		if (save_state.get_step() * options.output_period < ps.current_time()) {
-			save_state.save(ps.get_particlearray(), SaveState::Mode::Position);
+		if (output_step * options.output_period < ps.current_time()) {
+			if (save_binary)
+				save_binary->save(ps.get_fluid_begin(), ps.get_fluid_end());
+
+			if (options.vtk_output_filename) {
+				save_VTK(ps.get_fluid_begin(), ps.get_fluid_end(),
+					*options.vtk_output_filename + "-fluid-" + std::to_string(output_step));
+				save_VTK(ps.get_boundary_begin(), ps.get_boundary_end(),
+					*options.vtk_output_filename + "-boundary-" + std::to_string(output_step));
+			}
+
 			std::cout << "Snapshot saved at time " << ps.current_time() << "s\n";
+
+			++output_step;
 		}
 
 		while (_kbhit()) {
@@ -140,16 +162,16 @@ int main(int argc, char **argv) {
 	std::cout << "Time of simulation :" << ps.current_time() << " s\n"
 		<<"    (of requested " << options.time << " s)\n\n";
 
-	std::cout << "Steps saved in binary file : " << save_state.get_step() << '\n\n';
+	std::cout << "Steps saved in output file : " << output_step << '\n\n';
 
 	std::cout << "Saving snapshot of particles at moment of termination\n"
 			<< "Saved in order (previous step, current step)\n\n";
 
-	SaveState(
+	SaveBinary(
 			options.snapshot_filename, SaveState::WriteMode::Overwrite,
 			ps.get_num_of_fluid_particles(), ps.get_num_of_particles())
-		.save(ps.get_previous_particlearray(), SaveState::Mode::Full)
-		.save(ps.get_particlearray(), SaveState::Mode::Full);
+		.save(ps.get_previous_particlearray().begin(), ps.get_previous_particlearray().end())
+		.save(ps.get_particlearray().begin(), ps.get_particlearray().end());
 
 	return 0;
 }

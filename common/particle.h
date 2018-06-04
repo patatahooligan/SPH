@@ -14,3 +14,5 @@ struct Particle {
 
 // This is used across translation units. Defining it here enforces consistency and facilitates changes.
 using ParticleContainer = std::vector<Particle>;
+using ParticleIterator = ParticleContainer::iterator;
+using ParticleConstIterator = ParticleContainer::const_iterator;

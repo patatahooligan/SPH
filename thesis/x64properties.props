@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <LibraryPath>C:\dev\freeglut-3.0.0\build-x64\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\dev\VTK-8.1.1\build-x64\install\lib;C:\dev\freeglut-3.0.0\build-x64\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup />
   <ItemGroup />

@@ -98,6 +98,11 @@ class ParticleSystem {
 		const ParticleContainer& get_particlearray() const { return particles; }
 		const ParticleContainer& get_previous_particlearray() const { return prev_particles; }
 
+		ParticleConstIterator get_fluid_begin() const { return particles.begin(); }
+		ParticleConstIterator get_fluid_end() const { return particles.begin() + num_of_fluid_particles; }
+		ParticleConstIterator get_boundary_begin() const { return particles.begin() + num_of_fluid_particles; }
+		ParticleConstIterator get_boundary_end() const { return particles.end(); }
+
 		float current_time() const {return simulation_time;}
 
 		auto get_num_of_particles() const { return particles.size(); }
