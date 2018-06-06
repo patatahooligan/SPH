@@ -49,35 +49,24 @@ Vec3f CubicSpline::gradient(const Vec3f &r) const {
 }
 
 
-void ParticleSystem::generate_particles() {
-	struct TargetBox {
-		Vec3f origin, size;
-
-		bool contains(const Vec3f &position) const {
-			return
-				position.x >= origin.x && position.x <= origin.x + size.x &&
-				position.y >= origin.y && position.y <= origin.y + size.y &&
-				position.z >= origin.z && position.z <= origin.z + size.z;
-		}
-	};
-
+ParticleContainer ParticleSystem::generate_particles() {
 	ParticleContainer fluid_particles, boundary_particles;
 
-	auto remove_particles = [&](const TargetBox &box, ParticleContainer &target_container) {
+	auto remove_particles = [&](const CaseDef::Box &box, ParticleContainer &target_container) {
 		auto predicate = [&box](const Particle& p) {
 			return box.contains(p.position);
 		};
 		target_container.erase(
-			std::remove_if(fluid_particles.begin(), fluid_particles.end(), predicate),
-			fluid_particles.end());
+			std::remove_if(target_container.begin(), target_container.end(), predicate),
+			target_container.end());
 	};
 
-	auto fillbox = [&](const CaseDef::Box &box, ParticleContainer& target_container) {
+	auto fillbox = [&](const CaseDef::CaseDefBox &box, ParticleContainer& target_container) {
 		// Because we might need to fill any combination of faces of a box, break it down
 		const float& density = case_def.particles.density;
 
-		const std::vector<TargetBox> targets = [&]() {
-			std::vector<TargetBox> targets;
+		const std::vector<CaseDef::Box> targets = [&]() {
+			std::vector<CaseDef::Box> targets;
 
 			if (box.fillmode.solid) {
 				// If box is solid, skip all other checks and return just this
@@ -108,18 +97,18 @@ void ParticleSystem::generate_particles() {
 
 		for (const auto& target : targets) {
 			const Vec3f
-				fluid_offset = { density, density, density },
-				boundary_offset = 0.5f * Vec3f{ density, density, density };
+				fluid_offset = 2.0f * Vec3f{ density, density, density },
+				boundary_offset = 0.4f * Vec3f{ density, density, density };
 			remove_particles(
-				{target.origin - fluid_offset, target.size + 3.0f * fluid_offset },
+				{target.origin - fluid_offset, target.size + 2.0f * fluid_offset },
 				fluid_particles);
 			remove_particles(
-				{ target.origin - boundary_offset, target.size + 3.0f * boundary_offset },
+				{ target.origin - boundary_offset, target.size + 2.0f * boundary_offset },
 				boundary_particles);
 			const auto target_end = target.origin + target.size;
-			for (float x = target.origin.x; x < target_end.x; x += density) {
-				for (float y = target.origin.y; y < target_end.y; y += density) {
-					for (float z = target.origin.z; z < target_end.z; z += density) {
+			for (float x = target.origin.x; x <= target_end.x; x += density) {
+				for (float y = target.origin.y; y <= target_end.y; y += density) {
+					for (float z = target.origin.z; z <= target_end.z; z += density) {
 						Particle p;
 						p.position = { x, y, z };
 						p.density = case_def.rhop0;
@@ -131,7 +120,7 @@ void ParticleSystem::generate_particles() {
 	};
 
 	for (const auto& box : case_def.particle_boxes) {
-		using Type = CaseDef::Box::Type;
+		using Type = CaseDef::CaseDefBox::Type;
 		switch (box.type) {
 		case Type::Fluid:
 			fillbox(box, fluid_particles);
@@ -150,9 +139,34 @@ void ParticleSystem::generate_particles() {
 	// [0, num_of_particles)   -> fluid
 	// [num_of_particles, end) -> boundary
 	num_of_fluid_particles = fluid_particles.size();
-	particles = std::move(fluid_particles);
-	particles.insert(particles.end(), boundary_particles.begin(), boundary_particles.end());
-	particles.shrink_to_fit();
+
+	ParticleContainer generated_particles = std::move(fluid_particles);
+	generated_particles.insert(generated_particles.end(), boundary_particles.begin(), boundary_particles.end());
+	generated_particles.shrink_to_fit();
+
+	return generated_particles;
+}
+
+CaseDef::Box ParticleSystem::get_particle_axis_aligned_bounding_box() {
+	constexpr auto
+		float_max = std::numeric_limits<float>::max(),
+		float_min = std::numeric_limits<float>::min();
+
+	Vec3f
+		point_min = { float_max, float_max, float_max },
+		point_max = { float_min, float_min, float_min };
+
+	for (const auto& p : particles) {
+		point_min.x = std::min(point_min.x, p.position.x);
+		point_min.y = std::min(point_min.y, p.position.y);
+		point_min.z = std::min(point_min.z, p.position.z);
+
+		point_max.x = std::max(point_max.x, p.position.x);
+		point_max.y = std::max(point_max.y, p.position.y);
+		point_max.z = std::max(point_max.z, p.position.z);
+	}
+
+	return { point_min, point_max - point_min };
 }
 
 float ParticleSystem::calculate_time_step() const {
@@ -330,6 +344,54 @@ void ParticleSystem::integrate_verlet(const float dt) {
 	++verlet_step;
 }
 
+void ParticleSystem::remove_out_of_bounds_particles() {
+	const auto old_size = particles.size();
+
+	auto predicate = [this](const Particle& p) {return !bounding_box.contains(p.position); };
+	particles.erase(
+		std::remove_if(particles.begin(), particles.begin() + num_of_fluid_particles, predicate),
+		get_fluid_end());
+
+	num_of_fluid_particles -= old_size - particles.size();
+}
+
+ParticleSystem::ParticleSystem(const CaseDef &case_def) :
+	case_def(case_def),
+	particles(generate_particles()),
+	bounding_box(get_particle_axis_aligned_bounding_box()),
+	search_grid_fluid(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
+	search_grid_boundary(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
+	cubic_spline(CubicSpline(case_def.h))
+{
+	// We need to ensure that all particle arrays are the same size. We also
+	// want the boundary positions to be set here so we don't have to copy
+	// them every time. Simply copying the whole vector is fast enough.
+	prev_particles = particles;
+	next_particles = particles;
+
+	const auto &density = case_def.particles.density;
+	const Vec3f margin = 0.5f * Vec3f{ density, density, density };
+
+	allocate_memory_for_verlet_variables();
+}
+
+ParticleSystem::ParticleSystem(const CaseDef &case_def,
+	ParticleContainer previous, ParticleContainer current,
+	int num_of_fluid_particles) :
+	case_def(case_def),
+	search_grid_fluid(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
+	search_grid_boundary(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
+	cubic_spline(CubicSpline(case_def.h)),
+	num_of_fluid_particles(num_of_fluid_particles)
+{
+	prev_particles = std::move(previous);
+	particles = std::move(current);
+
+	next_particles.resize(particles.size());
+
+	allocate_memory_for_verlet_variables();
+}
+
 SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(const Vec3f &position) const {
 	SearchGrid::cell_indices_container neighbors;
 	neighbors.reserve(54);
@@ -370,4 +432,6 @@ void ParticleSystem::simulation_step() {
 	// next_particles practically holds garbage values after this
 	prev_particles.swap(particles);
 	particles.swap(next_particles);
+
+	remove_out_of_bounds_particles();
 }

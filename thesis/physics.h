@@ -25,15 +25,16 @@ class ParticleSystem {
 	// Holds the particles and handles the physics simulation
 
 	private:
-		float simulation_time = 0.0f;
-		int num_of_fluid_particles;
+		CaseDef case_def;
 		ParticleContainer
 			particles, prev_particles, next_particles;
 		std::unique_ptr<Vec3f[]> acceleration;
 		std::unique_ptr<float[]> density_derivative, pressure;
-		const CaseDef case_def;
+		int num_of_fluid_particles;
+		CaseDef::Box bounding_box;
 		SearchGrid search_grid_fluid, search_grid_boundary;
 		CubicSpline cubic_spline;
+		float simulation_time = 0.0f;
 		int verlet_step = 0;
 
 		void allocate_memory_for_verlet_variables() {
@@ -44,7 +45,9 @@ class ParticleSystem {
 		}
 
 		// Generate particles for the geomtery specified in the case_def member
-		void generate_particles();
+		ParticleContainer generate_particles();
+
+		CaseDef::Box get_particle_axis_aligned_bounding_box();
 
 		// Calculate a time step that is stable.
 		float calculate_time_step() const;
@@ -54,42 +57,16 @@ class ParticleSystem {
 		// Integrate forward using verlet
 		void integrate_verlet(float dt);
 
+		void remove_out_of_bounds_particles();
+
 		SearchGrid::cell_indices_container get_all_neighbors(const Vec3f &position) const;
 
 	public:
-		ParticleSystem(const CaseDef &case_def) :
-			case_def(case_def),
-			search_grid_fluid(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
-			search_grid_boundary(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
-			cubic_spline(CubicSpline(case_def.h))
-		{
-			generate_particles();
-
-			// We need to ensure that all particle arrays are the same size. We also
-			// want the boundary positions to be set here so we don't have to copy
-			// them every time. Simply copying the whole vector is fast enough.
-			prev_particles = particles;
-			next_particles = particles;
-
-			allocate_memory_for_verlet_variables();
-		}
+		ParticleSystem(const CaseDef &case_def);
 
 		ParticleSystem(const CaseDef &case_def,
 			ParticleContainer previous, ParticleContainer current,
-			int num_of_fluid_particles) :
-			case_def(case_def),
-			search_grid_fluid(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
-			search_grid_boundary(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
-			cubic_spline(CubicSpline(case_def.h)),
-			num_of_fluid_particles(num_of_fluid_particles)
-		{
-			prev_particles = std::move(previous);
-			particles = std::move(current);
-
-			next_particles.resize(particles.size());
-
-			allocate_memory_for_verlet_variables();
-		}
+			int num_of_fluid_particles);
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
 		ParticleSystem(ParticleSystem &&) = default;

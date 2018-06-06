@@ -30,9 +30,9 @@ class SearchGrid {
 
 	private:
 		std::vector<ParticleProxy> proxies;
-		const Vec3f point_min, point_max, size;
-		const float h;
-		const std::array<int, 3> grid_cells;
+		Vec3f point_min, point_max, size;
+		float h;
+		std::array<int, 3> grid_cells;
 		cell_indices_container cell_indices;
 
 		std::array<int, 3> determine_number_of_cells (
@@ -102,8 +102,6 @@ class SearchGrid {
 		SearchGrid(const Vec3f &point_min, const Vec3f &point_max, const float h) :
 			point_min(point_min), point_max(point_max), size (point_max - point_min), h(h),
 			grid_cells(determine_number_of_cells(size, h)) {}
-
-		SearchGrid(SearchGrid&&) = default;
 
 		void sort_containers(iter target_begin, iter target_end, iter parallel_begin) {
 			// Sort the containers in place based on [beg_it[0], end)

@@ -53,7 +53,7 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 			case_def.hswl = 0.0f;
 			const Vec3f down_unit_vector = case_def.gravity.unit_vector();
 			for (auto &box : case_def.particle_boxes)
-				if (box.type == CaseDef::Box::Type::Fluid)
+				if (box.type == CaseDef::CaseDefBox::Type::Fluid)
 					case_def.hswl = std::max(
 						std::abs(dot_product(box.size, down_unit_vector)),
 						case_def.hswl);
@@ -122,7 +122,7 @@ void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 	// The type of a box (fluid, boundary, void) is given in a separate command from the
 	// geometry of the box, so we have to store its type
-	using Type = CaseDef::Box::Type;
+	using Type = CaseDef::CaseDefBox::Type;
 	auto box_type = Type::Void;
 
 	for (auto command = command_list.FirstChildElement().ToElement(); command;) {
@@ -143,7 +143,7 @@ void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 			if (!size) throw std::runtime_error("No size given for drawbox");
 			if (!boxfill) throw std::runtime_error("No boxfill mode given for drawbox");
 
-			CaseDef::Box box;
+			CaseDef::CaseDefBox box;
 			box.origin = get_vec3f_from_element(*point);
 			box.size = get_vec3f_from_element(*size);
 			box.type = box_type;
