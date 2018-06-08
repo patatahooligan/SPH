@@ -216,3 +216,6 @@ thesis.VC.opendb
 # Output files
 *.bin
 *.vtp
+
+# Case files
+*.xml
