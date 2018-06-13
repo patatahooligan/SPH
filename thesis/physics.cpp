@@ -97,13 +97,13 @@ ParticleContainer ParticleSystem::generate_particles() {
 
 		for (const auto& target : targets) {
 			const Vec3f
-				fluid_offset = 2.0f * Vec3f{ density, density, density },
+				fluid_offset = { case_def.h, case_def.h, case_def.h },
 				boundary_offset = 0.4f * Vec3f{ density, density, density };
 			remove_particles(
-				{target.origin - fluid_offset, target.size + 2.0f * fluid_offset },
+				{target.origin - fluid_offset, target.size + 2.5f * fluid_offset },
 				fluid_particles);
 			remove_particles(
-				{ target.origin - boundary_offset, target.size + 2.0f * boundary_offset },
+				{ target.origin - boundary_offset, target.size + 2.5 * boundary_offset },
 				boundary_particles);
 			const auto target_end = target.origin + target.size;
 			for (float x = target.origin.x; x <= target_end.x; x += density) {
