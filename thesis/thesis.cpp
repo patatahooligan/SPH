@@ -114,6 +114,9 @@ int main(int argc, char **argv) {
 			return ParticleSystem{ case_def };
 	} ();
 
+	save_VTK(ps.get_boundary_begin(), ps.get_boundary_end(),
+		*options.vtk_output_filename + "-boundary");
+
 	std::optional<SaveBinary> save_binary;
 	if (options.binary_output_filename) {
 		save_binary.emplace(
@@ -139,8 +142,6 @@ int main(int argc, char **argv) {
 			if (options.vtk_output_filename) {
 				save_VTK(ps.get_fluid_begin(), ps.get_fluid_end(),
 					*options.vtk_output_filename + "-fluid-" + std::to_string(output_step));
-				save_VTK(ps.get_boundary_begin(), ps.get_boundary_end(),
-					*options.vtk_output_filename + "-boundary-" + std::to_string(output_step));
 			}
 
 			std::cout << "Snapshot saved at time " << ps.current_time() << "s\n";
