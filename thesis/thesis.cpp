@@ -8,7 +8,7 @@
 #include "loadstate.h"
 
 struct RunOptions {
-	std::string case_filename, snapshot_filename;
+	std::string case_filename;
 	float time, output_period;
 	SaveState::WriteMode write_mode;
 
@@ -36,8 +36,6 @@ auto get_options(int argc, char **argv) {
 			cxxopts::value<float>())
 		("max-run-time", "Maximum time in minutes the app can run before termination",
 			cxxopts::value<float>())
-		("i, input", "Binary snapshot file of previous run",
-			cxxopts::value<std::string>())
 		("snapshot", "Filename for snapshot of final step (default \"snapshot.bin\")",
 			cxxopts::value<std::string>());
 	
@@ -77,11 +75,6 @@ auto get_options(int argc, char **argv) {
 	if (!run_options.binary_output_filename && !run_options.vtk_output_filename)
 		throw std::runtime_error(std::string("No option specified for output"));
 
-	if (result.count("snapshot") == 0)
-		run_options.snapshot_filename = "snapshot.bin";
-	else
-		run_options.snapshot_filename = result["snapshot"].as<std::string>();
-
 	if (result.count("max-run-time") == 1)
 		run_options.max_run_time = int(result["max-run-time"].as<float>() * 60.0f);
 
@@ -98,21 +91,7 @@ int main(int argc, char **argv) {
 
 	const auto case_def = get_case_from_XML(options.case_filename);
 
-	auto ps = [&]() {
-		if (options.input) {
-			LoadState load_state{ *options.input };
-			ParticleContainer previous_particles, current_particles;
-
-			load_state.load(previous_particles, LoadState::Mode::Full);
-			load_state.load(current_particles, LoadState::Mode::Full);
-
-			return ParticleSystem{
-				case_def, previous_particles, current_particles,
-				load_state.get_num_of_fluid_particles() };
-		}
-		else
-			return ParticleSystem{ case_def };
-	} ();
+	ParticleSystem ps(case_def);
 
 	save_VTK(ps.get_boundary_begin(), ps.get_boundary_end(),
 		*options.vtk_output_filename + "-boundary");
@@ -167,12 +146,6 @@ int main(int argc, char **argv) {
 
 	std::cout << "Saving snapshot of particles at moment of termination\n"
 			<< "Saved in order (previous step, current step)\n\n";
-
-	SaveBinary(
-			options.snapshot_filename, SaveState::WriteMode::Overwrite,
-			ps.get_num_of_fluid_particles(), ps.get_num_of_particles())
-		.save(ps.get_previous_particlearray().begin(), ps.get_previous_particlearray().end())
-		.save(ps.get_particlearray().begin(), ps.get_particlearray().end());
 
 	return 0;
 }

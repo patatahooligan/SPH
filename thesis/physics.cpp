@@ -147,6 +147,26 @@ ParticleContainer ParticleSystem::generate_particles() {
 	return generated_particles;
 }
 
+void ParticleSystem::generate_mass_spring_damper() {
+	const auto &density = case_def.particles.density;
+	MassSpringDamper::k = 100.0f;
+	MassSpringDamper::resting_length = case_def.particles.density;
+	MassSpringDamper::damping_coef = 2.0f * std::sqrt(2.0f * MassSpringDamper::k * case_def.particles.mass);
+
+	for (int i = 0; i < num_of_fluid_particles; ++i) {
+		for (int j = i + 1; j < num_of_fluid_particles; ++j) {
+			const float distance = (particles[i].position - particles[j].position).length();
+			if (std::abs(distance - density) < 0.1f * density) {
+				MassSpringDamper msp;
+				msp.particle_indices = { i, j };
+				mass_spring_damper.emplace_back(msp);
+			}
+		}
+	}
+
+	mass_spring_damper.shrink_to_fit();
+}
+
 CaseDef::Box ParticleSystem::get_particle_axis_aligned_bounding_box() {
 	constexpr auto
 		float_max = std::numeric_limits<float>::max(),
@@ -184,7 +204,7 @@ float ParticleSystem::calculate_time_step() const {
 
 		const auto index_ranges = get_all_neighbors(Pi.position);
 
-		float sigma = 0.0f;
+		float sigma = std::numeric_limits<float>::lowest();
 		for (const auto index_pair : index_ranges) {
 			for (int j = index_pair.first; j < index_pair.second; ++j) {
 				const Particle& Pj = particles[j];
@@ -229,12 +249,11 @@ void ParticleSystem::compute_derivatives() {
 		for (int i = 0; size_t(i) < particles.size(); ++i) {
 			const Particle& Pi = particles[i];
 
-			// Get neighbors of Pi
-			const auto index_ranges = get_all_neighbors(Pi.position);
-
 			if (i < num_of_fluid_particles)
 				acceleration[i] = case_def.gravity;
 			density_derivative[i] = 0.0f;
+
+			const auto index_ranges = get_all_neighbors(Pi.position);
 
 			for (const auto index_pair : index_ranges) {
 				for (int j = index_pair.first; j < index_pair.second; ++j) {
@@ -296,13 +315,24 @@ void ParticleSystem::compute_derivatives() {
 				}
 			}
 		}
+
+		for (int k = 0; k < mass_spring_damper.size(); ++k) {
+			const auto
+				i = mass_spring_damper[k].particle_indices.first,
+				j = mass_spring_damper[k].particle_indices.second;
+
+			const auto force = MassSpringDamper::compute_force(particles[i], particles[j]);
+
+			acceleration[i] += force / case_def.particles.mass;
+			acceleration[j] -= force / case_def.particles.mass;
+		}
 	}
 }
 
 void ParticleSystem::integrate_verlet(const float dt) {
 	// How often to use the Verlet corrective step
 	// TODO: consider making this variable
-	constexpr int corrective_step_interval = 40;
+	constexpr int corrective_step_interval = 10;
 
 	#pragma omp parallel
 	if (verlet_step % corrective_step_interval == 0) {
@@ -369,25 +399,7 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 	prev_particles = particles;
 	next_particles = particles;
 
-	const auto &density = case_def.particles.density;
-	const Vec3f margin = 0.5f * Vec3f{ density, density, density };
-
-	allocate_memory_for_verlet_variables();
-}
-
-ParticleSystem::ParticleSystem(const CaseDef &case_def,
-	ParticleContainer previous, ParticleContainer current,
-	int num_of_fluid_particles) :
-	case_def(case_def),
-	search_grid_fluid(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
-	search_grid_boundary(case_def.particles.point_min, case_def.particles.point_max, case_def.h),
-	cubic_spline(CubicSpline(case_def.h)),
-	num_of_fluid_particles(num_of_fluid_particles)
-{
-	prev_particles = std::move(previous);
-	particles = std::move(current);
-
-	next_particles.resize(particles.size());
+	generate_mass_spring_damper();
 
 	allocate_memory_for_verlet_variables();
 }
@@ -412,13 +424,15 @@ void ParticleSystem::simulation_step() {
 	// Sort fluid and boundary particles separately
 	search_grid_fluid.sort_containers(
 		particles.begin(), particles.begin() + num_of_fluid_particles,
-		prev_particles.begin()
+		prev_particles.begin(),
+		&mass_spring_damper
 	);
 
 	search_grid_boundary.sort_containers(
 		particles.begin() + num_of_fluid_particles,
 		particles.end(),
-		prev_particles.begin() + num_of_fluid_particles
+		prev_particles.begin() + num_of_fluid_particles,
+		nullptr
 	);
 
 	compute_derivatives();
@@ -432,6 +446,4 @@ void ParticleSystem::simulation_step() {
 	// next_particles practically holds garbage values after this
 	prev_particles.swap(particles);
 	particles.swap(next_particles);
-
-	remove_out_of_bounds_particles();
 }

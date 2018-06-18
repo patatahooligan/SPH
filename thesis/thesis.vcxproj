@@ -176,6 +176,7 @@
     <ClInclude Include="..\common\targetver.h" />
     <ClInclude Include="..\common\vec3f.h" />
     <ClInclude Include="..\common\XMLReader.h" />
+    <ClInclude Include="massspringdamper.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="savestate.h" />
     <ClInclude Include="searchgrid.h" />

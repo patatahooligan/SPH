@@ -8,6 +8,7 @@
 
 #include "particle.h"
 #include "vec3f.h"
+#include "massspringdamper.h"
 
 struct ParticleProxy {
 	int index, cell;
@@ -103,10 +104,33 @@ class SearchGrid {
 			point_min(point_min), point_max(point_max), size (point_max - point_min), h(h),
 			grid_cells(determine_number_of_cells(size, h)) {}
 
-		void sort_containers(iter target_begin, iter target_end, iter parallel_begin) {
+		void sort_containers(
+			iter target_begin, iter target_end, iter parallel_begin,
+			std::vector<MassSpringDamper>* mass_spring_damper_p)
+		{
 			// Sort the containers in place based on [beg_it[0], end)
 
 			determine_order(target_begin, target_end);
+
+			if (mass_spring_damper_p) {
+				// Create an array of reverse proxies and use it to update the mass_spring_damper indices
+				std::vector<int> reverse_proxies;
+				reverse_proxies.resize(proxies.size());
+				#pragma omp parallel for
+				for (int i = 0; i < proxies.size(); ++i) {
+					reverse_proxies[proxies[i].index] = i;
+				}
+
+				#pragma omp parallel for
+				for (int i = 0; i < mass_spring_damper_p->size(); ++i) {
+					auto &mass_spring_damper = (*mass_spring_damper_p)[i];
+					auto
+						&first = mass_spring_damper.particle_indices.first,
+						&second = mass_spring_damper.particle_indices.second;
+					first = reverse_proxies[first];
+					second = reverse_proxies[second];
+				}
+			}
 
 			determine_cell_indices();
 

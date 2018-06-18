@@ -48,6 +48,9 @@
     <ClInclude Include="..\common\loadstate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="massspringdamper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="thesis.cpp">

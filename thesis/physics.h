@@ -8,6 +8,7 @@
 #include "particle.h"
 #include "Vec3f.h"
 #include "searchgrid.h"
+#include "massspringdamper.h"
 
 
 class CubicSpline {
@@ -28,24 +29,27 @@ class ParticleSystem {
 		CaseDef case_def;
 		ParticleContainer
 			particles, prev_particles, next_particles;
-		std::unique_ptr<Vec3f[]> acceleration;
-		std::unique_ptr<float[]> density_derivative, pressure;
+		std::vector<Vec3f> acceleration;
+		std::vector<float> density_derivative, pressure;
 		int num_of_fluid_particles;
 		CaseDef::Box bounding_box;
 		SearchGrid search_grid_fluid, search_grid_boundary;
 		CubicSpline cubic_spline;
+		std::vector<MassSpringDamper> mass_spring_damper;
 		float simulation_time = 0.0f;
 		int verlet_step = 0;
 
 		void allocate_memory_for_verlet_variables() {
 			// Note: these need different sizes because acceleration is not needed for boundaries
-			acceleration = std::make_unique<Vec3f[]>(num_of_fluid_particles);
-			density_derivative = std::make_unique<float[]>(particles.size());
-			pressure = std::make_unique<float[]>(particles.size());
+			acceleration.resize(num_of_fluid_particles);
+			density_derivative.resize(particles.size());
+			pressure.resize(particles.size());
 		}
 
 		// Generate particles for the geomtery specified in the case_def member
 		ParticleContainer generate_particles();
+
+		void generate_mass_spring_damper();
 
 		CaseDef::Box get_particle_axis_aligned_bounding_box();
 
@@ -63,10 +67,6 @@ class ParticleSystem {
 
 	public:
 		ParticleSystem(const CaseDef &case_def);
-
-		ParticleSystem(const CaseDef &case_def,
-			ParticleContainer previous, ParticleContainer current,
-			int num_of_fluid_particles);
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
 		ParticleSystem(ParticleSystem &&) = default;
