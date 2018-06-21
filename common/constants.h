@@ -26,6 +26,7 @@ struct CaseDef {
 	float h;            // Smoothing length
 	float cflnumber;    // Coefficient to multiply dt
 	float tensile_coef; // Coefficient to use in tensile correction method
+	float alpha;        // Coefficient in artificial viscosity
 
 	struct {
 		float density, mass;

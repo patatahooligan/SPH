@@ -42,6 +42,9 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	auto constants = XML_root.FirstChildElement("casedef").FirstChildElement("constantsdef");
 	assert(constants.ToNode());
 
+	if (auto alpha = constants.FirstChildElement("alpha").ToElement())
+		case_def.alpha = alpha->FloatAttribute("value");
+
 	if (auto gravity = constants.FirstChildElement("gravity").ToElement())
 		case_def.gravity = get_vec3f_from_element(*gravity);
 

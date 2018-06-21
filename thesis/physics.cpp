@@ -286,7 +286,7 @@ void ParticleSystem::compute_derivatives() {
 						density_product = Pi.density * Pj.density,
 						pi_ij = [&]() {
 							if (vel_pos_dot_product < 0.0f) {
-								constexpr float a = 0.01f;
+								const float &a = case_def.alpha;
 								const float
 									rho_ij = (Pi.density + Pj.density) / 2.0f,    // Mean density
 									mu = (h * vel_pos_dot_product) / (r2 + 0.01f * h * h);
