@@ -8,14 +8,6 @@
 // Constants needed in more than one translation unit
 constexpr float pi = 3.14159265359f;
 
-// Size of system
-constexpr float
-	size = 1.0f,
-	sizex = 1.0f,
-	sizey = 1.0f,
-	sizez = 1.0f,
-	offsetz = 1.0f;
-
 // Display window (and video output) dimensions
 constexpr int output_width = 800;
 constexpr int output_height = 800;
