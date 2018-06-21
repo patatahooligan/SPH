@@ -13,7 +13,10 @@ struct MassSpringDamper {
 			relative_position = target.position - other.position,
 			relative_velocity = target.velocity - other.velocity;
 		const float length = relative_position.length();
-		const Vec3f displacement = (length - resting_length) * (relative_position / length);
-		return -k * displacement; // -damping_coef * relative_velocity;
+		const Vec3f
+			spring_unit_vector = relative_position / length,
+			displacement = (length - resting_length) * spring_unit_vector,
+			normal_velocity = dot_product(relative_velocity, spring_unit_vector) * spring_unit_vector;
+		return -k * displacement - damping_coef * relative_velocity;
 	}
 };
