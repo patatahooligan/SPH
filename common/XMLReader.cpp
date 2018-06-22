@@ -51,6 +51,12 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	if (auto rhop0 = constants.FirstChildElement("rhop0").ToElement())
 		case_def.rhop0 = rhop0->FloatAttribute("value");
 
+	if (auto spring = constants.FirstChildElement("spring").ToElement()) {
+		case_def.spring.on = true;
+		case_def.spring.stiffness = spring->FloatAttribute("stiffness");
+		case_def.spring.damping = spring->FloatAttribute("damping");
+	}
+
 	if (auto hswl = constants.FirstChildElement("hswl").ToElement()) {
 		if (hswl->BoolAttribute("auto")) {
 			case_def.hswl = 0.0f;

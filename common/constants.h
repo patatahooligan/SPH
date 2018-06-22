@@ -33,6 +33,10 @@ struct CaseDef {
 	float cflnumber;    // Coefficient to multiply dt
 	float tensile_coef; // Coefficient to use in tensile correction method
 	float alpha;        // Coefficient in artificial viscosity
+	struct {
+		bool on = false;
+		float stiffness, damping;
+	} spring;
 
 	struct {
 		float density, mass;

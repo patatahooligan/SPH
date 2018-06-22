@@ -149,9 +149,9 @@ ParticleContainer ParticleSystem::generate_particles() {
 
 void ParticleSystem::generate_mass_spring_damper() {
 	const auto &density = case_def.particles.density;
-	MassSpringDamper::k = 100.0f;
+	MassSpringDamper::k = case_def.spring.stiffness;
 	MassSpringDamper::resting_length = case_def.particles.density;
-	MassSpringDamper::damping_coef = 2.0f * std::sqrt(2.0f * MassSpringDamper::k * case_def.particles.mass);
+	MassSpringDamper::damping_coef = case_def.spring.damping;
 
 	for (int i = 0; i < num_of_fluid_particles; ++i) {
 		for (int j = i + 1; j < num_of_fluid_particles; ++j) {
