@@ -56,6 +56,9 @@ class ParticleSystem {
 		// Calculate a time step that is stable.
 		float calculate_time_step() const;
 
+		template <ParticleType TypeOfPi, ParticleType TypeOfNeighbors>
+		void compute_derivatives(const int i);
+
 		void compute_derivatives();
 
 		// Integrate forward using verlet

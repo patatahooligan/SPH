@@ -13,6 +13,12 @@ constexpr int output_width = 800;
 constexpr int output_height = 800;
 constexpr float framerate = 60.0f;
 
+enum class ParticleType {
+	Void,
+	Fluid,
+	Boundary
+};
+
 // Constants for the simulation, but intended to be read from a case file at run-time
 // as they may vary from case to case.
 struct CaseDef {
@@ -45,11 +51,8 @@ struct CaseDef {
 	};
 
 	struct CaseDefBox : Box {
-		enum class Type{
-			Void,
-			Fluid,
-			Boundary
-		} type = Type::Void;
+		using Type = ParticleType;
+		Type type = Type::Void;
 		struct {
 			bool
 				solid = false,

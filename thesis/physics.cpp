@@ -233,6 +233,82 @@ float ParticleSystem::calculate_time_step() const {
 	return case_def.cflnumber * std::min(dt_cv, dt_f);
 }
 
+template <ParticleType TypeOfPi, ParticleType TypeOfNeighbors>
+void ParticleSystem::compute_derivatives(const int i) {
+	const Particle& Pi = particles[i];
+
+	const auto index_ranges = [&](){
+		if constexpr (TypeOfNeighbors == ParticleType::Fluid)
+			return search_grid_fluid.get_neighbor_indices(Pi.position);
+		else
+			return search_grid_boundary.get_neighbor_indices(Pi.position);
+	} ();
+
+	for (const auto index_pair : index_ranges) {
+		for (int j = index_pair.first; j < index_pair.second; ++j) {
+			const Particle& Pj = [&]() {
+				if constexpr (TypeOfNeighbors == ParticleType::Boundary)
+					return particles[j + num_of_fluid_particles];
+				else
+					return particles[j];
+			} ();
+
+			const Vec3f
+				r_ij = Pi.position - Pj.position;
+			const float
+				&h = case_def.h,
+				r2 = r_ij.length_squared();                           // Squared distance
+
+			if (i == j || r2 == 0.0f || r2 > 2 * h)
+				continue;
+
+			const Vec3f
+				v_ij = Pi.velocity - Pj.velocity,
+				kernel_gradient_rij = cubic_spline.gradient(r_ij);
+
+			density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_gradient_rij);
+
+			// If this is a boundary particle skip the acceleration part
+			if constexpr (TypeOfPi == ParticleType::Boundary)
+				continue;
+
+			const float
+				vel_pos_dot_product = dot_product(v_ij, r_ij),
+				&Pi_pressure = pressure[i],
+				&Pj_pressure = pressure[j],
+				pressure_sum = Pj_pressure + Pi_pressure,
+				density_product = Pi.density * Pj.density,
+				pi_ij = [&]() {
+					if (vel_pos_dot_product < 0.0f) {
+						const float &a = case_def.alpha;
+						const float
+							rho_ij = (Pi.density + Pj.density) / 2.0f,    // Mean density
+							mu = (h * vel_pos_dot_product) / (r2 + 0.01f * h * h);
+
+						return -(a * case_def.speedsound * mu) / rho_ij;
+					}
+					else
+						return 0.0f;
+				}(),
+				tensile_correction_term = [&]() {
+					const float
+						f_ij = cubic_spline(r_ij) * case_def.tensile_coef,
+						coef_i = Pi_pressure > 0 ? 0.01f : -0.2f,
+						coef_j = Pj_pressure > 0 ? 0.01f : -0.2f,
+						tensile_i = coef_i * (Pi_pressure / (Pi.density * Pi.density)),
+						tensile_j = coef_j * (Pj_pressure / (Pj.density * Pj.density));
+
+					return std::pow(f_ij, 4) * (tensile_i + tensile_j);
+				} ();
+
+			acceleration[i] -=
+			case_def.particles.mass *
+			((pressure_sum / density_product) + pi_ij + tensile_correction_term) *
+			kernel_gradient_rij;
+		}
+	}
+}
+
 void ParticleSystem::compute_derivatives() {
 	#pragma omp parallel
 	{
@@ -246,74 +322,18 @@ void ParticleSystem::compute_derivatives() {
 		}
 
 		#pragma omp for
-		for (int i = 0; size_t(i) < particles.size(); ++i) {
-			const Particle& Pi = particles[i];
-
-			if (i < num_of_fluid_particles)
-				acceleration[i] = case_def.gravity;
+		for (int i = 0; i < num_of_fluid_particles; ++i) {
+			acceleration[i] = case_def.gravity;
 			density_derivative[i] = 0.0f;
+			compute_derivatives<ParticleType::Fluid, ParticleType::Fluid>(i);
+			compute_derivatives<ParticleType::Fluid, ParticleType::Boundary>(i);
+		}
 
-			const auto index_ranges = get_all_neighbors(Pi.position);
-
-			for (const auto index_pair : index_ranges) {
-				for (int j = index_pair.first; j < index_pair.second; ++j) {
-					const Particle& Pj = particles[j];
-
-					const Vec3f
-						r_ij = Pi.position - Pj.position;
-					const float
-						&h = case_def.h,
-						r2 = r_ij.length_squared();                           // Squared distance
-
-					if (i == j || r2 == 0.0f || r2 > 2 * h)
-						continue;
-
-					const Vec3f
-						v_ij = Pi.velocity - Pj.velocity,
-						kernel_gradient_rij = cubic_spline.gradient(r_ij);
-
-					density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_gradient_rij);
-
-					// If this is a boundary particle skip the acceleration part
-					if (i >= num_of_fluid_particles)
-						continue;
-
-					const float
-						vel_pos_dot_product = dot_product(v_ij, r_ij),
-						&Pi_pressure = pressure[i],
-						&Pj_pressure = pressure[j],
-						pressure_sum = Pj_pressure + Pi_pressure,
-						density_product = Pi.density * Pj.density,
-						pi_ij = [&]() {
-							if (vel_pos_dot_product < 0.0f) {
-								const float &a = case_def.alpha;
-								const float
-									rho_ij = (Pi.density + Pj.density) / 2.0f,    // Mean density
-									mu = (h * vel_pos_dot_product) / (r2 + 0.01f * h * h);
-
-								return -(a * case_def.speedsound * mu) / rho_ij;
-							}
-							else
-								return 0.0f;
-							}(),
-						tensile_correction_term = [&]() {
-								const float
-									f_ij = cubic_spline(r_ij) * case_def.tensile_coef,
-									coef_i = Pi_pressure > 0 ? 0.01f : -0.2f,
-									coef_j = Pj_pressure > 0 ? 0.01f : -0.2f,
-									tensile_i = coef_i * (Pi_pressure / (Pi.density * Pi.density)),
-									tensile_j = coef_j * (Pj_pressure / (Pj.density * Pj.density));
-
-								return std::pow(f_ij, 4) * (tensile_i + tensile_j);
-							} ();
-
-					if (i < num_of_fluid_particles)
-						acceleration[i] -=
-						case_def.particles.mass *
-						((pressure_sum / density_product) + pi_ij + tensile_correction_term) *
-						kernel_gradient_rij;
-				}
-			}
+		#pragma omp for
+		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i) {
+			density_derivative[i] = 0.0f;
+			compute_derivatives<ParticleType::Boundary, ParticleType::Fluid>(i);
+			compute_derivatives<ParticleType::Boundary, ParticleType::Boundary>(i);
 		}
 
 		for (int k = 0; k < mass_spring_damper.size(); ++k) {
