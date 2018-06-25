@@ -54,6 +54,8 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	if (auto spring = constants.FirstChildElement("spring").ToElement()) {
 		case_def.spring.on = true;
 		case_def.spring.stiffness = spring->FloatAttribute("stiffness");
+		case_def.spring.start_of_stiffness_change = spring->FloatAttribute("changestart");
+		case_def.spring.rate_of_stiffness_change = spring->FloatAttribute("rateofchange");
 		case_def.spring.damping = spring->FloatAttribute("damping");
 	}
 

@@ -321,6 +321,7 @@ void ParticleSystem::compute_derivatives() {
 			pressure[i] = beta * (std::pow(particles[i].density / case_def.rhop0, gamma) - 1);
 		}
 
+		// Fluid-Fluid and Fluid-Boundary interactions
 		#pragma omp for
 		for (int i = 0; i < num_of_fluid_particles; ++i) {
 			acceleration[i] = case_def.gravity;
@@ -329,11 +330,22 @@ void ParticleSystem::compute_derivatives() {
 			compute_derivatives<ParticleType::Fluid, ParticleType::Boundary>(i);
 		}
 
+		// Boundary-Fluid and Boundary-Boundary interactions
 		#pragma omp for
 		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i) {
 			density_derivative[i] = 0.0f;
 			compute_derivatives<ParticleType::Boundary, ParticleType::Fluid>(i);
 			compute_derivatives<ParticleType::Boundary, ParticleType::Boundary>(i);
+		}
+
+		// Mass-Spring system forces
+		if (simulation_time > case_def.spring.start_of_stiffness_change) {
+			const float duration_of_change = simulation_time - case_def.spring.start_of_stiffness_change;
+			MassSpringDamper::k =
+				case_def.spring.stiffness +	duration_of_change * case_def.spring.rate_of_stiffness_change;
+			if (MassSpringDamper::k <= 0.0f) {
+				mass_spring_damper.clear();
+			}
 		}
 
 		for (int k = 0; k < mass_spring_damper.size(); ++k) {
@@ -419,7 +431,8 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 	prev_particles = particles;
 	next_particles = particles;
 
-	generate_mass_spring_damper();
+	if (case_def.spring.on)
+		generate_mass_spring_damper();
 
 	allocate_memory_for_verlet_variables();
 }
