@@ -219,3 +219,5 @@ thesis.VC.opendb
 
 # Case files
 *.xml
+*.ply
+data/
