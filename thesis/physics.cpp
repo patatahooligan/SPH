@@ -49,92 +49,115 @@ Vec3f CubicSpline::gradient(const Vec3f &r) const {
 }
 
 
-ParticleContainer ParticleSystem::generate_particles() {
-	ParticleContainer fluid_particles, boundary_particles;
+class ParticleGenerator {
+	private:
+		CaseDef case_def;
+		ParticleContainer fluid_particles, boundary_particles;
 
-	auto remove_particles = [&](const CaseDef::Box &box, ParticleContainer &target_container) {
-		auto predicate = [&box](const Particle& p) {
-			return box.contains(p.position);
-		};
-		target_container.erase(
-			std::remove_if(target_container.begin(), target_container.end(), predicate),
-			target_container.end());
-	};
+		void remove_particles(const CaseDef::Box &box, ParticleContainer &target_container) {
+			auto predicate = [&box](const Particle& p) {
+				return box.contains(p.position);
+			};
+			target_container.erase(
+				std::remove_if(target_container.begin(), target_container.end(), predicate),
+				target_container.end());
+		}
 
-	auto fillbox = [&](const CaseDef::CaseDefBox &box, ParticleContainer& target_container) {
-		// Because we might need to fill any combination of faces of a box, break it down
-		const float& density = case_def.particles.density;
+		void fillbox(const CaseDef::CaseDefBox &box, ParticleContainer& target_container) {
+			// Because we might need to fill any combination of faces of a box, break it down
+			const float& density = case_def.particles.density;
 
-		const std::vector<CaseDef::Box> targets = [&]() {
-			std::vector<CaseDef::Box> targets;
+			const std::vector<CaseDef::Box> targets = [&]() {
+				std::vector<CaseDef::Box> targets;
 
-			if (box.fillmode.solid) {
-				// If box is solid, skip all other checks and return just this
-				targets.push_back({ box.origin, box.size });
+				if (box.fillmode.solid) {
+					// If box is solid, skip all other checks and return just this
+					targets.push_back({ box.origin, box.size });
+					return targets;
+				}
+
+				// Otherwise, define a box for every face needed
+				const float thickness = density;
+
+				const Vec3f
+					right_origin = box.origin + Vec3f{ box.size.x - thickness, 0.0f, 0.0f },
+					back_origin = box.origin + Vec3f{ 0.0f, box.size.y - thickness, 0.0f },
+					top_origin = box.origin + Vec3f{ 0.0f, 0.0f, box.size.z - thickness },
+
+					x_size = { thickness, box.size.y, box.size.z },
+					y_size = { box.size.x, thickness, box.size.z },
+					z_size = { box.size.x, box.size.y, thickness };
+
+				if (box.fillmode.left) targets.push_back({ box.origin, x_size });
+				if (box.fillmode.right) targets.push_back({ right_origin, x_size });
+				if (box.fillmode.front) targets.push_back({ box.origin, y_size });
+				if (box.fillmode.back) targets.push_back({ back_origin, y_size });
+				if (box.fillmode.bottom) targets.push_back({ box.origin, z_size });
+				if (box.fillmode.top) targets.push_back({ top_origin, z_size });
 				return targets;
-			}
+			} ();
 
-			// Otherwise, define a box for every face needed
-			const float thickness = density;
-
-			const Vec3f
-				right_origin = box.origin + Vec3f{ box.size.x - thickness, 0.0f, 0.0f },
-				back_origin = box.origin + Vec3f{ 0.0f, box.size.y - thickness, 0.0f },
-				top_origin = box.origin + Vec3f{ 0.0f, 0.0f, box.size.z - thickness },
-				
-				x_size = { thickness, box.size.y, box.size.z },
-				y_size = { box.size.x, thickness, box.size.z },
-				z_size = { box.size.x, box.size.y, thickness };
-
-			if (box.fillmode.left) targets.push_back({ box.origin, x_size });
-			if (box.fillmode.right) targets.push_back({ right_origin, x_size });
-			if (box.fillmode.front) targets.push_back({ box.origin, y_size });
-			if (box.fillmode.back) targets.push_back({ back_origin, y_size });
-			if (box.fillmode.bottom) targets.push_back({ box.origin, z_size });
-			if (box.fillmode.top) targets.push_back({ top_origin, z_size });
-			return targets;
-		} ();
-
-		for (const auto& target : targets) {
-			const Vec3f
-				fluid_offset = { case_def.h, case_def.h, case_def.h },
-				boundary_offset = 0.4f * Vec3f{ density, density, density };
-			remove_particles(
-				{target.origin - fluid_offset, target.size + 2.5f * fluid_offset },
-				fluid_particles);
-			remove_particles(
-				{ target.origin - boundary_offset, target.size + 2.5 * boundary_offset },
-				boundary_particles);
-			const auto target_end = target.origin + target.size;
-			for (float x = target.origin.x; x <= target_end.x; x += density) {
-				for (float y = target.origin.y; y <= target_end.y; y += density) {
-					for (float z = target.origin.z; z <= target_end.z; z += density) {
-						Particle p;
-						p.position = { x, y, z };
-						p.density = case_def.rhop0;
-						target_container.emplace_back(p);
+			for (const auto& target : targets) {
+				const Vec3f
+					fluid_offset = { case_def.h, case_def.h, case_def.h },
+					boundary_offset = 0.4f * Vec3f{ density, density, density };
+				remove_particles(
+					{ target.origin - fluid_offset, target.size + 2.5f * fluid_offset },
+					fluid_particles);
+				remove_particles(
+					{ target.origin - boundary_offset, target.size + 2.5 * boundary_offset },
+					boundary_particles);
+				const auto target_end = target.origin + target.size;
+				for (float x = target.origin.x; x <= target_end.x; x += density) {
+					for (float y = target.origin.y; y <= target_end.y; y += density) {
+						for (float z = target.origin.z; z <= target_end.z; z += density) {
+							Particle p;
+							p.position = { x, y, z };
+							p.density = case_def.rhop0;
+							target_container.emplace_back(p);
+						}
 					}
 				}
 			}
 		}
-	};
 
-	for (const auto& box : case_def.particle_boxes) {
-		using Type = CaseDef::CaseDefBox::Type;
-		switch (box.type) {
-		case Type::Fluid:
-			fillbox(box, fluid_particles);
-			break;
-		case Type::Boundary:
-			fillbox(box, boundary_particles);
-			break;
-		case Type::Void:
-			remove_particles({ box.origin, box.size }, fluid_particles);
-			remove_particles({ box.origin, box.size }, boundary_particles);
-			break;
+	public:
+		ParticleGenerator(CaseDef case_def) :
+			case_def(case_def)
+		{
+			for (const auto& box : case_def.particle_boxes) {
+				using Type = CaseDef::CaseDefBox::Type;
+				switch (box.type) {
+				case Type::Fluid:
+					fillbox(box, fluid_particles);
+					break;
+				case Type::Boundary:
+					fillbox(box, boundary_particles);
+					break;
+				case Type::Void:
+					remove_particles({ box.origin, box.size }, fluid_particles);
+					remove_particles({ box.origin, box.size }, boundary_particles);
+					break;
+				}
+			}
 		}
-	}
 
+		ParticleContainer get_fluid_particles() const {
+			return fluid_particles;
+		}
+
+		ParticleContainer get_boundary_particles() const {
+			return boundary_particles;
+		}
+};
+
+
+ParticleContainer ParticleSystem::generate_particles() {
+	ParticleGenerator generator(case_def);
+	ParticleContainer
+		fluid_particles = generator.get_fluid_particles(),
+		boundary_particles = generator.get_boundary_particles();
+	
 	// Make note of the number of fluid particles, then concatenate the two vectors
 	// [0, num_of_particles)   -> fluid
 	// [num_of_particles, end) -> boundary
