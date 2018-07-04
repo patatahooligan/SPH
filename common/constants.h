@@ -70,4 +70,11 @@ struct CaseDef {
 	};
 
 	std::vector<CaseDefBox> particle_boxes;
+
+	struct PolyDataModel {
+		vtkSmartPointer<vtkPolyData> poly_data;
+		Vec3f offset;
+		float scale;
+	};
+	std::vector<PolyDataModel> poly_data_models;
 };

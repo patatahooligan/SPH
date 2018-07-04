@@ -54,6 +54,38 @@ class ParticleGenerator {
 		CaseDef case_def;
 		ParticleContainer fluid_particles, boundary_particles;
 
+		void fillPLY(CaseDef::PolyDataModel model, ParticleContainer &target_container) {
+			double bounds[6];
+			model.poly_data->ComputeBounds();
+			model.poly_data->GetBounds(bounds);
+			const double
+				&x_min = bounds[0], &x_max = bounds[1],
+				&y_min = bounds[2], &y_max = bounds[3],
+				&z_min = bounds[4], &z_max = bounds[5];
+
+			const float&
+				density = case_def.particles.density;
+
+			auto select_enclosed_points = vtkSmartPointer<vtkSelectEnclosedPoints>::New();
+			select_enclosed_points->SetCheckSurface(true);
+			select_enclosed_points->Initialize(model.poly_data);
+			for (float x = x_min; x <= x_max; x += density / model.scale) {
+				for (float y = y_min; y <= y_max; y += density / model.scale) {
+					for (float z = z_min; z <= z_max; z += density / model.scale) {
+						if (select_enclosed_points->IsInsideSurface(x, y, z)) {
+							Particle p;
+							p.position =
+								Vec3f{ x, y, z } *model.scale +
+								model.offset;
+							p.density = case_def.rhop0;
+							target_container.emplace_back(p);
+						}
+					}
+				}
+			}
+			select_enclosed_points->Complete();
+		}
+
 		void remove_particles(const CaseDef::Box &box, ParticleContainer &target_container) {
 			auto predicate = [&box](const Particle& p) {
 				return box.contains(p.position);
@@ -125,6 +157,9 @@ class ParticleGenerator {
 		ParticleGenerator(CaseDef case_def) :
 			case_def(case_def)
 		{
+			for (const auto& model : case_def.poly_data_models)
+				fillPLY(model, fluid_particles);
+
 			for (const auto& box : case_def.particle_boxes) {
 				using Type = CaseDef::CaseDefBox::Type;
 				switch (box.type) {
@@ -193,11 +228,11 @@ void ParticleSystem::generate_mass_spring_damper() {
 CaseDef::Box ParticleSystem::get_particle_axis_aligned_bounding_box() {
 	constexpr auto
 		float_max = std::numeric_limits<float>::max(),
-		float_min = std::numeric_limits<float>::min();
+		float_lowest = std::numeric_limits<float>::lowest();
 
 	Vec3f
 		point_min = { float_max, float_max, float_max },
-		point_max = { float_min, float_min, float_min };
+		point_max = { float_lowest, float_lowest, float_lowest };
 
 	for (const auto& p : particles) {
 		point_min.x = std::min(point_min.x, p.position.x);

@@ -29,7 +29,6 @@
 #include "GL\freeglut.h"
 #include "vtkPolyData.h"
 #include "vtkXMLPolyDataWriter.h"
+#include "vtkPLYReader.h"
+#include "vtkSelectEnclosedPoints.h"
 #include "vtkSmartPointer.h"
-
-
-// TODO: reference additional headers your program requires here

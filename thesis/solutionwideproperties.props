@@ -16,7 +16,7 @@
     </ClCompile>
     <Link />
     <Link>
-      <AdditionalDependencies>vtkCommonDataModel-8.1.lib;vtkIOXML-8.1.lib;vtkCommonCore-8.1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vtkFiltersModeling-8.1.lib;vtkCommonExecutionModel-8.1.lib;vtkIOPLY-8.1.lib;vtkCommonDataModel-8.1.lib;vtkIOXML-8.1.lib;vtkCommonCore-8.1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
