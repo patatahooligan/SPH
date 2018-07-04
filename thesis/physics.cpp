@@ -304,24 +304,22 @@ void ParticleSystem::compute_derivatives(const int i) {
 
 	for (const auto index_pair : index_ranges) {
 		for (int j = index_pair.first; j < index_pair.second; ++j) {
-			const Particle& Pj = [&]() {
-				if constexpr (TypeOfNeighbors == ParticleType::Boundary)
-					return particles[j + num_of_fluid_particles];
-				else
-					return particles[j];
-			} ();
+			if constexpr (TypeOfNeighbors == ParticleType::Boundary)
+				j += num_of_fluid_particles;
+			const Particle& Pj = particles[j];
 
 			const Vec3f
+				v_ij = Pi.velocity - Pj.velocity,
 				r_ij = Pi.position - Pj.position;
 			const float
 				&h = case_def.h,
 				r2 = r_ij.length_squared();                           // Squared distance
 
-			if (i == j || r2 == 0.0f || r2 > 2 * h)
+			if ((TypeOfPi == TypeOfNeighbors && i == j)
+				|| r2 == 0.0f || r2 > 4.0f * h * h || v_ij == Vec3f{0.0f, 0.0f, 0.0f})
 				continue;
 
 			const Vec3f
-				v_ij = Pi.velocity - Pj.velocity,
 				kernel_gradient_rij = cubic_spline.gradient(r_ij);
 
 			density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_gradient_rij);
@@ -393,7 +391,6 @@ void ParticleSystem::compute_derivatives() {
 		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i) {
 			density_derivative[i] = 0.0f;
 			compute_derivatives<ParticleType::Boundary, ParticleType::Fluid>(i);
-			compute_derivatives<ParticleType::Boundary, ParticleType::Boundary>(i);
 		}
 
 		// Mass-Spring system forces
