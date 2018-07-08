@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 	{
 		ps.simulation_step();
 
-		if (output_step * options.output_period < ps.current_time()) {
+		while (output_step * options.output_period < ps.current_time()) {
 			if (save_binary)
 				save_binary->save(ps.get_fluid_begin(), ps.get_fluid_end());
 
