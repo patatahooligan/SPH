@@ -59,15 +59,45 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 		case_def.spring.damping = spring->FloatAttribute("damping");
 	}
 
+	if (auto ply = constants.FirstChildElement("ply").ToElement()) {
+		do {
+			const auto filename = ply->Attribute("filename");
+			auto PLY_reader = vtkSmartPointer<vtkPLYReader>::New();
+			PLY_reader->SetFileName(filename);
+			PLY_reader->Update();
+			CaseDef::PolyDataModel poly_data_model;
+			poly_data_model.poly_data = PLY_reader->GetOutput();
+			poly_data_model.offset = {
+				ply->FloatAttribute("x"),
+				ply->FloatAttribute("y"),
+				ply->FloatAttribute("z")
+			};
+			poly_data_model.scale = ply->FloatAttribute("scale", 1.0f);
+			case_def.poly_data_models.emplace_back(poly_data_model);
+			ply = ply->NextSiblingElement("ply");
+		} while (ply);
+	}
+
 	if (auto hswl = constants.FirstChildElement("hswl").ToElement()) {
 		if (hswl->BoolAttribute("auto")) {
 			case_def.hswl = 0.0f;
 			const Vec3f down_unit_vector = case_def.gravity.unit_vector();
-			for (auto &box : case_def.particle_boxes)
+			for (const auto &box : case_def.particle_boxes)
 				if (box.type == CaseDef::CaseDefBox::Type::Fluid)
 					case_def.hswl = std::max(
 						std::abs(dot_product(box.size, down_unit_vector)),
 						case_def.hswl);
+			for (const auto &model : case_def.poly_data_models) {
+				double bounds[6];
+				model.poly_data->GetBounds(bounds);
+				const Vec3f bounding_box = Vec3f{
+					float(bounds[1] - bounds[0]),
+					float(bounds[3] - bounds[2]),
+					float(bounds[5] - bounds[4]) } * model.scale;
+				case_def.hswl = std::max(
+					std::abs(dot_product(bounding_box, down_unit_vector)),
+					case_def.hswl);
+			}
 		}
 		else
 			case_def.hswl = hswl->FloatAttribute("value");
@@ -108,25 +138,6 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 	if (auto cflnumber = constants.FirstChildElement("cflnumber").ToElement())
 		case_def.cflnumber = cflnumber->FloatAttribute("value");
-
-	if (auto ply = constants.FirstChildElement("ply").ToElement()) {
-		do {
-			const auto filename = ply->Attribute("filename");
-			auto PLY_reader = vtkSmartPointer<vtkPLYReader>::New();
-			PLY_reader->SetFileName(filename);
-			PLY_reader->Update();
-			CaseDef::PolyDataModel poly_data_model;
-			poly_data_model.poly_data = PLY_reader->GetOutput();
-			poly_data_model.offset = {
-				ply->FloatAttribute("x"),
-				ply->FloatAttribute("y"),
-				ply->FloatAttribute("z")
-			};
-			poly_data_model.scale = ply->FloatAttribute("scale", 1.0f);
-			case_def.poly_data_models.emplace_back(poly_data_model);
-			ply = ply->NextSiblingElement("ply");
-		} while (ply);
-	}
 }
 
 void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
