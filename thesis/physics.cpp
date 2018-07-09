@@ -393,6 +393,9 @@ void ParticleSystem::compute_derivatives() {
 			compute_derivatives<ParticleType::Boundary, ParticleType::Fluid>(i);
 		}
 
+		if (!case_def.spring.on)
+			return;
+
 		// Mass-Spring system forces
 		if (simulation_time > case_def.spring.start_of_stiffness_change) {
 			const float duration_of_change = simulation_time - case_def.spring.start_of_stiffness_change;
@@ -400,6 +403,7 @@ void ParticleSystem::compute_derivatives() {
 				case_def.spring.stiffness +	duration_of_change * case_def.spring.rate_of_stiffness_change;
 			if (MassSpringDamper::k <= 0.0f) {
 				mass_spring_damper.clear();
+				case_def.spring.on = false;
 			}
 		}
 
