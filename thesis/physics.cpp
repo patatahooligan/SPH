@@ -366,57 +366,54 @@ void ParticleSystem::compute_derivatives(const int i) {
 }
 
 void ParticleSystem::compute_derivatives() {
-	#pragma omp parallel
-	{
-		#pragma omp for
-		for (int i = 0; size_t(i) < particles.size(); ++i) {
-			constexpr int gamma = 7;
-			const float
-				beta = (case_def.speedsound * case_def.speedsound * case_def.rhop0) / gamma;
+	#pragma omp parallel for
+	for (int i = 0; size_t(i) < particles.size(); ++i) {
+		constexpr int gamma = 7;
+		const float
+			beta = (case_def.speedsound * case_def.speedsound * case_def.rhop0) / gamma;
 
-			pressure[i] = beta * (std::pow(particles[i].density / case_def.rhop0, gamma) - 1);
+		pressure[i] = beta * (std::pow(particles[i].density / case_def.rhop0, gamma) - 1);
+	}
+
+	// Fluid-Fluid and Fluid-Boundary interactions
+	#pragma omp parallel for
+	for (int i = 0; i < num_of_fluid_particles; ++i) {
+		acceleration[i] = case_def.gravity;
+		density_derivative[i] = 0.0f;
+		compute_derivatives<ParticleType::Fluid, ParticleType::Fluid>(i);
+		compute_derivatives<ParticleType::Fluid, ParticleType::Boundary>(i);
+	}
+
+	// Boundary-Fluid and Boundary-Boundary interactions
+	#pragma omp parallel for
+	for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i) {
+		density_derivative[i] = 0.0f;
+		compute_derivatives<ParticleType::Boundary, ParticleType::Fluid>(i);
+	}
+
+	if (!case_def.spring.on)
+		return;
+
+	// Mass-Spring system forces
+	if (simulation_time > case_def.spring.start_of_stiffness_change) {
+		const float duration_of_change = simulation_time - case_def.spring.start_of_stiffness_change;
+		MassSpringDamper::k =
+			case_def.spring.stiffness + duration_of_change * case_def.spring.rate_of_stiffness_change;
+		if (MassSpringDamper::k <= 0.0f) {
+			mass_spring_damper.clear();
+			case_def.spring.on = false;
 		}
+	}
 
-		// Fluid-Fluid and Fluid-Boundary interactions
-		#pragma omp for
-		for (int i = 0; i < num_of_fluid_particles; ++i) {
-			acceleration[i] = case_def.gravity;
-			density_derivative[i] = 0.0f;
-			compute_derivatives<ParticleType::Fluid, ParticleType::Fluid>(i);
-			compute_derivatives<ParticleType::Fluid, ParticleType::Boundary>(i);
-		}
+	for (const auto& spring : mass_spring_damper) {
+		const auto
+			i = spring.particle_indices.first,
+			j = spring.particle_indices.second;
 
-		// Boundary-Fluid and Boundary-Boundary interactions
-		#pragma omp for
-		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i) {
-			density_derivative[i] = 0.0f;
-			compute_derivatives<ParticleType::Boundary, ParticleType::Fluid>(i);
-		}
+		const auto force = spring.compute_force(particles[i], particles[j]);
 
-		if (!case_def.spring.on)
-			return;
-
-		// Mass-Spring system forces
-		if (simulation_time > case_def.spring.start_of_stiffness_change) {
-			const float duration_of_change = simulation_time - case_def.spring.start_of_stiffness_change;
-			MassSpringDamper::k =
-				case_def.spring.stiffness +	duration_of_change * case_def.spring.rate_of_stiffness_change;
-			if (MassSpringDamper::k <= 0.0f) {
-				mass_spring_damper.clear();
-				case_def.spring.on = false;
-			}
-		}
-
-		for (const auto& spring : mass_spring_damper) {
-			const auto
-				i = spring.particle_indices.first,
-				j = spring.particle_indices.second;
-
-			const auto force = spring.compute_force(particles[i], particles[j]);
-
-			acceleration[i] += force / case_def.particles.mass;
-			acceleration[j] -= force / case_def.particles.mass;
-		}
+		acceleration[i] += force / case_def.particles.mass;
+		acceleration[j] -= force / case_def.particles.mass;
 	}
 }
 
