@@ -35,7 +35,7 @@ struct CaseDef {
 	float alpha;        // Coefficient in artificial viscosity
 	struct {
 		bool on = false;
-		float stiffness, start_of_stiffness_change, rate_of_stiffness_change, damping;
+		float stiffness, start_of_stiffness_change, rate_of_stiffness_change, damping, max_length;
 	} spring;
 
 	struct {

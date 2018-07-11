@@ -208,16 +208,16 @@ ParticleContainer ParticleSystem::generate_particles() {
 void ParticleSystem::generate_mass_spring_damper() {
 	const auto &density = case_def.particles.density;
 	MassSpringDamper::k = case_def.spring.stiffness;
-	MassSpringDamper::resting_length = case_def.particles.density;
 	MassSpringDamper::damping_coef = case_def.spring.damping;
 
 	for (int i = 0; i < num_of_fluid_particles; ++i) {
 		for (int j = i + 1; j < num_of_fluid_particles; ++j) {
 			const float distance = (particles[i].position - particles[j].position).length();
-			if (std::abs(distance - density) < 0.1f * density) {
+			if (distance > 0.9 * case_def.particles.density && distance <= case_def.spring.max_length) {
 				MassSpringDamper msp;
 				msp.particle_indices = { i, j };
 				mass_spring_damper.emplace_back(msp);
+				msp.resting_length = distance;
 			}
 		}
 	}
@@ -407,12 +407,12 @@ void ParticleSystem::compute_derivatives() {
 			}
 		}
 
-		for (int k = 0; k < mass_spring_damper.size(); ++k) {
+		for (const auto& spring : mass_spring_damper) {
 			const auto
-				i = mass_spring_damper[k].particle_indices.first,
-				j = mass_spring_damper[k].particle_indices.second;
+				i = spring.particle_indices.first,
+				j = spring.particle_indices.second;
 
-			const auto force = MassSpringDamper::compute_force(particles[i], particles[j]);
+			const auto force = spring.compute_force(particles[i], particles[j]);
 
 			acceleration[i] += force / case_def.particles.mass;
 			acceleration[j] -= force / case_def.particles.mass;

@@ -5,10 +5,11 @@
 #include "particle.h"
 
 struct MassSpringDamper {
-	inline static float resting_length, k, damping_coef;
+	inline static float k, damping_coef;
 	std::pair<int, int> particle_indices;
+	float resting_length;
 
-	static Vec3f compute_force(const Particle &target, const Particle &other) {
+	Vec3f compute_force(const Particle &target, const Particle &other) const {
 		const Vec3f
 			relative_position = target.position - other.position,
 			relative_velocity = target.velocity - other.velocity;
