@@ -216,8 +216,8 @@ void ParticleSystem::generate_mass_spring_damper() {
 			if (distance > 0.9 * case_def.particles.density && distance <= case_def.spring.max_length) {
 				MassSpringDamper msp;
 				msp.particle_indices = { i, j };
-				mass_spring_damper.emplace_back(msp);
 				msp.resting_length = distance;
+				mass_spring_damper.emplace_back(msp);
 			}
 		}
 	}
