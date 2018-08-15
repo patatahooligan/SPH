@@ -27,14 +27,18 @@ class SearchGrid {
 	public:
 		using iter = ParticleContainer::iterator;
 		using index_pair = std::pair<int, int>;
-		using cell_indices_container = std::vector<index_pair>;
+		using cell_indices_container = boost::container::static_vector<index_pair, 54>;
 
 	private:
+		// We need a separate internal type because it uses vastly more memory.
+		// In theory they can both be the same type but for optimization reasons they might not.
+		using internal_cell_indices_container = std::vector<index_pair>;
+
 		std::vector<ParticleProxy> proxies;
 		Vec3f point_min, point_max, size;
 		float h;
 		std::array<int, 3> grid_cells;
-		cell_indices_container cell_indices;
+		internal_cell_indices_container cell_indices;
 
 		std::array<int, 3> determine_number_of_cells (
 			const Vec3f &size, const float h) const
