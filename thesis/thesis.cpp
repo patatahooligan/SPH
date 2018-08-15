@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
 	std::cout << "Time of simulation :" << ps.current_time() << " s\n"
 		<<"    (of requested " << options.time << " s)\n\n";
 
-	std::cout << "Verlet steps integrated : " << ps.current_step();
+	std::cout << "Verlet steps integrated : " << ps.current_step() << "\n";
 	std::cout << "Steps saved in output file : " << output_step << '\n\n';
 
 	return 0;
