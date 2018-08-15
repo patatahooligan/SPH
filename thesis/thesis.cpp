@@ -144,8 +144,5 @@ int main(int argc, char **argv) {
 
 	std::cout << "Steps saved in output file : " << output_step << '\n\n';
 
-	std::cout << "Saving snapshot of particles at moment of termination\n"
-			<< "Saved in order (previous step, current step)\n\n";
-
 	return 0;
 }
