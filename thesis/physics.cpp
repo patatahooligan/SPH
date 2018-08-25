@@ -74,9 +74,10 @@ class ParticleGenerator {
 					for (float z = z_min; z <= z_max; z += density / model.scale) {
 						if (select_enclosed_points->IsInsideSurface(x, y, z)) {
 							Particle p;
+							const auto& rot = model.rotation;
 							p.position =
-								Vec3f{ x, y, z } *model.scale +
-								model.offset;
+								Vec3f{ x, y, z }.rotate_x(rot.x).rotate_y(rot.y).rotate_z(rot.z)
+								* model.scale + model.offset;
 							p.density = case_def.rhop0;
 							target_container.emplace_back(p);
 						}

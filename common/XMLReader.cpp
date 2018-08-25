@@ -68,11 +68,9 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 			PLY_reader->Update();
 			CaseDef::PolyDataModel poly_data_model;
 			poly_data_model.poly_data = PLY_reader->GetOutput();
-			poly_data_model.offset = {
-				ply->FloatAttribute("x"),
-				ply->FloatAttribute("y"),
-				ply->FloatAttribute("z")
-			};
+			poly_data_model.offset = get_vec3f_from_element(*ply);
+			poly_data_model.rotation = {
+				ply->FloatAttribute("rotx"), ply->FloatAttribute("roty"), ply->FloatAttribute("rotz") };
 			poly_data_model.scale = ply->FloatAttribute("scale", 1.0f);
 			case_def.poly_data_models.emplace_back(poly_data_model);
 			ply = ply->NextSiblingElement("ply");

@@ -73,7 +73,7 @@ struct CaseDef {
 
 	struct PolyDataModel {
 		vtkSmartPointer<vtkPolyData> poly_data;
-		Vec3f offset;
+		Vec3f offset, rotation;
 		float scale;
 	};
 	std::vector<PolyDataModel> poly_data_models;
