@@ -464,20 +464,62 @@ void ParticleSystem::integrate_verlet(const float dt) {
 }
 
 void ParticleSystem::remove_out_of_bounds_particles() {
-	const auto old_size = particles.size();
+	// Figure out the particles in current time step that are out of bounds and remove them
+	// Remove the same particles and do any necessary re-ordering to prev particles to keep
+	// the two containers consistent. Resize next particles for size constistency but don't care
+	// about the data because it's supposed to be garbage at the point this function needs to run.
+	
+	const auto indices_to_remove = [this]() {
+		std::vector<size_t> indices_to_remove;
+		for (size_t i = 0; i < num_of_fluid_particles; ++i) {
+			if (!bounding_box.contains(particles[i].position))
+				indices_to_remove.emplace_back(i);
+		}
+		return indices_to_remove;
+	} ();
 
-	auto predicate = [this](const Particle& p) {return !bounding_box.contains(p.position); };
+	auto to_be_removed = [indices_to_remove](const size_t i) {
+		return std::binary_search(indices_to_remove.begin(), indices_to_remove.end(), i);
+	};
+
+	mass_spring_damper.erase(
+		std::remove_if(mass_spring_damper.begin(), mass_spring_damper.end(),
+			[to_be_removed](const MassSpringDamper& spring) {
+				return
+					to_be_removed(spring.particle_indices.first) ||
+					to_be_removed(spring.particle_indices.second);
+			}),
+		mass_spring_damper.end()
+	);
+
+	// Push invalid elements to the end of the array. This avoids issues of index invalidation
+	// and performance issues with removing random elements in a vector.
+	size_t last_valid_pos = num_of_fluid_particles - 1;
+	for (auto i = indices_to_remove.crbegin(); i != indices_to_remove.crend(); ++i) {
+		std::swap(particles[*i], particles[last_valid_pos]);
+		std::swap(prev_particles[*i], prev_particles[last_valid_pos]);
+		--last_valid_pos;
+	}
+
+	const size_t
+		number_of_removed_particles = indices_to_remove.size(),
+		old_num_of_fluid_particles = num_of_fluid_particles;
+
+	num_of_fluid_particles -= number_of_removed_particles;
+
 	particles.erase(
-		std::remove_if(particles.begin(), particles.begin() + num_of_fluid_particles, predicate),
-		get_fluid_end());
-
-	num_of_fluid_particles -= old_size - particles.size();
+		particles.begin() + num_of_fluid_particles,
+		particles.begin() + old_num_of_fluid_particles);
+	prev_particles.erase(
+		prev_particles.begin() + num_of_fluid_particles,
+		prev_particles.begin() + old_num_of_fluid_particles);
+	next_particles.resize(next_particles.size() - number_of_removed_particles);
 }
 
 ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 	case_def(case_def),
 	particles(generate_particles()),
-	bounding_box(get_particle_axis_aligned_bounding_box()),
+	bounding_box({ case_def.particles.point_min, case_def.particles.point_max - case_def.particles.point_min }),
 	search_grid_fluid(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
 	search_grid_boundary(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
 	cubic_spline(CubicSpline(case_def.h))
@@ -536,4 +578,6 @@ void ParticleSystem::simulation_step() {
 	// next_particles practically holds garbage values after this
 	prev_particles.swap(particles);
 	particles.swap(next_particles);
+
+	remove_out_of_bounds_particles();
 }
