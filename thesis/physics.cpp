@@ -11,6 +11,28 @@
 #include "constants.h"
 #include "vec3f.h"
 
+CaseDef::Box get_particle_axis_aligned_bounding_box(ParticleConstIterator begin, ParticleConstIterator end) {
+	constexpr auto
+		float_max = std::numeric_limits<float>::max(),
+		float_lowest = std::numeric_limits<float>::lowest();
+
+	Vec3f
+		point_min = { float_max, float_max, float_max },
+		point_max = { float_lowest, float_lowest, float_lowest };
+
+	for (auto iter = begin; iter != end; ++iter) {
+		point_min.x = std::min(point_min.x, iter->position.x);
+		point_min.y = std::min(point_min.y, iter->position.y);
+		point_min.z = std::min(point_min.z, iter->position.z);
+
+		point_max.x = std::max(point_max.x, iter->position.x);
+		point_max.y = std::max(point_max.y, iter->position.y);
+		point_max.z = std::max(point_max.z, iter->position.z);
+	}
+
+	return { point_min, point_max - point_min };
+}
+
 CubicSpline::CubicSpline(const float h):
 	h(h), a(1.0f / (pi * std::pow(h, 3))) {}
 
@@ -224,28 +246,6 @@ void ParticleSystem::generate_mass_spring_damper() {
 	}
 
 	mass_spring_damper.shrink_to_fit();
-}
-
-CaseDef::Box ParticleSystem::get_particle_axis_aligned_bounding_box() const {
-	constexpr auto
-		float_max = std::numeric_limits<float>::max(),
-		float_lowest = std::numeric_limits<float>::lowest();
-
-	Vec3f
-		point_min = { float_max, float_max, float_max },
-		point_max = { float_lowest, float_lowest, float_lowest };
-
-	for (const auto& p : particles) {
-		point_min.x = std::min(point_min.x, p.position.x);
-		point_min.y = std::min(point_min.y, p.position.y);
-		point_min.z = std::min(point_min.z, p.position.z);
-
-		point_max.x = std::max(point_max.x, p.position.x);
-		point_max.y = std::max(point_max.y, p.position.y);
-		point_max.z = std::max(point_max.z, p.position.z);
-	}
-
-	return { point_min, point_max - point_min };
 }
 
 float ParticleSystem::calculate_time_step() const {
@@ -582,20 +582,14 @@ void ParticleSystem::simulation_step() {
 	// Readjust the search space to only include the bounding box of particles in the simulation
 	// Make sure that the search space is not larger than the requested simulation space. This could
 	// be obsolete later if the removal of all out-of-bounds particles is fully integrated and not optional
-	const auto aabb = get_particle_axis_aligned_bounding_box();
-	const Vec3f
-		point_min = {
-			std::max(aabb.origin.x, case_def.particles.point_min.x),
-			std::max(aabb.origin.y, case_def.particles.point_min.y),
-			std::max(aabb.origin.z, case_def.particles.point_min.z) },
-		point_max = {
-			std::min(aabb.origin.x + aabb.size.x, case_def.particles.point_max.x),
-			std::min(aabb.origin.y + aabb.size.y, case_def.particles.point_max.y),
-			std::min(aabb.origin.z + aabb.size.z, case_def.particles.point_max.z) };
-	search_grid_fluid.set_point_min(point_min);
-	search_grid_fluid.set_point_max(point_max);
-	search_grid_boundary.set_point_min(point_min);
-	search_grid_boundary.set_point_max(point_max);
+	const auto
+		fluid_aabb = get_particle_axis_aligned_bounding_box(get_fluid_begin(), get_fluid_end()),
+		boundary_aabb = get_particle_axis_aligned_bounding_box(get_boundary_begin(), get_boundary_end());
+
+	search_grid_fluid.set_point_min(fluid_aabb.origin);
+	search_grid_fluid.set_point_max(fluid_aabb.origin + fluid_aabb.size);
+	search_grid_boundary.set_point_min(boundary_aabb.origin);
+	search_grid_boundary.set_point_max(boundary_aabb.origin + boundary_aabb.size);
 
 	// Sort fluid and boundary particles separately
 	search_grid_fluid.sort_containers(

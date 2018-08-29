@@ -51,8 +51,6 @@ class ParticleSystem {
 
 		void generate_mass_spring_damper();
 
-		CaseDef::Box get_particle_axis_aligned_bounding_box() const;
-
 		// Calculate a time step that is stable.
 		float calculate_time_step() const;
 
