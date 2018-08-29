@@ -40,8 +40,7 @@ class SearchGrid {
 		std::array<int, 3> grid_cells;
 		internal_cell_indices_container cell_indices;
 
-		std::array<int, 3> determine_number_of_cells (
-			const Vec3f &size, const float h) const
+		std::array<int, 3> determine_number_of_cells () const
 		{
 			assert(size.x >= 0.0f && size.y >= 0.0f && size.z >= 0.0f);
 			
@@ -105,14 +104,14 @@ class SearchGrid {
 
 	public:
 		SearchGrid(const Vec3f &point_min, const Vec3f &point_max, const float h) :
-			point_min(point_min), point_max(point_max), size (point_max - point_min), h(h),
-			grid_cells(determine_number_of_cells(size, h)) {}
+			point_min(point_min), point_max(point_max), size (point_max - point_min), h(h) {}
 
 		void sort_containers(
 			iter target_begin, iter target_end, iter parallel_begin,
 			std::vector<MassSpringDamper>* mass_spring_damper_p)
 		{
-			// Sort the containers in place based on [beg_it[0], end)
+			size = point_max - point_min;
+			grid_cells = determine_number_of_cells();
 
 			determine_order(target_begin, target_end);
 
@@ -205,4 +204,7 @@ class SearchGrid {
 			get_neighbor_indices(position, neighbor_indices);
 			return neighbor_indices;
 		}
+
+		void set_point_min(const Vec3f new_point) { point_min = new_point; }
+		void set_point_max(const Vec3f new_point) { point_max = new_point; }
 };

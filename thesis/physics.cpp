@@ -226,7 +226,7 @@ void ParticleSystem::generate_mass_spring_damper() {
 	mass_spring_damper.shrink_to_fit();
 }
 
-CaseDef::Box ParticleSystem::get_particle_axis_aligned_bounding_box() {
+CaseDef::Box ParticleSystem::get_particle_axis_aligned_bounding_box() const {
 	constexpr auto
 		float_max = std::numeric_limits<float>::max(),
 		float_lowest = std::numeric_limits<float>::lowest();
@@ -478,10 +478,11 @@ void ParticleSystem::remove_out_of_bounds_particles() {
 		return indices_to_remove;
 	} ();
 
+
+	// Simply remove all springs that point to particles about to be removed
 	auto to_be_removed = [indices_to_remove](const size_t i) {
 		return std::binary_search(indices_to_remove.begin(), indices_to_remove.end(), i);
 	};
-
 	mass_spring_damper.erase(
 		std::remove_if(mass_spring_damper.begin(), mass_spring_damper.end(),
 			[to_be_removed](const MassSpringDamper& spring) {
@@ -492,28 +493,40 @@ void ParticleSystem::remove_out_of_bounds_particles() {
 		mass_spring_damper.end()
 	);
 
-	// Push invalid elements to the end of the array. This avoids issues of index invalidation
-	// and performance issues with removing random elements in a vector.
-	size_t last_valid_pos = num_of_fluid_particles - 1;
+	// To preserve the contiguous storage of the container with the minimum complexity cost,
+	// we will move the out-of-bounds particles to the end of the range and remove them from there
+	// This not only minimizes the number of moves required, it also invalidates the minimum amount of
+	// indices to particles.
+
+	size_t next_slot_to_swap = 1;
 	for (auto i = indices_to_remove.crbegin(); i != indices_to_remove.crend(); ++i) {
-		std::swap(particles[*i], particles[last_valid_pos]);
-		std::swap(prev_particles[*i], prev_particles[last_valid_pos]);
-		--last_valid_pos;
+		auto particle_temp = std::move(particles[*i]);
+		auto prev_particle_temp = std::move(prev_particles[*i]);
+
+		particles[*i] = std::move(particles[num_of_fluid_particles - next_slot_to_swap]);
+		prev_particles[*i] = std::move(prev_particles[num_of_fluid_particles - next_slot_to_swap]);
+
+		particles[num_of_fluid_particles - next_slot_to_swap] =
+			std::move(particles[particles.size() - next_slot_to_swap]);
+		prev_particles[num_of_fluid_particles - next_slot_to_swap] =
+			std::move(prev_particles[prev_particles.size() - next_slot_to_swap]);
+
+		particles[particles.size() - next_slot_to_swap] = std::move(particle_temp);
+		prev_particles[prev_particles.size() - next_slot_to_swap] = std::move(prev_particle_temp);
+
+		++next_slot_to_swap;
 	}
 
+	// Readjust fluid and total sizes
 	const size_t
 		number_of_removed_particles = indices_to_remove.size(),
-		old_num_of_fluid_particles = num_of_fluid_particles;
-
+		total_number_of_particles = particles.size() - number_of_removed_particles;
 	num_of_fluid_particles -= number_of_removed_particles;
 
-	particles.erase(
-		particles.begin() + num_of_fluid_particles,
-		particles.begin() + old_num_of_fluid_particles);
-	prev_particles.erase(
-		prev_particles.begin() + num_of_fluid_particles,
-		prev_particles.begin() + old_num_of_fluid_particles);
-	next_particles.resize(next_particles.size() - number_of_removed_particles);
+	// A simple resize works because all out-of-bounds particles are at the end
+	particles.resize(total_number_of_particles);
+	prev_particles.resize(total_number_of_particles);
+	next_particles.resize(total_number_of_particles);
 }
 
 ParticleSystem::ParticleSystem(const CaseDef &case_def) :
@@ -553,6 +566,24 @@ SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(const Vec3f
 }
 
 void ParticleSystem::simulation_step() {
+	// Readjust the search space to only include the bounding box of particles in the simulation
+	// Make sure that the search space is not larger than the requested simulation space. This could
+	// be obsolete later if the removal of all out-of-bounds particles is fully integrated and not optional
+	const auto aabb = get_particle_axis_aligned_bounding_box();
+	const Vec3f
+		point_min = {
+			std::max(aabb.origin.x, case_def.particles.point_min.x),
+			std::max(aabb.origin.y, case_def.particles.point_min.y),
+			std::max(aabb.origin.z, case_def.particles.point_min.z) },
+		point_max = {
+			std::min(aabb.origin.x + aabb.size.x, case_def.particles.point_max.x),
+			std::min(aabb.origin.y + aabb.size.y, case_def.particles.point_max.y),
+			std::min(aabb.origin.z + aabb.size.z, case_def.particles.point_max.z) };
+	search_grid_fluid.set_point_min(point_min);
+	search_grid_fluid.set_point_max(point_max);
+	search_grid_boundary.set_point_min(point_min);
+	search_grid_boundary.set_point_max(point_max);
+
 	// Sort fluid and boundary particles separately
 	search_grid_fluid.sort_containers(
 		particles.begin(), particles.begin() + num_of_fluid_particles,
