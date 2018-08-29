@@ -480,7 +480,7 @@ void ParticleSystem::remove_out_of_bounds_particles() {
 
 
 	// Simply remove all springs that point to particles about to be removed
-	auto to_be_removed = [indices_to_remove](const size_t i) {
+	auto to_be_removed = [&indices_to_remove](const size_t i) {
 		return std::binary_search(indices_to_remove.begin(), indices_to_remove.end(), i);
 	};
 	mass_spring_damper.erase(
@@ -492,6 +492,19 @@ void ParticleSystem::remove_out_of_bounds_particles() {
 			}),
 		mass_spring_damper.end()
 	);
+
+	for (auto& spring : mass_spring_damper) {
+		auto adjust_index = [&](int &index) {
+			auto distance_from_end = num_of_fluid_particles - index;
+			while (distance_from_end <= indices_to_remove.size()) {
+				index = indices_to_remove[indices_to_remove.size() - distance_from_end];
+				distance_from_end = num_of_fluid_particles - index;
+			}
+		};
+
+		adjust_index(spring.particle_indices.first);
+		adjust_index(spring.particle_indices.second);
+	}
 
 	// To preserve the contiguous storage of the container with the minimum complexity cost,
 	// we will move the out-of-bounds particles to the end of the range and remove them from there
