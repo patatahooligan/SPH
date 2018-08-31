@@ -14,7 +14,7 @@ struct RunOptions {
 
 	std::optional<int> max_run_time;
 	std::optional<std::string> input;
-	std::optional<std::string> binary_output_filename, vtk_output_filename;
+	std::optional<std::string> binary_output_filename, particles_output_filename, surface_output_filename;
 };
 
 auto get_options(int argc, char **argv) {
@@ -24,7 +24,9 @@ auto get_options(int argc, char **argv) {
 	cxx_options.add_options()
 		("b, binary-output", "Binary file to hold the result of the simulation",
 			cxxopts::value<std::string>())
-		("vtk-output", "Prefix for group of vtk files to hold the result of the simulation",
+		("particles-output", "Prefix for group of vtk files to hold the result of the simulation",
+			cxxopts::value<std::string>())
+		("surface-output", "Prefix for group of vtk files to hold the reconstructed surface",
 			cxxopts::value<std::string>())
 		("overwrite", "Overwrite the binary output file if it exists (ignored if --append)")
 		("append", "Append to binary output file if it exists (disables --overwrite)")
@@ -69,10 +71,15 @@ auto get_options(int argc, char **argv) {
 	if (result.count("binary-output") != 0)
 		run_options.binary_output_filename = result["binary-output"].as<std::string>();
 
-	if (result.count("vtk-output") != 0)
-		run_options.vtk_output_filename = result["vtk-output"].as<std::string>();
+	if (result.count("particles-output") != 0)
+		run_options.particles_output_filename = result["particles-output"].as<std::string>();
 
-	if (!run_options.binary_output_filename && !run_options.vtk_output_filename)
+	if (result.count("surface-output") != 0)
+		run_options.surface_output_filename = result["surface-output"].as<std::string>();
+
+	if (!run_options.binary_output_filename && !run_options.particles_output_filename
+		&& !run_options.surface_output_filename)
+
 		throw std::runtime_error(std::string("No option specified for output"));
 
 	if (result.count("max-run-time") == 1)
@@ -85,16 +92,20 @@ auto get_options(int argc, char **argv) {
 }
 
 int main(int argc, char **argv) {
-	omp_set_num_threads(5);
-
 	const auto options = get_options(argc, argv);
 
 	const auto case_def = get_case_from_XML(options.case_filename);
 
 	ParticleSystem ps(case_def);
 
-	save_VTK(ps.get_boundary_begin(), ps.get_boundary_end(),
-		*options.vtk_output_filename + "-boundary");
+	{
+		SaveVTK save_VTK(ps.get_boundary_begin(), ps.get_boundary_end());
+		if (options.particles_output_filename)
+			save_VTK.save_particles(*options.particles_output_filename + "-boundary");
+
+		if (options.surface_output_filename)
+			save_VTK.save_particles(*options.surface_output_filename + "-boundary");
+	}
 
 	std::optional<SaveBinary> save_binary;
 	if (options.binary_output_filename) {
@@ -118,10 +129,12 @@ int main(int argc, char **argv) {
 			if (save_binary)
 				save_binary->save(ps.get_fluid_begin(), ps.get_fluid_end());
 
-			if (options.vtk_output_filename) {
-				save_VTK(ps.get_fluid_begin(), ps.get_fluid_end(),
-					*options.vtk_output_filename + "-fluid-" + std::to_string(output_step));
-			}
+			SaveVTK save_VTK(ps.get_fluid_begin(), ps.get_fluid_end());
+			if (options.particles_output_filename)
+				save_VTK.save_particles(*options.particles_output_filename + "-fluid" + std::to_string(output_step));
+
+			if (options.surface_output_filename)
+				save_VTK.save_surface(*options.surface_output_filename + "-fluid" + std::to_string(output_step));
 
 			std::cout << "Snapshot saved at time " << ps.current_time() << "s\n";
 
@@ -143,7 +156,7 @@ int main(int argc, char **argv) {
 		<<"    (of requested " << options.time << " s)\n\n";
 
 	std::cout << "Verlet steps integrated : " << ps.current_step() << "\n";
-	std::cout << "Steps saved in output file : " << output_step << '\n\n';
+	std::cout << "Steps saved in output file : " << output_step << "\n\n";
 
 	return 0;
 }

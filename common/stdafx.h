@@ -24,6 +24,7 @@
 #include <conio.h>
 #include <chrono>
 
+#include "boost/container/static_vector.hpp"
 #include "tinyxml2.h"
 #include "cxxopts.hpp"
 #include "GL\freeglut.h"
@@ -32,3 +33,19 @@
 #include "vtkPLYReader.h"
 #include "vtkSelectEnclosedPoints.h"
 #include "vtkSmartPointer.h"
+#include "vtkSurfaceReconstructionFilter.h"
+#include "vtkContourFilter.h"
+#include "vtkReverseSense.h"
+#include "vtkMarchingCubes.h"
+#include "vtkVoxelModeller.h"
+#include "vtkImageData.h"
+ 
+#include "vtkActor.h"
+#include "vtkPolyDataMapper.h"
+#include "vtkRenderWindowInteractor.h"
+#include "vtkRenderWindow.h"
+#include "vtkRenderer.h"
+#include "vtkProperty.h"
+#include "vtkCamera.h"
+#include "vtkAutoInit.h"
+VTK_MODULE_INIT(vtkRenderingOpenGL2);

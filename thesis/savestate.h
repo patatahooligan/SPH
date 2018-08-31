@@ -42,5 +42,14 @@ class SaveBinary : SaveState {
 		void save_particle(const Particle& particle);
 };
 
-void save_VTK(
-	ParticleConstIterator begin, ParticleConstIterator end, std::string output_filename);
+class SaveVTK {
+	private:
+		vtkSmartPointer<vtkPoints> points;
+		vtkSmartPointer<vtkPolyData> polydata;
+		vtkSmartPointer<vtkCellArray> vertices;
+	public:
+		SaveVTK(ParticleConstIterator begin, ParticleConstIterator end);
+
+		void save_particles(std::string output_filename);
+		void save_surface(std::string output_filename);
+};
