@@ -123,9 +123,7 @@ int main(int argc, char **argv) {
 		!user_exit &&
 		(!options.max_run_time || now() - start_time < std::chrono::seconds{ *(options.max_run_time) }))
 	{
-		ps.simulation_step();
-
-		while (output_step * options.output_period < ps.current_time()) {
+		while (output_step * options.output_period <= ps.current_time()) {
 			if (save_binary)
 				save_binary->save(ps.get_fluid_begin(), ps.get_fluid_end());
 
@@ -140,6 +138,8 @@ int main(int argc, char **argv) {
 
 			++output_step;
 		}
+
+		ps.simulation_step();
 
 		while (_kbhit()) {
 			auto key = _getch();
