@@ -190,9 +190,11 @@ class SearchGrid {
 			for (int curr_x = min_x; curr_x <= max_x; ++curr_x) {
 				for (int curr_y = min_y; curr_y <= max_y; ++curr_y) {
 					for (int curr_z = min_z; curr_z <= max_z; ++curr_z) {
-						// If current cell is valid (potentially empty), add it to neighbors
-						container.emplace_back(
-							cell_indices[cell_coordinates_to_index({ curr_x, curr_y, curr_z })]);
+						// If current cell is valid and non-empty, add it to neighbors
+						const auto& current_cell_indices =
+							cell_indices[cell_coordinates_to_index({ curr_x, curr_y, curr_z })];
+						if (current_cell_indices.first != current_cell_indices.second)
+							container.emplace_back(current_cell_indices);
 					}
 				}
 			}
