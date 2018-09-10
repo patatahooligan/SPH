@@ -16,8 +16,24 @@ class CubicSpline {
 		const float h, a;
 
 	public:
-		CubicSpline(const float h);
+		CubicSpline(float h);
 
+		float operator()(float length) const;
+		float operator()(const Vec3f &r) const;
+
+		float gradient_coef(float length) const;
+		Vec3f gradient(const Vec3f &r) const;
+};
+
+class CubicSplinePrecalculated {
+	private:
+		std::vector<float> values, gradient_values;
+		float h, resolution, step;
+
+	public:
+		CubicSplinePrecalculated(float h, int resolution);
+
+		float operator()(const float length) const;
 		float operator()(const Vec3f &r) const;
 		Vec3f gradient(const Vec3f &r) const;
 };
@@ -34,7 +50,7 @@ class ParticleSystem {
 		int num_of_fluid_particles;
 		CaseDef::Box bounding_box;
 		SearchGrid search_grid_fluid, search_grid_boundary;
-		CubicSpline cubic_spline;
+		CubicSplinePrecalculated cubic_spline;
 		std::vector<MassSpringDamper> mass_spring_damper;
 		float simulation_time = 0.0f;
 		int verlet_step = 0;

@@ -36,16 +36,33 @@ CaseDef::Box get_particle_axis_aligned_bounding_box(ParticleConstIterator begin,
 CubicSpline::CubicSpline(const float h):
 	h(h), a(1.0f / (pi * std::pow(h, 3))) {}
 
-float CubicSpline::operator()(const Vec3f &r) const {
-	const float
-		q = r.length() / h;
+float CubicSpline::operator()(const float length) const {
+	const float q = length / h;
 
 	if (q < 1.0f)
 		return a * (1 - (3.0f / 2.0f) * (q*q) + (3.0f / 4.0f) * std::pow(q, 3));
-	else if (q < 2.0f)
-		return a * (std::pow(2 - q, 3) / 4.0f);
 	else
-		return 0.0f;
+		return a * (std::pow(2 - q, 3) / 4.0f);
+}
+
+float CubicSpline::operator()(const Vec3f &r) const {
+	return (*this)(r.length());
+}
+
+float CubicSpline::gradient_coef(float length) const {
+	const float
+		q = length / h;
+
+	const float
+		dq = 1 / (h * h * q),
+		dw = a * [&]() {
+		if (q < 1.0f)
+			return (9.0f / 4.0f) * q * q - 3.0f * q;
+		else
+			return -(3.0f / 4.0f) * (2.0f - q) * (2.0f - q);
+	}();
+
+	return dw * dq;
 }
 
 Vec3f CubicSpline::gradient(const Vec3f &r) const {
@@ -68,6 +85,33 @@ Vec3f CubicSpline::gradient(const Vec3f &r) const {
 	}();
 
 	return dw * dq * r;
+}
+
+
+CubicSplinePrecalculated::CubicSplinePrecalculated(const float h, const int resolution = 32768):
+	h(h), resolution(resolution), step((2.0f * h) / resolution)
+{
+	values.resize(resolution);
+	gradient_values.resize(resolution);
+
+	CubicSpline spline(h);
+
+	for (int i = 0; i < resolution; ++i) {
+		values[i] = spline(i * step);
+		gradient_values[i] = spline.gradient_coef(i * step);
+	}
+}
+
+float CubicSplinePrecalculated::operator()(const float length) const {
+	return values[length / step];
+}
+
+float CubicSplinePrecalculated::operator()(const Vec3f & r) const {
+	return (*this)(r.length());
+}
+
+Vec3f CubicSplinePrecalculated::gradient(const Vec3f & r) const {
+	return gradient_values[r.length() / step] * r;
 }
 
 
@@ -548,7 +592,7 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 	bounding_box({ case_def.particles.point_min, case_def.particles.point_max - case_def.particles.point_min }),
 	search_grid_fluid(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
 	search_grid_boundary(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
-	cubic_spline(CubicSpline(case_def.h))
+	cubic_spline(case_def.h)
 {
 	// We need to ensure that all particle arrays are the same size. We also
 	// want the boundary positions to be set here so we don't have to copy
