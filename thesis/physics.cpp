@@ -293,45 +293,42 @@ void ParticleSystem::generate_mass_spring_damper() {
 }
 
 float ParticleSystem::calculate_time_step() const {
-	const float
-		&h = case_def.h,
-		&c = case_def.speedsound;
+	const float sigma_max = std::transform_reduce(
+		std::execution::par_unseq, get_fluid_begin(), get_fluid_end(), std::numeric_limits<float>::lowest(),
+		[](const float sigma1, const float sigma2) { return std::max(sigma1, sigma2); },
+		[this](const Particle& Pi) {
+			const float
+				&h = case_def.h;
+			const auto index_ranges = get_all_neighbors(Pi.position);
 
-	float
-		acceleration2_max = 0.0f,
-		dt_cv = std::numeric_limits<float>::max();
-	
-	#pragma omp parallel for
-	for (int i = 0; i < num_of_fluid_particles; ++i) {
-		const Particle& Pi = particles[i];
+			float sigma = std::numeric_limits<float>::lowest();
+			for (const auto index_pair : index_ranges) {
+				for (int j = index_pair.first; j < index_pair.second; ++j) {
+					const Particle& Pj = particles[j];
+					const Vec3f
+						v_ij = Pi.velocity - Pj.velocity,
+						r_ij = Pi.position - Pj.position;
 
-		const auto index_ranges = get_all_neighbors(Pi.position);
+					const float
+						r2 = r_ij.length_squared();
 
-		float sigma = std::numeric_limits<float>::lowest();
-		for (const auto index_pair : index_ranges) {
-			for (int j = index_pair.first; j < index_pair.second; ++j) {
-				const Particle& Pj = particles[j];
-				const Vec3f
-					v_ij = Pi.velocity - Pj.velocity,
-					r_ij = Pi.position - Pj.position;
-
-				const float
-					r2 = r_ij.length_squared();
-
-				sigma = std::max(
-					sigma,
-					std::abs((h * dot_product(v_ij, r_ij)) / (r2 + 0.01f * h * h)));
+					sigma = std::max(
+						sigma,
+						std::abs((h * dot_product(v_ij, r_ij)) / (r2 + 0.01f * h * h)));
+				}
 			}
-		}
+			return sigma;
+		});
 
-		acceleration2_max = std::max(acceleration2_max, acceleration[i].length_squared());
-
-		dt_cv = std::min(
-			dt_cv,
-			h / (c + sigma));
-	}
-
-	const float dt_f = std::sqrt(h / std::sqrt(acceleration2_max * case_def.particles.mass));
+	const float
+		&h = case_def.h, c = case_def.speedsound,
+		dt_cv = h / (c + sigma_max),
+		acceleration2_max = std::transform_reduce(
+			std::execution::par_unseq, acceleration.begin(), acceleration.end(),
+			std::numeric_limits<float>::lowest(),
+			[](const float a1, const float a2) { return std::max(a1, a2); },
+			[](const Vec3f& accel) {return accel.length_squared(); }),
+		dt_f = std::sqrt(h / std::sqrt(acceleration2_max * case_def.particles.mass));
 
 	return case_def.cflnumber * std::min(dt_cv, dt_f);
 }
