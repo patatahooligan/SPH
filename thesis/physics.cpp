@@ -88,15 +88,15 @@ Vec3f CubicSpline::gradient(const Vec3f &r) const {
 }
 
 
-CubicSplinePrecalculated::CubicSplinePrecalculated(const float h, const int resolution = 32768):
+CubicSplinePrecalculated::CubicSplinePrecalculated(const float h, const int resolution = 32767):
 	h(h), resolution(resolution), step((2.0f * h) / resolution)
 {
-	values.resize(resolution);
-	gradient_values.resize(resolution);
+	values.resize(resolution + 1);
+	gradient_values.resize(resolution + 1);
 
 	CubicSpline spline(h);
 
-	for (int i = 0; i < resolution; ++i) {
+	for (int i = 0; i <= resolution; ++i) {
 		values[i] = spline(i * step);
 		gradient_values[i] = spline.gradient_coef(i * step);
 	}
