@@ -89,43 +89,26 @@ void SaveVTK::save_particles(std::string output_filename) {
 	writer->Write();
 }
 
-void SaveVTK::save_surface(std::string output_filename) {
+void SaveVTK::save_surface(std::string output_filename, const float h) {
 	double bounds[6];
 	polydata->GetBounds(bounds);
 
 	auto voxel_modeller = vtkSmartPointer<vtkVoxelModeller>::New();
-	voxel_modeller->SetMaximumDistance(0.1);
+	voxel_modeller->SetSampleDimensions(
+		(bounds[1] - bounds[0]) / h, (bounds[3] -bounds[2]) / h, (bounds[5] - bounds[4]) / h);
+	voxel_modeller->SetModelBounds(bounds);
 	voxel_modeller->SetScalarTypeToFloat();
+	voxel_modeller->SetMaximumDistance(0.1);
 	voxel_modeller->SetInputData(polydata);
 
-	voxel_modeller->Update();
-	vtkSmartPointer<vtkImageData> volume = voxel_modeller->GetOutput();
-
-	int dimensions[3], low = 0, high = 0;
-	volume->GetDimensions(dimensions);
-	auto scalar_type = volume->GetScalarTypeAsString();
-	for (int x = 0; x < dimensions[0]; ++x) {
-		for (int y = 0; y < dimensions[1]; ++y) {
-			for (int z = 0; z < dimensions[2]; ++z) {
-				auto value = static_cast<float*>(volume->GetScalarPointer(x, y, z));
-				if (*value == 0.0)
-					++low;
-				else if (*value == 1.0)
-					++high;
-			}
-		}
-	}
-
 	auto marching_cubes = vtkSmartPointer<vtkMarchingCubes>::New();
-	marching_cubes->SetInputData(volume);
+	marching_cubes->SetInputConnection(voxel_modeller->GetOutputPort());
 	marching_cubes->ComputeNormalsOn();
 	marching_cubes->ComputeGradientsOn();
 	marching_cubes->SetValue(0, 0.5);
 
 	marching_cubes->Update();
 	vtkSmartPointer<vtkPolyData> cubes_output = marching_cubes->GetOutput();
-
-	const auto cells = cubes_output->GetPolys()->GetSize();
 
 	auto writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
 	writer->SetInputData(cubes_output);

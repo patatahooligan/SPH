@@ -104,7 +104,7 @@ int main(int argc, char **argv) {
 			save_VTK.save_particles(*options.particles_output_filename + "-boundary");
 
 		if (options.surface_output_filename)
-			save_VTK.save_particles(*options.surface_output_filename + "-boundary");
+			save_VTK.save_surface(*options.surface_output_filename + "-boundary", case_def.h);
 	}
 
 	std::optional<SaveBinary> save_binary;
@@ -132,7 +132,8 @@ int main(int argc, char **argv) {
 				save_VTK.save_particles(*options.particles_output_filename + "-fluid" + std::to_string(output_step));
 
 			if (options.surface_output_filename)
-				save_VTK.save_surface(*options.surface_output_filename + "-fluid" + std::to_string(output_step));
+				save_VTK.save_surface(
+					*options.surface_output_filename + "-fluid" + std::to_string(output_step), case_def.h);
 
 			std::cout << "Snapshot saved at time " << ps.current_time() << "s\n";
 

@@ -51,5 +51,5 @@ class SaveVTK {
 		SaveVTK(ParticleConstIterator begin, ParticleConstIterator end);
 
 		void save_particles(std::string output_filename);
-		void save_surface(std::string output_filename);
+		void save_surface(std::string output_filename, float h);
 };
