@@ -133,6 +133,7 @@ class ParticleGenerator {
 				density = case_def.particles.density;
 
 			auto select_enclosed_points = vtkSmartPointer<vtkSelectEnclosedPoints>::New();
+			select_enclosed_points->SetTolerance(std::numeric_limits<double>::min());
 			select_enclosed_points->SetCheckSurface(true);
 			select_enclosed_points->Initialize(model.poly_data);
 			for (float x = x_min; x <= x_max; x += density / model.scale) {
