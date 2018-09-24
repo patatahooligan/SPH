@@ -33,6 +33,9 @@ struct CaseDef {
 	float cflnumber;    // Coefficient to multiply dt
 	float tensile_coef; // Coefficient to use in tensile correction method
 	float alpha;        // Coefficient in artificial viscosity
+
+	float friction_coef;
+
 	struct {
 		bool on = false;
 		float stiffness, start_of_stiffness_change, rate_of_stiffness_change, damping, max_length;

@@ -137,6 +137,9 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 	if (auto cflnumber = constants.FirstChildElement("cflnumber").ToElement())
 		case_def.cflnumber = cflnumber->FloatAttribute("value");
+
+	if (auto friction = constants.FirstChildElement("friction").ToElement())
+		case_def.friction_coef = friction->FloatAttribute("coefficient");
 }
 
 void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {

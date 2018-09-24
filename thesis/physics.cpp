@@ -453,10 +453,8 @@ void ParticleSystem::compute_derivatives(const int i) {
 					}
 				} ();
 
-				constexpr float friction_coef = 1.0f;
-
 				acceleration[i] -=
-					(case_def.particles.mass * friction_coef * tangent_velocity) / particles[i].density;
+					(case_def.particles.mass * case_def.friction_coef * tangent_velocity) / particles[i].density;
 			}
 		}
 	}
