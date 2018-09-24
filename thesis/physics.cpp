@@ -298,18 +298,20 @@ void ParticleSystem::generate_friction_boxes() {
 		if (box.type != CaseDef::CaseDefBox::Type::Boundary)
 			continue;
 
-		const float thickness = case_def.particles.density;
+		const float
+			wall_thickness = case_def.particles.density,
+			friction_thickness = 2 * wall_thickness;
 
 		const Vec3f
-			left_origin = box.origin + thickness * Vec3f::x_unit(),
-			right_origin = box.origin + box.size.x - 2 * thickness * Vec3f::x_unit(),
-			front_origin = box.origin + thickness * Vec3f::y_unit(),
-			back_origin = box.origin + box.size.y - 2 * thickness * Vec3f::y_unit(),
-			bottom_origin = box.origin + thickness * Vec3f::z_unit(),
+			left_origin = box.origin + wall_thickness * Vec3f::x_unit(),
+			right_origin = box.origin + box.size.x - (wall_thickness + friction_thickness) * Vec3f::x_unit(),
+			front_origin = box.origin + wall_thickness * Vec3f::y_unit(),
+			back_origin = box.origin + box.size.y - (wall_thickness + friction_thickness) * Vec3f::y_unit(),
+			bottom_origin = box.origin + wall_thickness * Vec3f::z_unit(),
 
-			x_size = { thickness, box.size.y, box.size.z },
-			y_size = { box.size.x, thickness, box.size.z },
-			z_size = { box.size.x, box.size.y, thickness };
+			x_size = { friction_thickness, box.size.y,         box.size.z },
+			y_size = { box.size.x,         friction_thickness, box.size.z },
+			z_size = { box.size.x,         box.size.y,         friction_thickness };
 
 		using Plane = FrictionBox::Plane;
 		if (box.fillmode.left) friction_boxes.push_back({ { left_origin, x_size }, Plane::YZ });
