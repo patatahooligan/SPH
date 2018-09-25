@@ -287,6 +287,9 @@ void ParticleSystem::generate_mass_spring_damper() {
 }
 
 void ParticleSystem::generate_friction_boxes() {
+	if (case_def.friction_coef == 0.0f)
+		return;
+
 	for (const auto& box : case_def.particle_boxes) {
 		if (box.type != CaseDef::CaseDefBox::Type::Boundary)
 			continue;

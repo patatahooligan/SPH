@@ -140,6 +140,8 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 	if (auto friction = constants.FirstChildElement("friction").ToElement())
 		case_def.friction_coef = friction->FloatAttribute("coefficient");
+	else
+		case_def.friction_coef = 0.0f;
 }
 
 void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
