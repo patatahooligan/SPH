@@ -293,7 +293,7 @@ void ParticleSystem::generate_friction_boxes() {
 
 		const float
 			wall_thickness = case_def.particles.density,
-			friction_thickness = 3 * wall_thickness;
+			friction_thickness = 3 * case_def.h;
 
 		const Vec3f
 			left_origin = box.origin + wall_thickness * Vec3f::x_unit(),
