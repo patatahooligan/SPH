@@ -23,6 +23,8 @@
 #include <optional>
 #include <conio.h>
 #include <chrono>
+#include <fstream>
+#include <string_view>
 
 #include "boost/container/static_vector.hpp"
 #include "tinyxml2.h"

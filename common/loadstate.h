@@ -1,8 +1,5 @@
 #pragma once
 
-#include <fstream>
-#include <vector>
-
 #include "particle.h"
 
 class LoadState {

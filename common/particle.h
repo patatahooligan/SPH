@@ -1,8 +1,5 @@
 #pragma once
 
-#include <stdexcept>
-#include <vector>
-
 #include "constants.h"
 #include "vec3f.h"
 

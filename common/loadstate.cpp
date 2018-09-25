@@ -1,7 +1,5 @@
 #include "stdafx.h"
 
-#include <iomanip>
-
 #include "loadstate.h"
 
 bool LoadState::load(ParticleContainer& target_array, const Mode mode) {

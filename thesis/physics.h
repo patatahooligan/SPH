@@ -1,9 +1,5 @@
 #pragma once
 
-#include <vector>
-
-#include "boost\numeric\ublas\matrix.hpp"
-
 #include "constants.h"
 #include "particle.h"
 #include "Vec3f.h"

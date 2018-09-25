@@ -1,8 +1,5 @@
 #pragma once
 
-#include <cmath>
-#include <vector>
-
 #include "vec3f.h"
 
 // Constants needed in more than one translation unit

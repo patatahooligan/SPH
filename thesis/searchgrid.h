@@ -2,10 +2,6 @@
 
 #include "stdafx.h"
 
-#include <algorithm>
-#include <execution>
-#include <cassert>
-
 #include "particle.h"
 #include "vec3f.h"
 #include "massspringdamper.h"

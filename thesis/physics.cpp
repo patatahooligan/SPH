@@ -1,12 +1,5 @@
 #include "stdafx.h"
 
-#include <cstdlib>
-#include <ctime>
-#include <stdexcept>
-#include <cmath>
-#include <cfloat>
-#include <vector>
-
 #include "physics.h"
 #include "constants.h"
 #include "vec3f.h"
@@ -300,7 +293,7 @@ void ParticleSystem::generate_friction_boxes() {
 
 		const float
 			wall_thickness = case_def.particles.density,
-			friction_thickness = 2 * wall_thickness;
+			friction_thickness = 3 * wall_thickness;
 
 		const Vec3f
 			left_origin = box.origin + wall_thickness * Vec3f::x_unit(),
