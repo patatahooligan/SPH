@@ -13,15 +13,29 @@ CaseDef::Box get_particle_axis_aligned_bounding_box(ParticleConstIterator begin,
 		point_min = { float_max, float_max, float_max },
 		point_max = { float_lowest, float_lowest, float_lowest };
 
-	for (auto iter = begin; iter != end; ++iter) {
-		point_min.x = std::min(point_min.x, iter->position.x);
-		point_min.y = std::min(point_min.y, iter->position.y);
-		point_min.z = std::min(point_min.z, iter->position.z);
+	point_min = std::transform_reduce(std::execution::par_unseq, begin, end, point_min,
+		[](const Vec3f position1, const Vec3f position2) -> Vec3f {
+			return {
+				std::min(position1.x, position2.x),
+				std::min(position1.y, position2.y),
+				std::min(position1.z, position2.z)
+			};
+		},
+		[](const Particle &particle) {
+			return particle.position;
+		});
 
-		point_max.x = std::max(point_max.x, iter->position.x);
-		point_max.y = std::max(point_max.y, iter->position.y);
-		point_max.z = std::max(point_max.z, iter->position.z);
-	}
+	point_max = std::transform_reduce(std::execution::par_unseq, begin, end, point_max,
+		[](const Vec3f position1, const Vec3f position2) -> Vec3f {
+			return {
+				std::max(position1.x, position2.x),
+				std::max(position1.y, position2.y),
+				std::max(position1.z, position2.z)
+			};
+		},
+		[](const Particle &particle) {
+			return particle.position;
+		});
 
 	return { point_min, point_max - point_min };
 }
@@ -148,11 +162,11 @@ class ParticleGenerator {
 		}
 
 		void remove_particles(const CaseDef::Box &box, ParticleContainer &target_container) {
-			auto predicate = [&box](const Particle& p) {
-				return box.contains(p.position);
-			};
 			target_container.erase(
-				std::remove_if(target_container.begin(), target_container.end(), predicate),
+				std::remove_if(std::execution::par_unseq,
+					target_container.begin(), target_container.end(), [&box](const Particle& p) {
+						return box.contains(p.position);
+					}),
 				target_container.end());
 		}
 
@@ -604,7 +618,7 @@ void ParticleSystem::remove_out_of_bounds_particles() {
 		return std::binary_search(indices_to_remove.begin(), indices_to_remove.end(), i);
 	};
 	mass_spring_damper.erase(
-		std::remove_if(mass_spring_damper.begin(), mass_spring_damper.end(),
+		std::remove_if(std::execution::par_unseq, mass_spring_damper.begin(), mass_spring_damper.end(),
 			[to_be_removed](const MassSpringDamper& spring) {
 				return
 					to_be_removed(spring.particle_indices.first) ||
@@ -613,7 +627,8 @@ void ParticleSystem::remove_out_of_bounds_particles() {
 		mass_spring_damper.end()
 	);
 
-	for (auto& spring : mass_spring_damper) {
+	std::for_each(std::execution::par_unseq,
+		mass_spring_damper.begin(), mass_spring_damper.end(), [&](auto &spring) {
 		auto adjust_index = [&](int &index) {
 			auto distance_from_end = num_of_fluid_particles - index;
 			while (distance_from_end <= indices_to_remove.size()) {
@@ -624,7 +639,7 @@ void ParticleSystem::remove_out_of_bounds_particles() {
 
 		adjust_index(spring.particle_indices.first);
 		adjust_index(spring.particle_indices.second);
-	}
+	});
 
 	// To preserve the contiguous storage of the container with the minimum complexity cost,
 	// we will move the out-of-bounds particles to the end of the range and remove them from there
