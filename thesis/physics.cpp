@@ -192,13 +192,13 @@ class ParticleGenerator {
 
 			for (const auto& target : targets) {
 				const Vec3f
-					fluid_offset = { case_def.h, case_def.h, case_def.h },
+					fluid_offset = 0.4f * Vec3f{ case_def.h, case_def.h, case_def.h },
 					boundary_offset = 0.4f * Vec3f{ density, density, density };
 				remove_particles(
-					{ target.origin - fluid_offset, target.size + 2.5f * fluid_offset },
+					{ target.origin - fluid_offset, target.size + 2.0f * fluid_offset },
 					fluid_particles);
 				remove_particles(
-					{ target.origin - boundary_offset, target.size + 2.5 * boundary_offset },
+					{ target.origin - boundary_offset, target.size + 2.0f * boundary_offset },
 					boundary_particles);
 				const auto target_end = target.origin + target.size;
 				for (float x = target.origin.x; x <= target_end.x; x += density) {
@@ -271,10 +271,28 @@ void ParticleSystem::generate_mass_spring_damper() {
 	MassSpringDamper::k = case_def.spring.stiffness;
 	MassSpringDamper::damping_coef = case_def.spring.damping;
 
+	// Fluid - fluid springs
 	for (int i = 0; i < num_of_fluid_particles; ++i) {
 		for (int j = i + 1; j < num_of_fluid_particles; ++j) {
 			const float distance = (particles[i].position - particles[j].position).length();
-			if (distance > 0.9 * case_def.particles.density && distance <= case_def.spring.max_length) {
+			if (distance <= case_def.spring.max_length) {
+				MassSpringDamper msp;
+				msp.particle_indices = { i, j };
+				msp.resting_length = distance;
+				mass_spring_damper.emplace_back(msp);
+			}
+		}
+	}
+
+	num_of_fluid_fluid_springs = mass_spring_damper.size();
+
+	// Fluid - boundary springs
+	// Create these separately so they are at the end of the vector
+	// This simplifies handling them when calculating acceleration
+	for (int i = 0; i < num_of_fluid_particles; ++i) {
+		for (int j = num_of_fluid_particles; j < particles.size(); ++j) {
+			const float distance = (particles[i].position - particles[j].position).length();
+			if (distance <= case_def.spring.max_length) {
 				MassSpringDamper msp;
 				msp.particle_indices = { i, j };
 				msp.resting_length = distance;
@@ -496,7 +514,8 @@ void ParticleSystem::compute_derivatives() {
 		}
 	}
 
-	for (const auto& spring : mass_spring_damper) {
+	for (int k = 0; k < num_of_fluid_fluid_springs; ++k) {
+		const auto& spring = mass_spring_damper[k];
 		const auto
 			i = spring.particle_indices.first,
 			j = spring.particle_indices.second;
@@ -505,6 +524,17 @@ void ParticleSystem::compute_derivatives() {
 
 		acceleration[i] += force / case_def.particles.mass;
 		acceleration[j] -= force / case_def.particles.mass;
+	}
+
+	for (int k = num_of_fluid_fluid_springs; k < mass_spring_damper.size(); ++k) {
+		const auto& spring = mass_spring_damper[k];
+		const auto
+			i = spring.particle_indices.first,
+			j = spring.particle_indices.second;
+
+		const auto force = spring.compute_force(particles[i], particles[j]);
+
+		acceleration[i] += force / case_def.particles.mass;
 	}
 }
 
@@ -709,5 +739,7 @@ void ParticleSystem::simulation_step() {
 	prev_particles.swap(particles);
 	particles.swap(next_particles);
 
-	remove_out_of_bounds_particles();
+	// Temporarily remove this because it doesn't function correctly with springs attached
+	// to boundary particles
+	//remove_out_of_bounds_particles();
 }
