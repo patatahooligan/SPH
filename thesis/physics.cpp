@@ -13,7 +13,7 @@ CaseDef::Box get_particle_axis_aligned_bounding_box(ParticleConstIterator begin,
 		point_min = { float_max, float_max, float_max },
 		point_max = { float_lowest, float_lowest, float_lowest };
 
-	point_min = std::transform_reduce(std::execution::par_unseq, begin, end, point_min,
+	point_min = std::transform_reduce(std::execution::seq, begin, end, point_min,
 		[](const Vec3f position1, const Vec3f position2) -> Vec3f {
 			return {
 				std::min(position1.x, position2.x),
@@ -25,7 +25,7 @@ CaseDef::Box get_particle_axis_aligned_bounding_box(ParticleConstIterator begin,
 			return particle.position;
 		});
 
-	point_max = std::transform_reduce(std::execution::par_unseq, begin, end, point_max,
+	point_max = std::transform_reduce(std::execution::seq, begin, end, point_max,
 		[](const Vec3f position1, const Vec3f position2) -> Vec3f {
 			return {
 				std::max(position1.x, position2.x),
