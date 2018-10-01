@@ -21,7 +21,7 @@ CaseDef::Box get_particle_axis_aligned_bounding_box(ParticleConstIterator begin,
 				std::min(position1.z, position2.z)
 			};
 		},
-		[](const Particle &particle) {
+		[](const Particle &particle) ->Vec3f {
 			return particle.position;
 		});
 
@@ -33,7 +33,7 @@ CaseDef::Box get_particle_axis_aligned_bounding_box(ParticleConstIterator begin,
 				std::max(position1.z, position2.z)
 			};
 		},
-		[](const Particle &particle) {
+		[](const Particle &particle) ->Vec3f {
 			return particle.position;
 		});
 
@@ -691,6 +691,19 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 	prev_particles = particles;
 	next_particles = particles;
 
+	const auto boundary_bounding_box =
+		get_particle_axis_aligned_bounding_box(get_boundary_begin(), get_boundary_end());
+
+	search_grid_boundary.set_point_min(boundary_bounding_box.origin);
+	search_grid_boundary.set_point_max(boundary_bounding_box.origin + boundary_bounding_box.size);
+
+	search_grid_boundary.sort_containers(
+		particles.begin() + num_of_fluid_particles,
+		particles.end(),
+		prev_particles.begin() + num_of_fluid_particles,
+		nullptr
+	);
+
 	if (case_def.spring.on)
 		generate_mass_spring_damper();
 
@@ -717,29 +730,18 @@ SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(const Vec3f
 
 void ParticleSystem::simulation_step() {
 	// Readjust the search space to only include the bounding box of particles in the simulation
-	// Make sure that the search space is not larger than the requested simulation space. This could
-	// be obsolete later if the removal of all out-of-bounds particles is fully integrated and not optional
+	// Make sure that the search space is not larger than the requested simulation space.
 	const auto
-		fluid_aabb = get_particle_axis_aligned_bounding_box(get_fluid_begin(), get_fluid_end()),
-		boundary_aabb = get_particle_axis_aligned_bounding_box(get_boundary_begin(), get_boundary_end());
+		fluid_aabb = get_particle_axis_aligned_bounding_box(get_fluid_begin(), get_fluid_end());
 
 	search_grid_fluid.set_point_min(fluid_aabb.origin);
 	search_grid_fluid.set_point_max(fluid_aabb.origin + fluid_aabb.size);
-	search_grid_boundary.set_point_min(boundary_aabb.origin);
-	search_grid_boundary.set_point_max(boundary_aabb.origin + boundary_aabb.size);
 
 	// Sort fluid and boundary particles separately
 	search_grid_fluid.sort_containers(
 		particles.begin(), particles.begin() + num_of_fluid_particles,
 		prev_particles.begin(),
 		&mass_spring_damper
-	);
-
-	search_grid_boundary.sort_containers(
-		particles.begin() + num_of_fluid_particles,
-		particles.end(),
-		prev_particles.begin() + num_of_fluid_particles,
-		nullptr
 	);
 
 	compute_derivatives();
