@@ -689,7 +689,6 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 	// want the boundary positions to be set here so we don't have to copy
 	// them every time. Simply copying the whole vector is fast enough.
 	prev_particles = particles;
-	next_particles = particles;
 
 	const auto boundary_bounding_box =
 		get_particle_axis_aligned_bounding_box(get_boundary_begin(), get_boundary_end());
@@ -703,6 +702,8 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 		prev_particles.begin() + num_of_fluid_particles,
 		nullptr
 	);
+
+	next_particles = particles;
 
 	if (case_def.spring.on)
 		generate_mass_spring_damper();
