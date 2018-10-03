@@ -127,7 +127,10 @@ class SearchGrid {
 						&first = mass_spring_damper.particle_indices.first,
 						&second = mass_spring_damper.particle_indices.second;
 					first = reverse_proxies[first];
-					second = reverse_proxies[second];
+
+					// If the spring is holding a boundary particle don't adjust it
+					if (second < proxies.size())
+						second = reverse_proxies[second];
 				}
 			}
 
