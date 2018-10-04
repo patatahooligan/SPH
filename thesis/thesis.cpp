@@ -3,18 +3,16 @@
 #include "stdafx.h"
 
 #include "physics.h"
-#include "savestate.h"
+#include "fileIO.h"
 #include "XMLReader.h"
-#include "loadstate.h"
 
 struct RunOptions {
 	std::string case_filename;
 	float time, output_period;
-	SaveState::WriteMode write_mode;
 
 	std::optional<int> max_run_time;
 	std::optional<std::string> input;
-	std::optional<std::string> binary_output_filename, particles_output_filename, surface_output_filename;
+	std::optional<std::string> particles_output_filename, surface_output_filename;
 };
 
 auto get_options(int argc, char **argv) {
@@ -22,14 +20,10 @@ auto get_options(int argc, char **argv) {
 	RunOptions run_options;
 
 	cxx_options.add_options()
-		("b, binary-output", "Binary file to hold the result of the simulation",
-			cxxopts::value<std::string>())
 		("particles-output", "Prefix for group of vtk files to hold the result of the simulation",
 			cxxopts::value<std::string>())
 		("surface-output", "Prefix for group of vtk files to hold the reconstructed surface",
 			cxxopts::value<std::string>())
-		("overwrite", "Overwrite the binary output file if it exists (ignored if --append)")
-		("append", "Append to binary output file if it exists (disables --overwrite)")
 		("t, time", "Time of simulation run in seconds",
 			cxxopts::value<float>())
 		("c, case", "XML file that defines the case",
@@ -43,14 +37,6 @@ auto get_options(int argc, char **argv) {
 	
 	auto const_argv = const_cast<const char**>(argv);       // Workaround for cxxopts bug!!!
 	const auto result = cxx_options.parse(argc, const_argv);
-
-	// Mandatory options
-	if (result.count("append") > 0)
-		run_options.write_mode = SaveState::WriteMode::Append;
-	else if (result.count("overwrite") > 0)
-		run_options.write_mode = SaveState::WriteMode::Overwrite;
-	else
-		run_options.write_mode = SaveState::WriteMode::DontModify;
 
 	if (result.count("case") == 0)
 		throw std::runtime_error(std::string("No option specified for case"));
@@ -67,19 +53,13 @@ auto get_options(int argc, char **argv) {
 	else
 		run_options.output_period = result["output-period"].as<float>();
 
-	// Optional
-	if (result.count("binary-output") != 0)
-		run_options.binary_output_filename = result["binary-output"].as<std::string>();
-
 	if (result.count("particles-output") != 0)
 		run_options.particles_output_filename = result["particles-output"].as<std::string>();
 
 	if (result.count("surface-output") != 0)
 		run_options.surface_output_filename = result["surface-output"].as<std::string>();
 
-	if (!run_options.binary_output_filename && !run_options.particles_output_filename
-		&& !run_options.surface_output_filename)
-
+	if (!run_options.particles_output_filename && !run_options.surface_output_filename)
 		throw std::runtime_error(std::string("No option specified for output"));
 
 	if (result.count("max-run-time") == 1)
@@ -106,13 +86,6 @@ int main(int argc, char **argv) {
 		if (options.surface_output_filename)
 			save_VTK.save_surface(*options.surface_output_filename + "-boundary", case_def.h);
 	}
-
-	std::optional<SaveBinary> save_binary;
-	if (options.binary_output_filename) {
-		save_binary.emplace(
-			*options.binary_output_filename, options.write_mode,
-			ps.get_num_of_fluid_particles(), ps.get_num_of_particles());
-	}
 	
 	bool user_exit = false;
 	auto& now = std::chrono::steady_clock::now;
@@ -124,9 +97,6 @@ int main(int argc, char **argv) {
 		(!options.max_run_time || now() - start_time < std::chrono::seconds{ *(options.max_run_time) }))
 	{
 		while (output_step * options.output_period <= ps.current_time()) {
-			if (save_binary)
-				save_binary->save(ps.get_fluid_begin(), ps.get_fluid_end());
-
 			SaveVTK save_VTK(ps.get_fluid_begin(), ps.get_fluid_end());
 			if (options.particles_output_filename)
 				save_VTK.save_particles(*options.particles_output_filename + "-fluid" + std::to_string(output_step));

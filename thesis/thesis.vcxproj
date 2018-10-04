@@ -170,7 +170,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\constants.h" />
-    <ClInclude Include="..\common\loadstate.h" />
+    <ClInclude Include="..\common\fileIO.h" />
     <ClInclude Include="..\common\particle.h" />
     <ClInclude Include="..\common\stdafx.h" />
     <ClInclude Include="..\common\targetver.h" />
@@ -178,11 +178,10 @@
     <ClInclude Include="..\common\XMLReader.h" />
     <ClInclude Include="massspringdamper.h" />
     <ClInclude Include="physics.h" />
-    <ClInclude Include="savestate.h" />
     <ClInclude Include="searchgrid.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\common\loadstate.cpp" />
+    <ClCompile Include="..\common\fileIO.cpp" />
     <ClCompile Include="..\common\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -191,7 +190,6 @@
     </ClCompile>
     <ClCompile Include="..\common\XMLReader.cpp" />
     <ClCompile Include="physics.cpp" />
-    <ClCompile Include="savestate.cpp" />
     <ClCompile Include="thesis.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -21,9 +21,6 @@
     <ClInclude Include="physics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="savestate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="searchgrid.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -39,16 +36,16 @@
     <ClInclude Include="..\common\XMLReader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\common\targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\common\loadstate.h">
+    <ClInclude Include="massspringdamper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="massspringdamper.h">
+    <ClInclude Include="..\common\stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\fileIO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -59,16 +56,13 @@
     <ClCompile Include="physics.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="savestate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\common\XMLReader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\common\stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\loadstate.cpp">
+    <ClCompile Include="..\common\fileIO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
