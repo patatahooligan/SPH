@@ -18,13 +18,13 @@ vtkSmartPointer<vtkPolyData> surface_from_polydata(
 	bounds[2] -= h; bounds[3] += h;
 	bounds[4] -= h; bounds[5] += h;
 
-	const float resolution = 0.75f * h;
+	const float resolution = 0.1f * h;
 
 	auto implicit_modeller = vtkSmartPointer<vtkImplicitModeller>::New();
 	implicit_modeller->SetSampleDimensions(
 		(bounds[1] - bounds[0]) / resolution, (bounds[3] - bounds[2]) / resolution, (bounds[5] - bounds[4]) / resolution);
 	implicit_modeller->SetModelBounds(bounds);
-	implicit_modeller->SetMaximumDistance(0.1);
+	implicit_modeller->SetMaximumDistance(0.05);
 	implicit_modeller->SetProcessModeToPerVoxel();
 	implicit_modeller->SetInputData(polydata);
 
