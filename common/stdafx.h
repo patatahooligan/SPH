@@ -25,6 +25,7 @@
 #include <chrono>
 #include <fstream>
 #include <string_view>
+#include <filesystem>
 
 #include "boost/container/static_vector.hpp"
 #include "tinyxml2.h"
