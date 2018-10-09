@@ -2,6 +2,47 @@
 
 #include "fileIO.h"
 
+vtkSmartPointer<vtkPolyData> polydata_from_vtp(const std::string filename) {
+	auto reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
+	reader->SetFileName(filename.c_str());
+	reader->Update();
+	return reader->GetOutput();
+}
+
+vtkSmartPointer<vtkPolyData> surface_from_polydata(
+	const vtkSmartPointer<vtkPolyData> polydata, const float h) {
+
+	double bounds[6];
+	polydata->GetBounds(bounds);
+
+	auto voxel_modeller = vtkSmartPointer<vtkVoxelModeller>::New();
+	voxel_modeller->SetSampleDimensions(
+		(bounds[1] - bounds[0]) / h, (bounds[3] - bounds[2]) / h, (bounds[5] - bounds[4]) / h);
+	voxel_modeller->SetModelBounds(bounds);
+	voxel_modeller->SetScalarTypeToFloat();
+	voxel_modeller->SetMaximumDistance(0.1);
+	voxel_modeller->SetInputData(polydata);
+
+	auto marching_cubes = vtkSmartPointer<vtkMarchingCubes>::New();
+	marching_cubes->SetInputConnection(voxel_modeller->GetOutputPort());
+	marching_cubes->ComputeNormalsOn();
+	marching_cubes->ComputeGradientsOn();
+	marching_cubes->SetValue(0, 0.5);
+
+	marching_cubes->Update();
+	return marching_cubes->GetOutput();
+}
+
+void save_surface_to_vtp(const vtkSmartPointer<vtkPolyData> surface, std::string output_filename) {
+	auto writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+	writer->SetInputData(surface);
+
+	output_filename += '.';
+	output_filename += writer->GetDefaultFileExtension();
+	writer->SetFileName(output_filename.data());
+	writer->Write();
+}
+
 SaveVTK::SaveVTK(ParticleConstIterator begin, ParticleConstIterator end):
 	points(vtkSmartPointer<vtkPoints>::New()),
 	polydata(vtkSmartPointer<vtkPolyData>::New()),
@@ -27,31 +68,6 @@ void SaveVTK::save_particles(std::string output_filename) {
 }
 
 void SaveVTK::save_surface(std::string output_filename, const float h) {
-	double bounds[6];
-	polydata->GetBounds(bounds);
-
-	auto voxel_modeller = vtkSmartPointer<vtkVoxelModeller>::New();
-	voxel_modeller->SetSampleDimensions(
-		(bounds[1] - bounds[0]) / h, (bounds[3] -bounds[2]) / h, (bounds[5] - bounds[4]) / h);
-	voxel_modeller->SetModelBounds(bounds);
-	voxel_modeller->SetScalarTypeToFloat();
-	voxel_modeller->SetMaximumDistance(0.1);
-	voxel_modeller->SetInputData(polydata);
-
-	auto marching_cubes = vtkSmartPointer<vtkMarchingCubes>::New();
-	marching_cubes->SetInputConnection(voxel_modeller->GetOutputPort());
-	marching_cubes->ComputeNormalsOn();
-	marching_cubes->ComputeGradientsOn();
-	marching_cubes->SetValue(0, 0.5);
-
-	marching_cubes->Update();
-	vtkSmartPointer<vtkPolyData> cubes_output = marching_cubes->GetOutput();
-
-	auto writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-	writer->SetInputData(cubes_output);
-
-	output_filename += '.';
-	output_filename += writer->GetDefaultFileExtension();
-	writer->SetFileName(output_filename.data());
-	writer->Write();
+	const auto surface = surface_from_polydata(polydata, h);
+	save_surface_to_vtp(surface, output_filename);
 }
