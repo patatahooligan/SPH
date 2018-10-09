@@ -14,6 +14,9 @@ vtkSmartPointer<vtkPolyData> surface_from_polydata(
 
 	double bounds[6];
 	polydata->GetBounds(bounds);
+	bounds[0] -= h; bounds[1] += h;
+	bounds[2] -= h; bounds[3] += h;
+	bounds[4] -= h; bounds[5] += h;
 
 	auto voxel_modeller = vtkSmartPointer<vtkVoxelModeller>::New();
 	voxel_modeller->SetSampleDimensions(
