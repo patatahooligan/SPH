@@ -18,9 +18,11 @@ vtkSmartPointer<vtkPolyData> surface_from_polydata(
 	bounds[2] -= h; bounds[3] += h;
 	bounds[4] -= h; bounds[5] += h;
 
+	const float resolution = 0.75f * h;
+
 	auto voxel_modeller = vtkSmartPointer<vtkVoxelModeller>::New();
 	voxel_modeller->SetSampleDimensions(
-		(bounds[1] - bounds[0]) / h, (bounds[3] - bounds[2]) / h, (bounds[5] - bounds[4]) / h);
+		(bounds[1] - bounds[0]) / resolution, (bounds[3] - bounds[2]) / resolution, (bounds[5] - bounds[4]) / resolution);
 	voxel_modeller->SetModelBounds(bounds);
 	voxel_modeller->SetScalarTypeToFloat();
 	voxel_modeller->SetMaximumDistance(0.1);
