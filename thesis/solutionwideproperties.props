@@ -16,7 +16,7 @@
     </ClCompile>
     <Link />
     <Link>
-      <AdditionalDependencies>vtkRenderingFreeType-8.1.lib;vtkRenderingOpenGL2-8.1.lib;vtkRenderingCore-8.1.lib; vtkFiltersCore-8.1.lib;vtkImagingHybrid-8.1.lib;vtkFiltersModeling-8.1.lib;vtkCommonExecutionModel-8.1.lib;vtkIOPLY-8.1.lib;vtkCommonDataModel-8.1.lib;vtkIOXML-8.1.lib;vtkCommonCore-8.1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>vtkFiltersHybrid-8.1.lib;vtkRenderingFreeType-8.1.lib;vtkRenderingOpenGL2-8.1.lib;vtkRenderingCore-8.1.lib; vtkFiltersCore-8.1.lib;vtkImagingHybrid-8.1.lib;vtkFiltersModeling-8.1.lib;vtkCommonExecutionModel-8.1.lib;vtkIOPLY-8.1.lib;vtkCommonDataModel-8.1.lib;vtkIOXML-8.1.lib;vtkCommonCore-8.1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />

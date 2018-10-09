@@ -20,22 +20,22 @@ vtkSmartPointer<vtkPolyData> surface_from_polydata(
 
 	const float resolution = 0.75f * h;
 
-	auto voxel_modeller = vtkSmartPointer<vtkVoxelModeller>::New();
-	voxel_modeller->SetSampleDimensions(
+	auto implicit_modeller = vtkSmartPointer<vtkImplicitModeller>::New();
+	implicit_modeller->SetSampleDimensions(
 		(bounds[1] - bounds[0]) / resolution, (bounds[3] - bounds[2]) / resolution, (bounds[5] - bounds[4]) / resolution);
-	voxel_modeller->SetModelBounds(bounds);
-	voxel_modeller->SetScalarTypeToFloat();
-	voxel_modeller->SetMaximumDistance(0.1);
-	voxel_modeller->SetInputData(polydata);
+	implicit_modeller->SetModelBounds(bounds);
+	implicit_modeller->SetMaximumDistance(0.1);
+	implicit_modeller->SetProcessModeToPerVoxel();
+	implicit_modeller->SetInputData(polydata);
 
-	auto marching_cubes = vtkSmartPointer<vtkMarchingCubes>::New();
-	marching_cubes->SetInputConnection(voxel_modeller->GetOutputPort());
-	marching_cubes->ComputeNormalsOn();
-	marching_cubes->ComputeGradientsOn();
-	marching_cubes->SetValue(0, 0.5);
+	auto flyingedges3D = vtkSmartPointer<vtkFlyingEdges3D>::New();
+	flyingedges3D->SetInputConnection(implicit_modeller->GetOutputPort());
+	flyingedges3D->ComputeNormalsOn();
+	flyingedges3D->ComputeGradientsOn();
+	flyingedges3D->SetValue(0, 0.5);
 
-	marching_cubes->Update();
-	return marching_cubes->GetOutput();
+	flyingedges3D->Update();
+	return flyingedges3D->GetOutput();
 }
 
 void save_surface_to_vtp(const vtkSmartPointer<vtkPolyData> surface, std::string output_filename) {

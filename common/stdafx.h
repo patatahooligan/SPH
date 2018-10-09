@@ -41,6 +41,8 @@
 #include "vtkContourFilter.h"
 #include "vtkReverseSense.h"
 #include "vtkMarchingCubes.h"
+#include "vtkFlyingEdges3D.h"
+#include "vtkImplicitModeller.h"
 #include "vtkVoxelModeller.h"
 #include "vtkImageData.h"
  
