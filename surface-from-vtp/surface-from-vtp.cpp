@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
 	while (std::filesystem::exists(input_filename)) {
 		const auto polydata = polydata_from_vtp(input_filename);
 		const auto surface = surface_from_polydata(polydata, h);
-		save_surface_to_vtp(surface, output_prefix + std::to_string(++i));
+		save_surface_to_vtp(surface, output_prefix + std::to_string(i));
 
 		input_filename = input_prefix + std::to_string(++i) + ".vtp";
 	}
