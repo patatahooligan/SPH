@@ -54,7 +54,7 @@ class SearchGrid {
 			for (size_t i = 0; i < 3; ++i) {
 				// To robustly handle (slightly) out of bounds particles
 				// group them to the nearest cell
-				cell[i] = int(position[i] / h);
+				cell[i] = int(relative_position[i] / h);
 				cell[i] = std::max(cell[i], 0);
 				cell[i] = std::min(cell[i], grid_cells[i] - 1);
 			}
