@@ -21,3 +21,7 @@ struct MassSpringDamper {
 		return -k * displacement - damping_coef * relative_velocity;
 	}
 };
+
+using MassSpringContainer = std::vector<MassSpringDamper>;
+using MassSpringIterator = MassSpringContainer::iterator;
+using MassSpringConstIterator = MassSpringContainer::const_iterator;

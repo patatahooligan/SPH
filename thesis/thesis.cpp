@@ -74,7 +74,7 @@ auto get_options(int argc, char **argv) {
 int main(int argc, char **argv) {
 	const auto options = get_options(argc, argv);
 
-	const auto case_def = get_case_from_XML(options.case_filename);
+	const auto case_def = get_case_from_XML(options.case_filename.c_str());
 
 	ParticleSystem ps(case_def);
 
@@ -126,8 +126,32 @@ int main(int argc, char **argv) {
 	std::cout << "Time of simulation :" << ps.current_time() << " s\n"
 		<<"    (of requested " << options.time << " s)\n\n";
 
+	// Save one last step, mostly for debugging
+	// Consider removing this later
+	SaveVTK save_VTK(ps.get_fluid_begin(), ps.get_fluid_end());
+	if (options.particles_output_filename)
+		save_VTK.save_particles(*options.particles_output_filename + "-fluid" + std::to_string(output_step));
+
+	if (options.surface_output_filename)
+		save_VTK.save_surface(
+			*options.surface_output_filename + "-fluid" + std::to_string(output_step), case_def.h);
+
+	std::cout << "Snapshot saved at time " << ps.current_time() << "s\n";
+
 	std::cout << "Verlet steps integrated : " << ps.current_step() << "\n";
 	std::cout << "Steps saved in output file : " << output_step << "\n\n";
+
+	std::cout << "Saving two snapshots of particles\n";
+
+	save_particles_to_xml(ps.get_fluid_begin(), ps.get_fluid_end(), "prev_particles.xml", "fluidparticle");
+	ps.simulation_step();
+	save_particles_to_xml(ps.get_fluid_begin(), ps.get_fluid_end(), "prev_particles.xml", "fluidparticle");
+
+	if (ps.get_springs_begin() != ps.get_springs_end()) {
+		std::cout << "Saving mass-spring system\n";
+
+		save_springs_to_xml(ps.get_springs_begin(), ps.get_springs_end(), "springs.xml", "massspring");
+	}
 
 	return 0;
 }

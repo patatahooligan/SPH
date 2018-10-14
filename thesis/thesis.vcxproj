@@ -175,10 +175,10 @@
     <ClInclude Include="..\common\stdafx.h" />
     <ClInclude Include="..\common\targetver.h" />
     <ClInclude Include="..\common\vec3f.h" />
-    <ClInclude Include="..\common\XMLReader.h" />
     <ClInclude Include="massspringdamper.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="searchgrid.h" />
+    <ClInclude Include="XMLReader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\common\fileIO.cpp" />
@@ -188,9 +188,9 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="..\common\XMLReader.cpp" />
     <ClCompile Include="physics.cpp" />
     <ClCompile Include="thesis.cpp" />
+    <ClCompile Include="XMLReader.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

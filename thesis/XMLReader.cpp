@@ -3,10 +3,13 @@
 #include "vec3f.h"
 #include "constants.h"
 #include "XMLReader.h"
+#include "particle.h"
+#include "massspringdamper.h"
 
 using namespace tinyxml2;
 
 Vec3f get_vec3f_from_element(XMLElement& elem);
+void set_element_to_vec3f(XMLElement& elem, const Vec3f &vec);
 
 void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def);
 void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def);
@@ -15,14 +18,20 @@ Vec3f get_vec3f_from_element(XMLElement& elem) {
 	return { elem.FloatAttribute("x"), elem.FloatAttribute("y"), elem.FloatAttribute("z") };
 }
 
-CaseDef get_case_from_XML(const std::string_view xml_filename) {
+void set_element_to_vec3f(XMLElement& elem, const Vec3f &vec) {
+	elem.SetAttribute("x", vec.x);
+	elem.SetAttribute("y", vec.y);
+	elem.SetAttribute("z", vec.z);
+}
+
+CaseDef get_case_from_XML(const char*  xml_filename) {
 	CaseDef case_def;
 	XMLDocument case_XML;
 
 	// TODO: Consider how to implement error handling
 	//       For now just throw the return value for debugging
 
-	auto error = case_XML.LoadFile(xml_filename.data());
+	auto error = case_XML.LoadFile(xml_filename);
 	if (error != XML_SUCCESS)
 		throw error;
 
@@ -206,4 +215,47 @@ void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 		command = command->NextSiblingElement();
 	}
+}
+
+
+void save_particles_to_xml(const ParticleContainer::const_iterator begin, const ParticleContainer::const_iterator end,
+                           const char* xml_filename, const char* element_name) {
+	XMLDocument particles_xml;
+
+	for (auto particle = begin; particle != end; ++particle) {
+		auto particle_element = particles_xml.NewElement(element_name);
+
+		auto position_element = particles_xml.NewElement("position");
+		set_element_to_vec3f(*position_element, particle->position);
+		particle_element->InsertEndChild(position_element);
+
+		auto velocity_element = particles_xml.NewElement("velocity");
+		set_element_to_vec3f(*velocity_element, particle->velocity);
+		particle_element->InsertEndChild(velocity_element);
+
+		auto density_element = particles_xml.NewElement("density");
+		density_element->SetAttribute("value", particle->density);
+		particle_element->InsertEndChild(density_element);
+
+		particles_xml.InsertEndChild(particle_element);
+	}
+
+	particles_xml.SaveFile(xml_filename);
+}
+
+void save_springs_to_xml(const MassSpringConstIterator begin, const MassSpringConstIterator end,
+                         const char* xml_filename, const char* element_name) {
+
+	XMLDocument springs_xml;
+
+	for (auto spring = begin; spring != end; ++spring) {
+		auto spring_element = springs_xml.NewElement(element_name);
+		spring_element->SetAttribute("restinglength", spring->resting_length);
+		spring_element->SetAttribute("first", spring->particle_indices.first);
+		spring_element->SetAttribute("second", spring->particle_indices.second);
+
+		springs_xml.InsertEndChild(spring_element);
+	}
+
+	springs_xml.SaveFile(xml_filename);
 }

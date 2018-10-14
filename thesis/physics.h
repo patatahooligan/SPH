@@ -47,7 +47,7 @@ class ParticleSystem {
 		CaseDef::Box bounding_box;
 		SearchGrid search_grid_fluid, search_grid_boundary;
 		CubicSplinePrecalculated cubic_spline;
-		std::vector<MassSpringDamper> mass_spring_damper;
+		MassSpringContainer mass_spring_damper;
 		struct FrictionBox { CaseDef::Box box; enum class Plane { XY, XZ, YZ } plane; };
 		std::vector<FrictionBox> friction_boxes;
 		float simulation_time = 0.0f;
@@ -83,6 +83,9 @@ class ParticleSystem {
 		SearchGrid::cell_indices_container get_all_neighbors(const Vec3f &position) const;
 
 	public:
+		using SpringIterator = std::vector<MassSpringDamper>::iterator;
+		using SpringConstIterator = std::vector<MassSpringDamper>::const_iterator;
+
 		ParticleSystem(const CaseDef &case_def);
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
@@ -92,10 +95,13 @@ class ParticleSystem {
 		const ParticleContainer& get_particlearray() const { return particles; }
 		const ParticleContainer& get_previous_particlearray() const { return prev_particles; }
 
-		ParticleConstIterator get_fluid_begin() const { return particles.begin(); }
-		ParticleConstIterator get_fluid_end() const { return particles.begin() + num_of_fluid_particles; }
-		ParticleConstIterator get_boundary_begin() const { return particles.begin() + num_of_fluid_particles; }
-		ParticleConstIterator get_boundary_end() const { return particles.end(); }
+		ParticleConstIterator get_fluid_begin() const { return particles.cbegin(); }
+		ParticleConstIterator get_fluid_end() const { return particles.cbegin() + num_of_fluid_particles; }
+		ParticleConstIterator get_boundary_begin() const { return particles.cbegin() + num_of_fluid_particles; }
+		ParticleConstIterator get_boundary_end() const { return particles.cend(); }
+
+		MassSpringConstIterator get_springs_begin() const { return mass_spring_damper.cbegin(); }
+		MassSpringConstIterator get_springs_end() const { return mass_spring_damper.cend(); }
 
 		auto current_time() const {return simulation_time;}
 		auto current_step() const { return verlet_step; }
