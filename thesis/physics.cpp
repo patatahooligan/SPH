@@ -15,27 +15,27 @@ CaseDef::Box get_particle_axis_aligned_bounding_box(ParticleConstIterator begin,
 
 	point_min = std::transform_reduce(std::execution::seq, begin, end, point_min,
 		[](const Vec3f position1, const Vec3f position2) -> Vec3f {
-			return {
-				std::min(position1.x, position2.x),
-				std::min(position1.y, position2.y),
-				std::min(position1.z, position2.z)
-			};
-		},
+		return {
+			std::min(position1.x, position2.x),
+			std::min(position1.y, position2.y),
+			std::min(position1.z, position2.z)
+		};
+	},
 		[](const Particle &particle) ->Vec3f {
-			return particle.position;
-		});
+		return particle.position;
+	});
 
 	point_max = std::transform_reduce(std::execution::seq, begin, end, point_max,
 		[](const Vec3f position1, const Vec3f position2) -> Vec3f {
-			return {
-				std::max(position1.x, position2.x),
-				std::max(position1.y, position2.y),
-				std::max(position1.z, position2.z)
-			};
-		},
+		return {
+			std::max(position1.x, position2.x),
+			std::max(position1.y, position2.y),
+			std::max(position1.z, position2.z)
+		};
+	},
 		[](const Particle &particle) ->Vec3f {
-			return particle.position;
-		});
+		return particle.position;
+	});
 
 	return { point_min, point_max - point_min };
 }
@@ -287,13 +287,16 @@ void ParticleSystem::generate_mass_spring_damper() {
 
 	// Fluid - fluid springs
 	for (int i = 0; i < num_of_fluid_particles; ++i) {
-		for (int j = i + 1; j < num_of_fluid_particles; ++j) {
-			const float distance = (particles[i].position - particles[j].position).length();
-			if (distance <= case_def.spring.max_length) {
-				MassSpringDamper msp;
-				msp.particle_indices = { i, j };
-				msp.resting_length = distance;
-				mass_spring_damper.emplace_back(msp);
+		const auto neighbor_indices = search_grid_fluid.get_neighbor_indices(particles[i].position);
+		for (const auto& index_pair : neighbor_indices) {
+			for (int j = index_pair.first; j < index_pair.second; ++j) {
+				const float distance = (particles[i].position - particles[j].position).length();
+				if (distance <= case_def.spring.max_length) {
+					MassSpringDamper msp;
+					msp.particle_indices = { i, j };
+					msp.resting_length = distance;
+					mass_spring_damper.emplace_back(msp);
+				}
 			}
 		}
 	}
@@ -304,13 +307,16 @@ void ParticleSystem::generate_mass_spring_damper() {
 	// Create these separately so they are at the end of the vector
 	// This simplifies handling them when calculating acceleration
 	for (int i = 0; i < num_of_fluid_particles; ++i) {
-		for (int j = num_of_fluid_particles; j < particles.size(); ++j) {
-			const float distance = (particles[i].position - particles[j].position).length();
-			if (distance <= case_def.spring.max_length) {
-				MassSpringDamper msp;
-				msp.particle_indices = { i, j };
-				msp.resting_length = distance;
-				mass_spring_damper.emplace_back(msp);
+		const auto neighbor_indices = search_grid_boundary.get_neighbor_indices(particles[i].position);
+		for (const auto& index_pair : neighbor_indices) {
+			for (int j = index_pair.first; j < index_pair.second; ++j) {
+				const float distance = (particles[i].position - particles[j].position).length();
+				if (distance <= case_def.spring.max_length) {
+					MassSpringDamper msp;
+					msp.particle_indices = { i, j };
+					msp.resting_length = distance;
+					mass_spring_damper.emplace_back(msp);
+				}
 			}
 		}
 	}
@@ -555,7 +561,7 @@ void ParticleSystem::compute_derivatives() {
 void ParticleSystem::integrate_verlet(const float dt) {
 	// How often to use the Verlet corrective step
 	// TODO: consider making this variable
-	constexpr int corrective_step_interval = 10;
+	constexpr int corrective_step_interval = 40;
 
 	#pragma omp parallel
 	if (verlet_step % corrective_step_interval == 0) {
@@ -690,11 +696,22 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 	// them every time. Simply copying the whole vector is fast enough.
 	prev_particles = particles;
 
-	const auto boundary_bounding_box =
-		get_particle_axis_aligned_bounding_box(get_boundary_begin(), get_boundary_end());
+	const auto
+		fluid_bounding_box = get_particle_axis_aligned_bounding_box(get_fluid_begin(), get_fluid_end()),
+		boundary_bounding_box =	get_particle_axis_aligned_bounding_box(get_boundary_begin(), get_boundary_end());
+
+	search_grid_fluid.set_point_min(fluid_bounding_box.origin);
+	search_grid_fluid.set_point_max(fluid_bounding_box.origin + fluid_bounding_box.size);
 
 	search_grid_boundary.set_point_min(boundary_bounding_box.origin);
 	search_grid_boundary.set_point_max(boundary_bounding_box.origin + boundary_bounding_box.size);
+
+	search_grid_fluid.sort_containers(
+		particles.begin(),
+		particles.begin() + num_of_fluid_particles,
+		prev_particles.begin(),
+		nullptr
+	);
 
 	search_grid_boundary.sort_containers(
 		particles.begin() + num_of_fluid_particles,
