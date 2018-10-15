@@ -146,7 +146,7 @@ int main(int argc, char **argv) {
 	save_particles_to_xml(ps.get_fluid_begin(), ps.get_fluid_end(), "prev_fluid_particles.xml", "particle");
 	save_particles_to_xml(ps.get_boundary_begin(), ps.get_boundary_end(), "prev_boundary_particles.xml", "particle");
 	ps.simulation_step();
-	save_particles_to_xml(ps.get_fluid_begin(), ps.get_fluid_end(), "particles.xml", "particle");
+	save_particles_to_xml(ps.get_fluid_begin(), ps.get_fluid_end(), "fluid_particles.xml", "particle");
 	save_particles_to_xml(ps.get_boundary_begin(), ps.get_boundary_end(), "boundary_particles.xml", "particle");
 
 	if (ps.get_springs_begin() != ps.get_springs_end()) {
