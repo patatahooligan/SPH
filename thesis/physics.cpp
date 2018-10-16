@@ -206,8 +206,8 @@ class ParticleGenerator {
 
 			for (const auto& target : targets) {
 				const Vec3f
-					fluid_offset = 0.4f * Vec3f{ case_def.h, case_def.h, case_def.h },
-					boundary_offset = 0.4f * Vec3f{ density, density, density };
+					fluid_offset = 0.4f * Vec3f{ density, density, density },
+					boundary_offset = fluid_offset;
 				remove_particles(
 					{ target.origin - fluid_offset, target.size + 2.0f * fluid_offset },
 					fluid_particles);
