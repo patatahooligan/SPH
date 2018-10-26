@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
 		input_prefix = argv[1],
 		output_prefix = argv[2];
 
-	const int	begin_index = argc >= 3 ? std::stoi(argv[3]) : 0;
+	const int	begin_index = argc >= 4 ? std::stoi(argv[3]) : 0;
 	int end_index = begin_index;
 	while (std::filesystem::exists(input_prefix + std::to_string(++end_index) + ".vtp"));
 
