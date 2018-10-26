@@ -48,8 +48,6 @@ class ParticleSystem {
 		SearchGrid search_grid_fluid, search_grid_boundary;
 		CubicSplinePrecalculated cubic_spline;
 		MassSpringContainer mass_spring_damper;
-		struct FrictionBox { CaseDef::Box box; enum class Plane { XY, XZ, YZ } plane; };
-		std::vector<FrictionBox> friction_boxes;
 		float simulation_time = 0.0f;
 		int verlet_step = 0;
 
@@ -64,8 +62,6 @@ class ParticleSystem {
 		ParticleContainer generate_particles();
 
 		void generate_mass_spring_damper();
-
-		void generate_friction_boxes();
 
 		// Calculate a time step that is stable.
 		float calculate_time_step() const;

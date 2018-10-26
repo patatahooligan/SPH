@@ -324,40 +324,6 @@ void ParticleSystem::generate_mass_spring_damper() {
 	mass_spring_damper.shrink_to_fit();
 }
 
-void ParticleSystem::generate_friction_boxes() {
-	if (case_def.friction_coef == 0.0f)
-		return;
-
-	for (const auto& box : case_def.particle_boxes) {
-		if (box.type != CaseDef::CaseDefBox::Type::Boundary)
-			continue;
-
-		const float
-			wall_thickness = case_def.particles.density,
-			friction_thickness = 3 * case_def.h;
-
-		const Vec3f
-			left_origin = box.origin + wall_thickness * Vec3f::x_unit(),
-			right_origin = box.origin + box.size.x - (wall_thickness + friction_thickness) * Vec3f::x_unit(),
-			front_origin = box.origin + wall_thickness * Vec3f::y_unit(),
-			back_origin = box.origin + box.size.y - (wall_thickness + friction_thickness) * Vec3f::y_unit(),
-			bottom_origin = box.origin + wall_thickness * Vec3f::z_unit(),
-
-			x_size = { friction_thickness, box.size.y,         box.size.z },
-			y_size = { box.size.x,         friction_thickness, box.size.z },
-			z_size = { box.size.x,         box.size.y,         friction_thickness };
-
-		using Plane = FrictionBox::Plane;
-		if (box.fillmode.left) friction_boxes.push_back({ { left_origin, x_size }, Plane::YZ });
-		if (box.fillmode.right) friction_boxes.push_back({{ right_origin, x_size }, Plane::YZ });
-		if (box.fillmode.front) friction_boxes.push_back({ { front_origin, y_size }, Plane::XZ });
-		if (box.fillmode.back) friction_boxes.push_back({{ back_origin, y_size }, Plane::XZ });
-		if (box.fillmode.bottom) friction_boxes.push_back({ { bottom_origin, z_size }, Plane::XY });
-	}
-
-	friction_boxes.shrink_to_fit();
-}
-
 float ParticleSystem::calculate_time_step() const {
 	const float sigma_max = std::transform_reduce(
 		std::execution::par_unseq, get_fluid_begin(), get_fluid_end(), std::numeric_limits<float>::lowest(),
@@ -469,27 +435,6 @@ void ParticleSystem::compute_derivatives(const int i) {
 			case_def.particles.mass *
 			((pressure_sum / density_product) + pi_ij + tensile_correction_term) *
 			kernel_gradient_rij;
-		}
-	}
-
-	// Friction forces
-	if constexpr (TypeOfPi == ParticleType::Fluid && TypeOfNeighbors == ParticleType::Boundary) {
-		for (const auto& friction_box : friction_boxes) {
-			if (friction_box.box.contains(Pi.position)) {
-				const auto tangent_velocity = [&]() {
-					switch (friction_box.plane) {
-					case FrictionBox::Plane::XY:
-						return Vec3f{ Pi.velocity.x, Pi.velocity.y, 0.0f };
-					case FrictionBox::Plane::XZ:
-						return Vec3f{ Pi.velocity.x, 0.0f, Pi.velocity.z };
-					case FrictionBox::Plane::YZ:
-						return Vec3f{ 0.0f, Pi.velocity.y, Pi.velocity.z };
-					}
-				} ();
-
-				acceleration[i] -=
-					(case_def.particles.mass * case_def.friction_coef * tangent_velocity) / particles[i].density;
-			}
 		}
 	}
 }
@@ -724,8 +669,6 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 
 	if (case_def.spring.on)
 		generate_mass_spring_damper();
-
-	generate_friction_boxes();
 
 	allocate_memory_for_verlet_variables();
 }
