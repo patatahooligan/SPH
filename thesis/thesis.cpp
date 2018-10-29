@@ -126,16 +126,6 @@ int main(int argc, char **argv) {
 	std::cout << "Time of simulation :" << ps.current_time() << " s\n"
 		<<"    (of requested " << options.time << " s)\n\n";
 
-	// Save one last step, mostly for debugging
-	// Consider removing this later
-	SaveVTK save_VTK(ps.get_fluid_begin(), ps.get_fluid_end());
-	if (options.particles_output_filename)
-		save_VTK.save_particles(*options.particles_output_filename + "-fluid" + std::to_string(output_step));
-
-	if (options.surface_output_filename)
-		save_VTK.save_surface(
-			*options.surface_output_filename + "-fluid" + std::to_string(output_step), case_def.h);
-
 	std::cout << "Snapshot saved at time " << ps.current_time() << "s\n";
 
 	std::cout << "Verlet steps integrated : " << ps.current_step() << "\n";
@@ -143,17 +133,25 @@ int main(int argc, char **argv) {
 
 	std::cout << "Saving two snapshots of particles\n";
 
-	save_particles_to_xml(ps.get_fluid_begin(), ps.get_fluid_end(), "prev_fluid_particles.xml", "particle");
-	save_particles_to_xml(ps.get_boundary_begin(), ps.get_boundary_end(), "prev_boundary_particles.xml", "particle");
+	tinyxml2::XMLDocument final_state_output;
+
+	save_particles_to_xml(final_state_output, ps.get_fluid_begin(), ps.get_fluid_end(), "prev_fluid_particle");
+	save_particles_to_xml(final_state_output, ps.get_boundary_begin(), ps.get_boundary_end(), "prev_boundary_particles");
 	ps.simulation_step();
-	save_particles_to_xml(ps.get_fluid_begin(), ps.get_fluid_end(), "fluid_particles.xml", "particle");
-	save_particles_to_xml(ps.get_boundary_begin(), ps.get_boundary_end(), "boundary_particles.xml", "particle");
+	save_particles_to_xml(final_state_output, ps.get_fluid_begin(), ps.get_fluid_end(), "fluid_particle");
+	save_particles_to_xml(final_state_output, ps.get_boundary_begin(), ps.get_boundary_end(), "boundary_particles");
 
 	if (ps.get_springs_begin() != ps.get_springs_end()) {
 		std::cout << "Saving mass-spring system\n";
 
-		save_springs_to_xml(ps.get_springs_begin(), ps.get_springs_end(), "springs.xml", "spring");
+		save_springs_to_xml(final_state_output, ps.get_springs_begin(), ps.get_springs_end(), "spring");
 	}
+
+	append_element_to_xml(final_state_output, "time", ps.current_time());
+	append_element_to_xml(final_state_output, "verlet-step", ps.current_step());
+	append_element_to_xml(final_state_output, "output-step", output_step);
+
+	final_state_output.SaveFile("final_state.xml");
 
 	return 0;
 }

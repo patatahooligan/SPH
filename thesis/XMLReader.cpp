@@ -218,44 +218,37 @@ void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 }
 
 
-void save_particles_to_xml(const ParticleContainer::const_iterator begin, const ParticleContainer::const_iterator end,
-                           const char* xml_filename, const char* element_name) {
-	XMLDocument particles_xml;
+void save_particles_to_xml(XMLDocument &document, const ParticleConstIterator begin,
+                           const ParticleConstIterator end, const char* element_name) {
 
 	for (auto particle = begin; particle != end; ++particle) {
-		auto particle_element = particles_xml.NewElement(element_name);
+		auto particle_element = document.NewElement(element_name);
 
-		auto position_element = particles_xml.NewElement("position");
+		auto position_element = document.NewElement("position");
 		set_element_to_vec3f(*position_element, particle->position);
 		particle_element->InsertEndChild(position_element);
 
-		auto velocity_element = particles_xml.NewElement("velocity");
+		auto velocity_element = document.NewElement("velocity");
 		set_element_to_vec3f(*velocity_element, particle->velocity);
 		particle_element->InsertEndChild(velocity_element);
 
-		auto density_element = particles_xml.NewElement("density");
+		auto density_element = document.NewElement("density");
 		density_element->SetAttribute("value", particle->density);
 		particle_element->InsertEndChild(density_element);
 
-		particles_xml.InsertEndChild(particle_element);
+		document.InsertEndChild(particle_element);
 	}
-
-	particles_xml.SaveFile(xml_filename);
 }
 
-void save_springs_to_xml(const MassSpringConstIterator begin, const MassSpringConstIterator end,
-                         const char* xml_filename, const char* element_name) {
-
-	XMLDocument springs_xml;
+void save_springs_to_xml(XMLDocument &document, const MassSpringConstIterator begin,
+	const MassSpringConstIterator end, const char* element_name) {
 
 	for (auto spring = begin; spring != end; ++spring) {
-		auto spring_element = springs_xml.NewElement(element_name);
+		auto spring_element = document.NewElement(element_name);
 		spring_element->SetAttribute("restinglength", spring->resting_length);
 		spring_element->SetAttribute("first", spring->particle_indices.first);
 		spring_element->SetAttribute("second", spring->particle_indices.second);
 
-		springs_xml.InsertEndChild(spring_element);
+		document.InsertEndChild(spring_element);
 	}
-
-	springs_xml.SaveFile(xml_filename);
 }
