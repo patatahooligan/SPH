@@ -630,7 +630,6 @@ void ParticleSystem::remove_out_of_bounds_particles() {
 
 ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 	case_def(case_def),
-	particles(generate_particles()),
 	bounding_box({ case_def.particles.point_min, case_def.particles.point_max - case_def.particles.point_min }),
 	search_grid_fluid(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
 	search_grid_boundary(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
@@ -639,6 +638,7 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 	// We need to ensure that all particle arrays are the same size. We also
 	// want the boundary positions to be set here so we don't have to copy
 	// them every time. Simply copying the whole vector is fast enough.
+	particles = generate_particles();
 	prev_particles = particles;
 
 	const auto
@@ -671,6 +671,29 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 		generate_mass_spring_damper();
 
 	allocate_memory_for_verlet_variables();
+}
+
+ParticleSystem::ParticleSystem(const CaseDef & case_def, State state) :
+	case_def(case_def),
+	bounding_box({ case_def.particles.point_min, case_def.particles.point_max - case_def.particles.point_min }),
+	search_grid_fluid(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
+	search_grid_boundary(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
+	cubic_spline(case_def.h)
+{
+	num_of_fluid_particles = state.fluid_particles.size();
+	particles = std::move(state.fluid_particles);
+	particles.insert(particles.end(), state.boundary_particles.begin(), state.boundary_particles.end());
+
+	prev_particles = std::move(state.fluid_particles);
+	prev_particles.insert(prev_particles.end(), state.prev_boundary_particles.begin(), state.prev_boundary_particles.end());
+
+	next_particles = particles;
+	allocate_memory_for_verlet_variables();
+
+	mass_spring_damper = std::move(state.mass_spring_damper);
+
+	verlet_step = state.verlet_step;
+	simulation_time = state.simulation_time;
 }
 
 SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(const Vec3f &position) const {

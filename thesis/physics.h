@@ -82,7 +82,17 @@ class ParticleSystem {
 		using SpringIterator = std::vector<MassSpringDamper>::iterator;
 		using SpringConstIterator = std::vector<MassSpringDamper>::const_iterator;
 
+		struct State {
+			ParticleContainer
+				prev_fluid_particles, prev_boundary_particles,
+				fluid_particles, boundary_particles;
+			MassSpringContainer mass_spring_damper;
+			float simulation_time;
+			int verlet_step;
+		};
+
 		ParticleSystem(const CaseDef &case_def);
+		ParticleSystem(const CaseDef &case_def, State state);
 
 		// Delete these to make sure ParticleSystem is only ever passed by reference.
 		ParticleSystem(ParticleSystem &&) = default;
