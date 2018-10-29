@@ -98,6 +98,8 @@ class ParticleSystem {
 		ParticleSystem(ParticleSystem &&) = default;
 		ParticleSystem& operator=(const ParticleSystem &other) = delete;
 
+		State get_current_state() const;
+
 		const ParticleContainer& get_particlearray() const { return particles; }
 		const ParticleContainer& get_previous_particlearray() const { return prev_particles; }
 

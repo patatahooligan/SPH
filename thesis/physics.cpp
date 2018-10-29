@@ -696,6 +696,19 @@ ParticleSystem::ParticleSystem(const CaseDef & case_def, State state) :
 	simulation_time = state.simulation_time;
 }
 
+ParticleSystem::State ParticleSystem::get_current_state() const {
+	State current_state;
+	std::copy(particles.begin(), particles.begin() + num_of_fluid_particles, std::back_inserter(current_state.fluid_particles));
+	std::copy(particles.begin() + num_of_fluid_particles, particles.end(), std::back_inserter(current_state.boundary_particles));
+
+	std::copy(prev_particles.begin(), prev_particles.begin() + num_of_fluid_particles,
+	          std::back_inserter(current_state.prev_fluid_particles));
+	std::copy(prev_particles.begin() + num_of_fluid_particles, prev_particles.end(),
+	          std::back_inserter(current_state.prev_boundary_particles));
+
+	return current_state;
+}
+
 SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(const Vec3f &position) const {
 	SearchGrid::cell_indices_container neighbors;
 	neighbors.reserve(54);

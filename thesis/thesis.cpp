@@ -134,18 +134,17 @@ int main(int argc, char **argv) {
 	std::cout << "Saving two snapshots of particles\n";
 
 	tinyxml2::XMLDocument final_state_output;
+	const auto final_state = ps.get_current_state();
 
-	save_particles_to_xml(final_state_output, ps.get_fluid_begin(), ps.get_fluid_end(), "prev_fluid_particle");
-	save_particles_to_xml(final_state_output, ps.get_boundary_begin(), ps.get_boundary_end(), "prev_boundary_particles");
-	ps.simulation_step();
-	save_particles_to_xml(final_state_output, ps.get_fluid_begin(), ps.get_fluid_end(), "fluid_particle");
-	save_particles_to_xml(final_state_output, ps.get_boundary_begin(), ps.get_boundary_end(), "boundary_particles");
-
-	if (ps.get_springs_begin() != ps.get_springs_end()) {
-		std::cout << "Saving mass-spring system\n";
-
-		save_springs_to_xml(final_state_output, ps.get_springs_begin(), ps.get_springs_end(), "spring");
-	}
+	save_particles_to_xml(final_state_output, final_state.prev_fluid_particles.begin(), final_state.prev_fluid_particles.end(),
+	                      "prev_fluid_particle");
+	save_particles_to_xml(final_state_output, final_state.fluid_particles.begin(), final_state.fluid_particles.end(),
+	                      "fluid_particle");
+	save_particles_to_xml(final_state_output, final_state.prev_boundary_particles.begin(), final_state.prev_boundary_particles.end(),
+	                      "prev_boundary_particle");
+	save_particles_to_xml(final_state_output, final_state.boundary_particles.begin(), final_state.boundary_particles.end(),
+	                      "boundary_particle");
+	save_springs_to_xml(final_state_output, final_state.mass_spring_damper.begin(), final_state.mass_spring_damper.end(), "spring");
 
 	append_element_to_xml(final_state_output, "time", ps.current_time());
 	append_element_to_xml(final_state_output, "verlet-step", ps.current_step());
