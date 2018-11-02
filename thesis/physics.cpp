@@ -684,8 +684,15 @@ ParticleSystem::ParticleSystem(const CaseDef & case_def, State state) :
 	particles = std::move(state.fluid_particles);
 	particles.insert(particles.end(), state.boundary_particles.begin(), state.boundary_particles.end());
 
-	prev_particles = std::move(state.fluid_particles);
+	prev_particles = std::move(state.prev_fluid_particles);
 	prev_particles.insert(prev_particles.end(), state.prev_boundary_particles.begin(), state.prev_boundary_particles.end());
+
+	const auto boundary_bounding_box = get_particle_axis_aligned_bounding_box(get_boundary_begin(), get_boundary_end());
+
+	search_grid_boundary.set_point_min(boundary_bounding_box.origin);
+	search_grid_boundary.set_point_max(boundary_bounding_box.origin + boundary_bounding_box.size);
+
+	search_grid_boundary.build_index(particles.begin() + num_of_fluid_particles, particles.end());
 
 	next_particles = particles;
 	allocate_memory_for_verlet_variables();
@@ -705,6 +712,10 @@ ParticleSystem::State ParticleSystem::get_current_state() const {
 	          std::back_inserter(current_state.prev_fluid_particles));
 	std::copy(prev_particles.begin() + num_of_fluid_particles, prev_particles.end(),
 	          std::back_inserter(current_state.prev_boundary_particles));
+
+	current_state.mass_spring_damper = mass_spring_damper;
+	current_state.simulation_time = simulation_time;
+	current_state.verlet_step = verlet_step;
 
 	return current_state;
 }

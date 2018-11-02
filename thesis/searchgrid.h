@@ -70,12 +70,12 @@ class SearchGrid {
 				cell[0] * grid_cells[1] * grid_cells[2];
 		}
 
-		void determine_order(iter begin, iter end) {
-			const int size = std::distance(begin, end);
-			proxies.resize(size);
+		void determine_order(const iter begin, const iter end) {
+			const int container_size = std::distance(begin, end);
+			proxies.resize(container_size);
 
 			#pragma omp parallel for
-			for (int i = 0; i < size; ++i)
+			for (int i = 0; i < container_size; ++i)
 				proxies[i] = ParticleProxy(
 					i,
 					cell_coordinates_to_index(determine_cell(begin[i].position)));
@@ -103,7 +103,7 @@ class SearchGrid {
 			point_min(point_min), point_max(point_max), size (point_max - point_min), h(h) {}
 
 		void sort_containers(
-			iter target_begin, iter target_end, iter parallel_begin,
+			const iter target_begin, const iter target_end, iter parallel_begin,
 			std::vector<MassSpringDamper>* mass_spring_damper_p)
 		{
 			size = point_max - point_min;
@@ -173,6 +173,25 @@ class SearchGrid {
 
 				proxies[current].index = current;
 			}
+		}
+
+		void build_index(iter target_begin, iter target_end) {
+			size = point_max - point_min;
+			grid_cells = determine_number_of_cells();
+
+			const int container_size = std::distance(target_begin, target_end);
+			proxies.resize(container_size);
+
+			#pragma omp parallel for
+			for (int i = 0; i < container_size; ++i)
+				proxies[i] = ParticleProxy(
+					i,
+					cell_coordinates_to_index(determine_cell(target_begin[i].position)));
+
+			if (!std::is_sorted(proxies.begin(), proxies.end()))
+				throw std::runtime_error("Can't build index on non-sorted container");
+
+			determine_cell_indices();
 		}
 
 		void get_neighbor_indices(const Vec3f &position, cell_indices_container &container) const {

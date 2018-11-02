@@ -8,13 +8,13 @@
 
 using namespace tinyxml2;
 
-Vec3f get_vec3f_from_element(XMLElement& elem);
+Vec3f get_vec3f_from_element(const XMLElement& elem);
 void set_element_to_vec3f(XMLElement& elem, const Vec3f &vec);
 
 void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def);
 void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def);
 
-Vec3f get_vec3f_from_element(XMLElement& elem) {
+Vec3f get_vec3f_from_element(const XMLElement& elem) {
 	return { elem.FloatAttribute("x"), elem.FloatAttribute("y"), elem.FloatAttribute("z") };
 }
 
@@ -251,4 +251,34 @@ void save_springs_to_xml(XMLDocument &document, const MassSpringConstIterator be
 
 		document.InsertEndChild(spring_element);
 	}
+}
+
+ParticleContainer load_particles_from_xml(const XMLDocument &document, const char* element_name) {
+	ParticleContainer particles;
+	auto element = document.FirstChildElement(element_name);
+	while (element) {
+		Particle particle;
+		particle.position = get_vec3f_from_element(*(element->FirstChildElement("position")));
+		particle.velocity = get_vec3f_from_element(*(element->FirstChildElement("velocity")));
+		particle.density = element->FirstChildElement("density")->FloatAttribute("value");
+		particles.push_back(particle);
+
+		element = element->NextSiblingElement(element_name);
+	}
+	return particles;
+}
+
+MassSpringContainer load_springs_from_xml(const XMLDocument &document, const char* element_name) {
+	MassSpringContainer springs;
+	auto element = document.FirstChildElement(element_name);
+	while(element) {
+		MassSpringDamper spring;
+		spring.resting_length = element->FloatAttribute("restinglength");
+		spring.particle_indices.first = element->IntAttribute("first");
+		spring.particle_indices.second = element->IntAttribute("second");
+		springs.push_back(spring);
+
+		element = element->NextSiblingElement(element_name);
+	}
+	return springs;
 }

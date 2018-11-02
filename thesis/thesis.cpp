@@ -12,7 +12,7 @@ struct RunOptions {
 
 	std::optional<int> max_run_time;
 	std::optional<std::string> input;
-	std::optional<std::string> particles_output_filename, surface_output_filename;
+	std::optional<std::string> particles_output_filename, surface_output_filename, initial_state_filename;
 };
 
 auto get_options(int argc, char **argv) {
@@ -30,6 +30,8 @@ auto get_options(int argc, char **argv) {
 			cxxopts::value<std::string>())
 		("p, output-period", "interval in seconds between saved snapshots in binary output",
 			cxxopts::value<float>())
+		("i, initial-state", "A saved state from older simulation to be used as initial state of this one",
+			cxxopts::value<std::string>())
 		("max-run-time", "Maximum time in minutes the app can run before termination",
 			cxxopts::value<float>())
 		("snapshot", "Filename for snapshot of final step (default \"snapshot.bin\")",
@@ -52,6 +54,9 @@ auto get_options(int argc, char **argv) {
 		run_options.output_period = 0;
 	else
 		run_options.output_period = result["output-period"].as<float>();
+
+	if (result.count("initial-state") != 0)
+		run_options.initial_state_filename = result["initial-state"].as<std::string>();
 
 	if (result.count("particles-output") != 0)
 		run_options.particles_output_filename = result["particles-output"].as<std::string>();
@@ -76,9 +81,35 @@ int main(int argc, char **argv) {
 
 	const auto case_def = get_case_from_XML(options.case_filename.c_str());
 
-	ParticleSystem ps(case_def);
+	int output_step = 0;
+	ParticleSystem ps = [&]() {
+		if (options.initial_state_filename) {
+			ParticleSystem::State initial_state;
+			tinyxml2::XMLDocument initial_state_xml;
+			initial_state_xml.LoadFile(options.initial_state_filename->c_str());
+			initial_state.prev_fluid_particles = load_particles_from_xml(initial_state_xml, "prev_fluid_particle");
+			initial_state.prev_boundary_particles = load_particles_from_xml(initial_state_xml, "prev_boundary_particle");
+			initial_state.fluid_particles = load_particles_from_xml(initial_state_xml, "fluid_particle");
+			initial_state.boundary_particles = load_particles_from_xml(initial_state_xml, "boundary_particle");
+			initial_state.mass_spring_damper = load_springs_from_xml(initial_state_xml, "spring");
+			
+			if (const auto simulation_time_elem = initial_state_xml.FirstChildElement("time"))
+				initial_state.simulation_time = simulation_time_elem->FloatAttribute("value");
+			
+			if (const auto verlet_step_elem = initial_state_xml.FirstChildElement("verlet-step"))
+				initial_state.verlet_step = verlet_step_elem->FloatAttribute("value");
 
-	{
+			if (const auto output_step_elem = initial_state_xml.FirstChildElement("output-step"))
+				output_step = output_step_elem->IntAttribute("value");
+
+			return ParticleSystem(case_def, std::move(initial_state));
+		}
+		else
+			return ParticleSystem(case_def);
+	}();
+
+	// Save initial state only if this is a clean run
+	if (output_step == 0)	{
 		SaveVTK save_VTK(ps.get_boundary_begin(), ps.get_boundary_end());
 		if (options.particles_output_filename)
 			save_VTK.save_particles(*options.particles_output_filename + "-boundary");
@@ -90,7 +121,6 @@ int main(int argc, char **argv) {
 	bool user_exit = false;
 	auto& now = std::chrono::steady_clock::now;
 	const auto start_time = now();
-	int output_step = 0;
 	while (
 		ps.current_time() < options.time &&
 		!user_exit &&

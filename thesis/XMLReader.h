@@ -20,3 +20,7 @@ void append_element_to_xml(tinyxml2::XMLDocument &document, const char* element_
 	element->SetAttribute("value", element_value);
 	document.InsertEndChild(element);
 }
+
+ParticleContainer load_particles_from_xml(const tinyxml2::XMLDocument &document, const char* element_name);
+
+MassSpringContainer load_springs_from_xml(const tinyxml2::XMLDocument &document, const char* element_name);
