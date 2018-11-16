@@ -86,7 +86,7 @@ class ParticleSystem {
 			ParticleContainer
 				prev_fluid_particles, prev_boundary_particles,
 				fluid_particles, boundary_particles;
-			MassSpringContainer mass_spring_damper;
+			MassSpringContainer fluid_fluid_springs, fluid_boundary_springs;
 			float simulation_time;
 			int verlet_step;
 		};
@@ -108,8 +108,11 @@ class ParticleSystem {
 		ParticleConstIterator get_boundary_begin() const { return particles.cbegin() + num_of_fluid_particles; }
 		ParticleConstIterator get_boundary_end() const { return particles.cend(); }
 
-		MassSpringConstIterator get_springs_begin() const { return mass_spring_damper.cbegin(); }
-		MassSpringConstIterator get_springs_end() const { return mass_spring_damper.cend(); }
+		MassSpringConstIterator get_fluid_fluid_springs_begin() const { return mass_spring_damper.cbegin(); }
+		MassSpringConstIterator get_fluid_fluid_springs_end() const { return mass_spring_damper.cbegin() + num_of_fluid_fluid_springs; }
+
+		MassSpringConstIterator get_fluid_boundary_springs_begin() const { return mass_spring_damper.cbegin() + num_of_fluid_fluid_springs; }
+		MassSpringConstIterator get_fluid_boundary_springs_end() const { return mass_spring_damper.cend(); }
 
 		auto current_time() const {return simulation_time;}
 		auto current_step() const { return verlet_step; }

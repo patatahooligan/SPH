@@ -91,7 +91,8 @@ int main(int argc, char **argv) {
 			initial_state.prev_boundary_particles = load_particles_from_xml(initial_state_xml, "prev_boundary_particle");
 			initial_state.fluid_particles = load_particles_from_xml(initial_state_xml, "fluid_particle");
 			initial_state.boundary_particles = load_particles_from_xml(initial_state_xml, "boundary_particle");
-			initial_state.mass_spring_damper = load_springs_from_xml(initial_state_xml, "spring");
+			initial_state.fluid_fluid_springs = load_springs_from_xml(initial_state_xml, "fluid_fluid_spring");
+			initial_state.fluid_boundary_springs = load_springs_from_xml(initial_state_xml, "fluid_boundary_spring");
 			
 			if (const auto simulation_time_elem = initial_state_xml.FirstChildElement("time"))
 				initial_state.simulation_time = simulation_time_elem->FloatAttribute("value");
@@ -174,7 +175,10 @@ int main(int argc, char **argv) {
 	                      "prev_boundary_particle");
 	save_particles_to_xml(final_state_output, final_state.boundary_particles.begin(), final_state.boundary_particles.end(),
 	                      "boundary_particle");
-	save_springs_to_xml(final_state_output, final_state.mass_spring_damper.begin(), final_state.mass_spring_damper.end(), "spring");
+	save_springs_to_xml(final_state_output, final_state.fluid_fluid_springs.begin(), final_state.fluid_fluid_springs.end(),
+	                      "fluid_fluid_spring");
+	save_springs_to_xml(final_state_output, final_state.fluid_boundary_springs.begin(), final_state.fluid_boundary_springs.end(),
+	                      "fluid_boundary_spring");
 
 	append_element_to_xml(final_state_output, "time", ps.current_time());
 	append_element_to_xml(final_state_output, "verlet-step", ps.current_step());

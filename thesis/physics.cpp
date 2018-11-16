@@ -683,9 +683,11 @@ ParticleSystem::ParticleSystem(const CaseDef & case_def, State state) :
 	num_of_fluid_particles = state.fluid_particles.size();
 	particles = std::move(state.fluid_particles);
 	particles.insert(particles.end(), state.boundary_particles.begin(), state.boundary_particles.end());
+	particles.shrink_to_fit();
 
 	prev_particles = std::move(state.prev_fluid_particles);
 	prev_particles.insert(prev_particles.end(), state.prev_boundary_particles.begin(), state.prev_boundary_particles.end());
+	prev_particles.shrink_to_fit();
 
 	const auto boundary_bounding_box = get_particle_axis_aligned_bounding_box(get_boundary_begin(), get_boundary_end());
 
@@ -697,7 +699,10 @@ ParticleSystem::ParticleSystem(const CaseDef & case_def, State state) :
 	next_particles = particles;
 	allocate_memory_for_verlet_variables();
 
-	mass_spring_damper = std::move(state.mass_spring_damper);
+	num_of_fluid_fluid_springs = state.fluid_fluid_springs.size();
+	mass_spring_damper = std::move(state.fluid_fluid_springs);
+	std::copy(state.fluid_boundary_springs.cbegin(), state.fluid_boundary_springs.cend(), std::back_inserter(mass_spring_damper));
+	mass_spring_damper.shrink_to_fit();
 
 	verlet_step = state.verlet_step;
 	simulation_time = state.simulation_time;
@@ -713,7 +718,8 @@ ParticleSystem::State ParticleSystem::get_current_state() const {
 	std::copy(prev_particles.begin() + num_of_fluid_particles, prev_particles.end(),
 	          std::back_inserter(current_state.prev_boundary_particles));
 
-	current_state.mass_spring_damper = mass_spring_damper;
+	std::copy(get_fluid_fluid_springs_begin(), get_fluid_fluid_springs_end(), std::back_inserter(current_state.fluid_fluid_springs));
+	std::copy(get_fluid_boundary_springs_begin(), get_fluid_boundary_springs_end(), std::back_inserter(current_state.fluid_boundary_springs));
 	current_state.simulation_time = simulation_time;
 	current_state.verlet_step = verlet_step;
 
