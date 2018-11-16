@@ -704,6 +704,9 @@ ParticleSystem::ParticleSystem(const CaseDef & case_def, State state) :
 	std::copy(state.fluid_boundary_springs.cbegin(), state.fluid_boundary_springs.cend(), std::back_inserter(mass_spring_damper));
 	mass_spring_damper.shrink_to_fit();
 
+	MassSpringDamper::k = case_def.spring.stiffness;
+	MassSpringDamper::damping_coef = case_def.spring.damping;
+
 	verlet_step = state.verlet_step;
 	simulation_time = state.simulation_time;
 }
