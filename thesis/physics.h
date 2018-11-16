@@ -76,6 +76,8 @@ class ParticleSystem {
 
 		void remove_out_of_bounds_particles();
 
+		SearchGrid::cell_indices_container get_fluid_neighbors(const Vec3f &position) const;
+		SearchGrid::cell_indices_container get_boundary_neighbors(const Vec3f &position) const;
 		SearchGrid::cell_indices_container get_all_neighbors(const Vec3f &position) const;
 
 	public:

@@ -287,7 +287,7 @@ void ParticleSystem::generate_mass_spring_damper() {
 
 	// Fluid - fluid springs
 	for (int i = 0; i < num_of_fluid_particles; ++i) {
-		const auto neighbor_indices = search_grid_fluid.get_neighbor_indices(particles[i].position);
+		const auto neighbor_indices = get_fluid_neighbors(particles[i].position);
 		for (const auto& index_pair : neighbor_indices) {
 			for (int j = index_pair.first; j < index_pair.second; ++j) {
 				if (j <= i)
@@ -309,7 +309,7 @@ void ParticleSystem::generate_mass_spring_damper() {
 	// Create these separately so they are at the end of the vector
 	// This simplifies handling them when calculating acceleration
 	for (int i = 0; i < num_of_fluid_particles; ++i) {
-		const auto neighbor_indices = search_grid_boundary.get_neighbor_indices(particles[i].position);
+		const auto neighbor_indices = get_boundary_neighbors(particles[i].position);
 		for (const auto& index_pair : neighbor_indices) {
 			for (int j = index_pair.first; j < index_pair.second; ++j) {
 				const float distance = (particles[i].position - particles[j].position).length();
@@ -373,15 +373,13 @@ void ParticleSystem::compute_derivatives(const int i) {
 
 	const auto index_ranges = [&](){
 		if constexpr (TypeOfNeighbors == ParticleType::Fluid)
-			return search_grid_fluid.get_neighbor_indices(Pi.position);
+			return get_fluid_neighbors(Pi.position);
 		else
-			return search_grid_boundary.get_neighbor_indices(Pi.position);
+			return get_boundary_neighbors(Pi.position);
 	} ();
 
 	for (const auto index_pair : index_ranges) {
 		for (int j = index_pair.first; j < index_pair.second; ++j) {
-			if constexpr (TypeOfNeighbors == ParticleType::Boundary)
-				j += num_of_fluid_particles;
 			const Particle& Pj = particles[j];
 
 			const Vec3f
@@ -728,18 +726,32 @@ ParticleSystem::State ParticleSystem::get_current_state() const {
 	return current_state;
 }
 
+SearchGrid::cell_indices_container ParticleSystem::get_fluid_neighbors(const Vec3f & position) const
+{
+	return search_grid_fluid.get_neighbor_indices(position);
+}
+
+SearchGrid::cell_indices_container ParticleSystem::get_boundary_neighbors(const Vec3f & position) const
+{
+	auto neighbors = search_grid_boundary.get_neighbor_indices(position);
+
+	std::for_each(neighbors.begin(), neighbors.end(), [this](auto &neighbor) {
+		neighbor.first += num_of_fluid_particles;
+		neighbor.second += num_of_fluid_particles;
+	});
+
+	return neighbors;
+}
+
 SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(const Vec3f &position) const {
-	SearchGrid::cell_indices_container neighbors;
-	neighbors.reserve(54);
-	search_grid_fluid.get_neighbor_indices(position, neighbors);
+	auto neighbors = get_fluid_neighbors(position);
 	const auto boundary_start = neighbors.size();
 	search_grid_boundary.get_neighbor_indices(position, neighbors);
 
-	// Apply offset to boundary particles
-	for (auto i = boundary_start; i < neighbors.size(); ++i) {
-		neighbors[i].first += num_of_fluid_particles;
-		neighbors[i].second += num_of_fluid_particles;
-	}
+	std::for_each(neighbors.begin() + boundary_start, neighbors.end(), [this](auto &neighbor) {
+		neighbor.first += num_of_fluid_particles;
+		neighbor.second += num_of_fluid_particles;
+	});
 
 	return neighbors;
 }
