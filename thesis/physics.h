@@ -29,8 +29,9 @@ class CubicSplinePrecalculated {
 	public:
 		CubicSplinePrecalculated(float h, int resolution);
 
-		float operator()(const float length) const;
+		float operator()(float length) const;
 		float operator()(const Vec3f &r) const;
+		Vec3f gradient(const Vec3f & r, float length) const;
 		Vec3f gradient(const Vec3f &r) const;
 };
 

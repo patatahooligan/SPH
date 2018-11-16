@@ -117,8 +117,12 @@ float CubicSplinePrecalculated::operator()(const Vec3f & r) const {
 	return (*this)(r.length());
 }
 
+Vec3f CubicSplinePrecalculated::gradient(const Vec3f & r, const float length) const {
+	return gradient_values[length / step] * r;
+}
+
 Vec3f CubicSplinePrecalculated::gradient(const Vec3f & r) const {
-	return gradient_values[r.length() / step] * r;
+	return gradient(r, r.length());
 }
 
 
@@ -393,8 +397,10 @@ void ParticleSystem::compute_derivatives(const int i) {
 				|| r2 == 0.0f || r2 > 4.0f * h * h || v_ij == Vec3f{0.0f, 0.0f, 0.0f})
 				continue;
 
+			const float r = std::sqrt(r2);
+
 			const Vec3f
-				kernel_gradient_rij = cubic_spline.gradient(r_ij);
+				kernel_gradient_rij = cubic_spline.gradient(r_ij, r);
 
 			density_derivative[i] += case_def.particles.mass * dot_product(v_ij, kernel_gradient_rij);
 
@@ -422,7 +428,7 @@ void ParticleSystem::compute_derivatives(const int i) {
 				}(),
 				tensile_correction_term = [&]() {
 					const float
-						f_ij = cubic_spline(r_ij) * case_def.tensile_coef,
+						f_ij = cubic_spline(r) * case_def.tensile_coef,
 						coef_i = Pi_pressure > 0 ? 0.01f : -0.2f,
 						coef_j = Pj_pressure > 0 ? 0.01f : -0.2f,
 						tensile_i = coef_i * (Pi_pressure / (Pi.density * Pi.density)),
