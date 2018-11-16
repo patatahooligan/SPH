@@ -290,8 +290,10 @@ void ParticleSystem::generate_mass_spring_damper() {
 		const auto neighbor_indices = search_grid_fluid.get_neighbor_indices(particles[i].position);
 		for (const auto& index_pair : neighbor_indices) {
 			for (int j = index_pair.first; j < index_pair.second; ++j) {
+				if (j <= i)
+					continue;
 				const float distance = (particles[i].position - particles[j].position).length();
-				if (distance <= case_def.spring.max_length && distance > 0) {
+				if (distance <= case_def.spring.max_length) {
 					MassSpringDamper msp;
 					msp.particle_indices = { i, j };
 					msp.resting_length = distance;
