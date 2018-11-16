@@ -32,7 +32,7 @@ class SearchGrid {
 
 		std::vector<ParticleProxy> proxies;
 		Vec3f point_min, point_max, size;
-		float h;
+		float cell_size;
 		std::array<int, 3> grid_cells;
 		internal_cell_indices_container cell_indices;
 
@@ -41,9 +41,9 @@ class SearchGrid {
 			assert(size.x >= 0.0f && size.y >= 0.0f && size.z >= 0.0f);
 			
 			return {
-				int(size.x / h) + 1,
-				int(size.y / h) + 1,
-				int(size.z / h) + 1
+				int(size.x / cell_size) + 1,
+				int(size.y / cell_size) + 1,
+				int(size.z / cell_size) + 1
 			};
 		}
 
@@ -54,7 +54,7 @@ class SearchGrid {
 			for (size_t i = 0; i < 3; ++i) {
 				// To robustly handle (slightly) out of bounds particles
 				// group them to the nearest cell
-				cell[i] = int(relative_position[i] / h);
+				cell[i] = int(relative_position[i] / cell_size);
 				cell[i] = std::max(cell[i], 0);
 				cell[i] = std::min(cell[i], grid_cells[i] - 1);
 			}
@@ -99,8 +99,8 @@ class SearchGrid {
 		}
 
 	public:
-		SearchGrid(const Vec3f &point_min, const Vec3f &point_max, const float h) :
-			point_min(point_min), point_max(point_max), size (point_max - point_min), h(h) {}
+		SearchGrid(const Vec3f &point_min, const Vec3f &point_max, const float cell_size) :
+			point_min(point_min), point_max(point_max), size (point_max - point_min), cell_size(cell_size) {}
 
 		void sort_containers(
 			const iter target_begin, const iter target_end, iter parallel_begin,

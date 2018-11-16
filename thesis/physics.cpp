@@ -631,8 +631,8 @@ void ParticleSystem::remove_out_of_bounds_particles() {
 ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 	case_def(case_def),
 	bounding_box({ case_def.particles.point_min, case_def.particles.point_max - case_def.particles.point_min }),
-	search_grid_fluid(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
-	search_grid_boundary(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
+	search_grid_fluid(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h * 2),
+	search_grid_boundary(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h * 2),
 	cubic_spline(case_def.h)
 {
 	// We need to ensure that all particle arrays are the same size. We also
@@ -676,8 +676,8 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 ParticleSystem::ParticleSystem(const CaseDef & case_def, State state) :
 	case_def(case_def),
 	bounding_box({ case_def.particles.point_min, case_def.particles.point_max - case_def.particles.point_min }),
-	search_grid_fluid(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
-	search_grid_boundary(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h),
+	search_grid_fluid(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h * 2),
+	search_grid_boundary(bounding_box.origin, bounding_box.origin + bounding_box.size, case_def.h * 2),
 	cubic_spline(case_def.h)
 {
 	num_of_fluid_particles = state.fluid_particles.size();
