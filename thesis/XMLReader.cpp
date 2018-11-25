@@ -63,8 +63,8 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 	if (auto spring = constants.FirstChildElement("spring").ToElement()) {
 		case_def.spring.on = true;
 		case_def.spring.stiffness = spring->FloatAttribute("stiffness");
-		case_def.spring.start_of_stiffness_change = spring->FloatAttribute("changestart");
-		case_def.spring.rate_of_stiffness_change = spring->FloatAttribute("rateofchange");
+		case_def.spring.start_of_melting = spring->FloatAttribute("start_of_melting");
+		case_def.spring.duration_of_melting = spring->FloatAttribute("duration_of_melting");
 		case_def.spring.damping = spring->FloatAttribute("damping");
 		case_def.spring.max_length = spring->FloatAttribute("maxlength", case_def.particles.density);
 	}

@@ -475,13 +475,17 @@ void ParticleSystem::compute_derivatives() {
 		return;
 
 	// Mass-Spring system forces
-	if (simulation_time > case_def.spring.start_of_stiffness_change) {
-		const float duration_of_change = simulation_time - case_def.spring.start_of_stiffness_change;
-		MassSpringDamper::k =
-			case_def.spring.stiffness + duration_of_change * case_def.spring.rate_of_stiffness_change;
-		if (MassSpringDamper::k <= 0.0f) {
+	if (simulation_time > case_def.spring.start_of_melting) {
+		const auto &spring = case_def.spring;
+		const float	time_from_melting_end = (spring.start_of_melting + spring.duration_of_melting) - simulation_time;
+
+		if (time_from_melting_end <= 0) {
 			mass_spring_damper.clear();
 			case_def.spring.on = false;
+		}
+		else {
+			const float	normalization_coef = spring.stiffness / (spring.duration_of_melting * spring.duration_of_melting);
+			MassSpringDamper::k = normalization_coef * (time_from_melting_end * time_from_melting_end);
 		}
 	}
 

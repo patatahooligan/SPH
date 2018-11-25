@@ -35,7 +35,7 @@ struct CaseDef {
 
 	struct {
 		bool on = false;
-		float stiffness, start_of_stiffness_change, rate_of_stiffness_change, damping, max_length;
+		float stiffness, start_of_melting, duration_of_melting, damping, max_length;
 	} spring;
 
 	struct {
