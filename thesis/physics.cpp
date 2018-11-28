@@ -481,6 +481,7 @@ void ParticleSystem::compute_derivatives() {
 
 		if (time_from_melting_end <= 0) {
 			mass_spring_damper.clear();
+			num_of_fluid_fluid_springs = 0;
 			case_def.spring.on = false;
 		}
 		else {
