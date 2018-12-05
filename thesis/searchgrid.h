@@ -196,6 +196,12 @@ class SearchGrid {
 
 		void get_neighbor_indices(const Vec3f &position, cell_indices_container &container) const {
 			const auto target_cell = determine_cell(position);
+
+			for (int dim = 0; dim < 3; ++dim) {
+				if (target_cell[dim] < -1 || target_cell[dim] > grid_cells[dim] + 1)
+					return;
+			}
+
 			const auto
 				min_x = std::max(target_cell[0] - 1, 0),
 				min_y = std::max(target_cell[1] - 1, 0),
