@@ -104,14 +104,14 @@ class SearchGrid {
 
 		void sort_containers(
 			const iter target_begin, const iter target_end, iter parallel_begin,
-			std::vector<MassSpringDamper>* mass_spring_damper_p)
+			std::vector<MassSpringSystem>* fluid_spring_systems = nullptr, std::vector<MassSpringSystem>* boundary_spring_systems = nullptr)
 		{
 			size = point_max - point_min;
 			grid_cells = determine_number_of_cells();
 
 			determine_order(target_begin, target_end);
 
-			if (mass_spring_damper_p) {
+			if (fluid_spring_systems && boundary_spring_systems) {
 				// Create an array of reverse proxies and use it to update the mass_spring_damper indices
 				std::vector<int> reverse_proxies;
 				reverse_proxies.resize(proxies.size());
@@ -120,17 +120,30 @@ class SearchGrid {
 					reverse_proxies[proxies[i].index] = i;
 				}
 
-				#pragma omp parallel for
-				for (int i = 0; i < mass_spring_damper_p->size(); ++i) {
-					auto &mass_spring_damper = (*mass_spring_damper_p)[i];
-					auto
-						&first = mass_spring_damper.particle_indices.first,
-						&second = mass_spring_damper.particle_indices.second;
-					first = reverse_proxies[first];
+				if (fluid_spring_systems) {
+					for (auto &fluid_spring_system : *fluid_spring_systems) {
+						#pragma omp parallel for
+						for (int i = 0; i < fluid_spring_system.springs.size(); ++i) {
+							auto &mass_spring_damper = fluid_spring_system.springs[i];
+							auto
+								&first = mass_spring_damper.particle_indices.first,
+								&second = mass_spring_damper.particle_indices.second;
+							first = reverse_proxies[first];
+							second = reverse_proxies[second];
+						}
+					}
+				}
 
-					// If the spring is holding a boundary particle don't adjust it
-					if (second < proxies.size())
-						second = reverse_proxies[second];
+				if (boundary_spring_systems) {
+					for (auto &boundary_spring_system : *boundary_spring_systems) {
+						#pragma omp parallel for
+						for (int i = 0; i < boundary_spring_system.springs.size(); ++i) {
+							auto &mass_spring_damper = boundary_spring_system.springs[i];
+							auto
+								&first = mass_spring_damper.particle_indices.first;
+							first = reverse_proxies[first];
+						}
+					}
 				}
 			}
 

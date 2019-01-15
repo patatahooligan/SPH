@@ -273,8 +273,8 @@ ParticleContainer ParticleSystem::generate_particles() {
 		boundary_particles = generator.get_boundary_particles();
 	
 	// Make note of the number of fluid particles, then concatenate the two vectors
-	// [0, num_of_particles)   -> fluid
-	// [num_of_particles, end) -> boundary
+	// [0, num_of_fluid_particles)   -> fluid
+	// [num_of_fluid_particles, end) -> boundary
 	num_of_fluid_particles = fluid_particles.size();
 
 	ParticleContainer generated_particles = std::move(fluid_particles);
@@ -286,48 +286,52 @@ ParticleContainer ParticleSystem::generate_particles() {
 
 void ParticleSystem::generate_mass_spring_damper() {
 	const auto &density = case_def.particles.density;
-	MassSpringDamper::k = case_def.spring.stiffness;
 	MassSpringDamper::damping_coef = case_def.spring.damping;
 
-	// Fluid - fluid springs
+	for (const auto &mass_spring_system : case_def.spring.mass_spring_systems) {
+		MassSpringSystem system;
+
+		system.duration_of_melting = mass_spring_system.duration_of_melting;
+		system.initial_k = mass_spring_system.initial_k;
+		system.start_of_melting = mass_spring_system.start_of_melting;
+
+		fluid_spring_systems.emplace_back(system);
+		boundary_spring_systems.emplace_back(system);
+	}
+
 	for (int i = 0; i < num_of_fluid_particles; ++i) {
-		const auto neighbor_indices = get_fluid_neighbors(particles[i].position);
-		for (const auto& index_pair : neighbor_indices) {
-			for (int j = index_pair.first; j < index_pair.second; ++j) {
-				if (j <= i)
+		const int system_index = [this](const Vec3f &position) {
+			for (int i = 0; i < case_def.spring.mass_spring_systems.size(); ++i) {
+				if (case_def.spring.mass_spring_systems[i].region.contains(position))
+					return i;
+			}
+			return -1;
+		}(particles[i].position);
+
+		if (system_index == -1)
+			continue;
+
+		const auto generate_springs = [&](auto& system, const auto& neighbor_indices) {
+			for (const auto& index_pair : neighbor_indices) {
+				if (index_pair.second <= i)
 					continue;
-				const float distance = (particles[i].position - particles[j].position).length();
-				if (distance <= case_def.spring.max_length) {
-					MassSpringDamper msp;
-					msp.particle_indices = { i, j };
-					msp.resting_length = distance;
-					mass_spring_damper.emplace_back(msp);
+				for (int j = index_pair.first; j < index_pair.second; ++j) {
+					if (j <= i)
+						continue;
+					const float distance = (particles[i].position - particles[j].position).length();
+					if (distance <= case_def.spring.max_length) {
+						MassSpringDamper msp;
+						msp.particle_indices = { i, j };
+						msp.resting_length = distance;
+						system.springs.emplace_back(msp);
+					}
 				}
 			}
-		}
+		};
+
+		generate_springs(fluid_spring_systems[system_index], get_fluid_neighbors(particles[i].position));
+		generate_springs(boundary_spring_systems[system_index], get_boundary_neighbors(particles[i].position));
 	}
-
-	num_of_fluid_fluid_springs = mass_spring_damper.size();
-
-	// Fluid - boundary springs
-	// Create these separately so they are at the end of the vector
-	// This simplifies handling them when calculating acceleration
-	for (int i = 0; i < num_of_fluid_particles; ++i) {
-		const auto neighbor_indices = get_boundary_neighbors(particles[i].position);
-		for (const auto& index_pair : neighbor_indices) {
-			for (int j = index_pair.first; j < index_pair.second; ++j) {
-				const float distance = (particles[i].position - particles[j].position).length();
-				if (distance <= case_def.spring.max_length && distance > 0) {
-					MassSpringDamper msp;
-					msp.particle_indices = { i, j };
-					msp.resting_length = distance;
-					mass_spring_damper.emplace_back(msp);
-				}
-			}
-		}
-	}
-
-	mass_spring_damper.shrink_to_fit();
 }
 
 float ParticleSystem::calculate_time_step() const {
@@ -369,6 +373,47 @@ float ParticleSystem::calculate_time_step() const {
 		dt_f = std::sqrt(h / std::sqrt(acceleration2_max * case_def.particles.mass));
 
 	return case_def.cflnumber * std::min(dt_cv, dt_f);
+}
+
+template <ParticleType TypeOfPj>
+void ParticleSystem::spring_forces() {
+	auto& spring_systems = [this]() -> std::vector<MassSpringSystem>& {
+		if (TypeOfPj == ParticleType::Fluid)
+			return fluid_spring_systems;
+		else
+			return boundary_spring_systems;
+	}();
+
+	// Remove springs for parts that have melted
+	spring_systems.erase(std::remove_if(spring_systems.begin(), spring_systems.end(), [this](const auto &system) {
+		return simulation_time >= system.start_of_melting + system.duration_of_melting;
+	}), spring_systems.end());
+
+	for (const auto& spring_system : spring_systems) {
+		const float k = [&]() {
+			if (simulation_time > spring_system.start_of_melting) {
+				const float
+					time_from_melting_end = (spring_system.start_of_melting + spring_system.duration_of_melting) - simulation_time,
+					normalization_coef =
+					spring_system.initial_k / (spring_system.duration_of_melting * spring_system.duration_of_melting);
+				return normalization_coef * (time_from_melting_end * time_from_melting_end);
+			}
+			else
+				return spring_system.initial_k;
+		}();
+
+		for (const auto &spring : spring_system.springs) {
+			const auto
+				i = spring.particle_indices.first,
+				j = spring.particle_indices.second;
+
+			const auto force = spring.compute_force(particles[i], particles[j], k);
+
+			acceleration[i] += force / case_def.particles.mass;
+			if (TypeOfPj == ParticleType::Fluid)
+				acceleration[j] -= force / case_def.particles.mass;
+		}
+	}
 }
 
 template <ParticleType TypeOfPi, ParticleType TypeOfNeighbors>
@@ -471,46 +516,9 @@ void ParticleSystem::compute_derivatives() {
 		compute_derivatives<ParticleType::Boundary, ParticleType::Fluid>(i);
 	}
 
-	if (!case_def.spring.on)
-		return;
-
-	// Mass-Spring system forces
-	if (simulation_time > case_def.spring.start_of_melting) {
-		const auto &spring = case_def.spring;
-		const float	time_from_melting_end = (spring.start_of_melting + spring.duration_of_melting) - simulation_time;
-
-		if (time_from_melting_end <= 0) {
-			mass_spring_damper.clear();
-			num_of_fluid_fluid_springs = 0;
-			case_def.spring.on = false;
-		}
-		else {
-			const float	normalization_coef = spring.stiffness / (spring.duration_of_melting * spring.duration_of_melting);
-			MassSpringDamper::k = normalization_coef * (time_from_melting_end * time_from_melting_end);
-		}
-	}
-
-	for (int k = 0; k < num_of_fluid_fluid_springs; ++k) {
-		const auto& spring = mass_spring_damper[k];
-		const auto
-			i = spring.particle_indices.first,
-			j = spring.particle_indices.second;
-
-		const auto force = spring.compute_force(particles[i], particles[j]);
-
-		acceleration[i] += force / case_def.particles.mass;
-		acceleration[j] -= force / case_def.particles.mass;
-	}
-
-	for (int k = num_of_fluid_fluid_springs; k < mass_spring_damper.size(); ++k) {
-		const auto& spring = mass_spring_damper[k];
-		const auto
-			i = spring.particle_indices.first,
-			j = spring.particle_indices.second;
-
-		const auto force = spring.compute_force(particles[i], particles[j]);
-
-		acceleration[i] += force / case_def.particles.mass;
+	if (case_def.spring.on) {
+		spring_forces<ParticleType::Fluid>();
+		spring_forces<ParticleType::Boundary>();
 	}
 }
 
@@ -557,86 +565,6 @@ void ParticleSystem::integrate_verlet(const float dt) {
 	}
 
 	++verlet_step;
-}
-
-void ParticleSystem::remove_out_of_bounds_particles() {
-	// Figure out the particles in current time step that are out of bounds and remove them
-	// Remove the same particles and do any necessary re-ordering to prev particles to keep
-	// the two containers consistent. Resize next particles for size constistency but don't care
-	// about the data because it's supposed to be garbage at the point this function needs to run.
-	
-	const auto indices_to_remove = [this]() {
-		std::vector<size_t> indices_to_remove;
-		for (size_t i = 0; i < num_of_fluid_particles; ++i) {
-			if (!bounding_box.contains(particles[i].position))
-				indices_to_remove.emplace_back(i);
-		}
-		return indices_to_remove;
-	} ();
-
-
-	// Simply remove all springs that point to particles about to be removed
-	auto to_be_removed = [&indices_to_remove](const size_t i) {
-		return std::binary_search(indices_to_remove.begin(), indices_to_remove.end(), i);
-	};
-	mass_spring_damper.erase(
-		std::remove_if(std::execution::par_unseq, mass_spring_damper.begin(), mass_spring_damper.end(),
-			[to_be_removed](const MassSpringDamper& spring) {
-				return
-					to_be_removed(spring.particle_indices.first) ||
-					to_be_removed(spring.particle_indices.second);
-			}),
-		mass_spring_damper.end()
-	);
-
-	std::for_each(std::execution::par_unseq,
-		mass_spring_damper.begin(), mass_spring_damper.end(), [&](auto &spring) {
-		auto adjust_index = [&](int &index) {
-			auto distance_from_end = num_of_fluid_particles - index;
-			while (distance_from_end <= indices_to_remove.size()) {
-				index = indices_to_remove[indices_to_remove.size() - distance_from_end];
-				distance_from_end = num_of_fluid_particles - index;
-			}
-		};
-
-		adjust_index(spring.particle_indices.first);
-		adjust_index(spring.particle_indices.second);
-	});
-
-	// To preserve the contiguous storage of the container with the minimum complexity cost,
-	// we will move the out-of-bounds particles to the end of the range and remove them from there
-	// This not only minimizes the number of moves required, it also invalidates the minimum amount of
-	// indices to particles.
-
-	size_t next_slot_to_swap = 1;
-	for (auto i = indices_to_remove.crbegin(); i != indices_to_remove.crend(); ++i) {
-		auto particle_temp = std::move(particles[*i]);
-		auto prev_particle_temp = std::move(prev_particles[*i]);
-
-		particles[*i] = std::move(particles[num_of_fluid_particles - next_slot_to_swap]);
-		prev_particles[*i] = std::move(prev_particles[num_of_fluid_particles - next_slot_to_swap]);
-
-		particles[num_of_fluid_particles - next_slot_to_swap] =
-			std::move(particles[particles.size() - next_slot_to_swap]);
-		prev_particles[num_of_fluid_particles - next_slot_to_swap] =
-			std::move(prev_particles[prev_particles.size() - next_slot_to_swap]);
-
-		particles[particles.size() - next_slot_to_swap] = std::move(particle_temp);
-		prev_particles[prev_particles.size() - next_slot_to_swap] = std::move(prev_particle_temp);
-
-		++next_slot_to_swap;
-	}
-
-	// Readjust fluid and total sizes
-	const size_t
-		number_of_removed_particles = indices_to_remove.size(),
-		total_number_of_particles = particles.size() - number_of_removed_particles;
-	num_of_fluid_particles -= number_of_removed_particles;
-
-	// A simple resize works because all out-of-bounds particles are at the end
-	particles.resize(total_number_of_particles);
-	prev_particles.resize(total_number_of_particles);
-	next_particles.resize(total_number_of_particles);
 }
 
 ParticleSystem::ParticleSystem(const CaseDef &case_def) :
@@ -710,12 +638,9 @@ ParticleSystem::ParticleSystem(const CaseDef & case_def, State state) :
 	next_particles = particles;
 	allocate_memory_for_verlet_variables();
 
-	num_of_fluid_fluid_springs = state.fluid_fluid_springs.size();
-	mass_spring_damper = std::move(state.fluid_fluid_springs);
-	std::copy(state.fluid_boundary_springs.cbegin(), state.fluid_boundary_springs.cend(), std::back_inserter(mass_spring_damper));
-	mass_spring_damper.shrink_to_fit();
+	fluid_spring_systems = std::move(state.fluid_spring_systems);
+	boundary_spring_systems = std::move(state.boundary_spring_systems);
 
-	MassSpringDamper::k = case_def.spring.stiffness;
 	MassSpringDamper::damping_coef = case_def.spring.damping;
 
 	verlet_step = state.verlet_step;
@@ -732,8 +657,8 @@ ParticleSystem::State ParticleSystem::get_current_state() const {
 	std::copy(prev_particles.begin() + num_of_fluid_particles, prev_particles.end(),
 	          std::back_inserter(current_state.prev_boundary_particles));
 
-	std::copy(get_fluid_fluid_springs_begin(), get_fluid_fluid_springs_end(), std::back_inserter(current_state.fluid_fluid_springs));
-	std::copy(get_fluid_boundary_springs_begin(), get_fluid_boundary_springs_end(), std::back_inserter(current_state.fluid_boundary_springs));
+	current_state.fluid_spring_systems = fluid_spring_systems;
+	current_state.boundary_spring_systems = boundary_spring_systems;
 	current_state.simulation_time = simulation_time;
 	current_state.verlet_step = verlet_step;
 
@@ -788,7 +713,8 @@ void ParticleSystem::simulation_step() {
 	search_grid_fluid.sort_containers(
 		particles.begin(), particles.begin() + num_of_fluid_particles,
 		prev_particles.begin(),
-		&mass_spring_damper
+		&fluid_spring_systems,
+		&boundary_spring_systems
 	);
 
 	compute_derivatives();
@@ -802,8 +728,4 @@ void ParticleSystem::simulation_step() {
 	// next_particles practically holds garbage values after this
 	prev_particles.swap(particles);
 	particles.swap(next_particles);
-
-	// Temporarily remove this because it doesn't function correctly with springs attached
-	// to boundary particles
-	//remove_out_of_bounds_particles();
 }

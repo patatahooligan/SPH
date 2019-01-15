@@ -48,9 +48,10 @@ class ParticleSystem {
 		CaseDef::Box bounding_box;
 		SearchGrid search_grid_fluid, search_grid_boundary;
 		CubicSplinePrecalculated cubic_spline;
-		MassSpringContainer mass_spring_damper;
 		float simulation_time = 0.0f;
 		int verlet_step = 0;
+
+		std::vector<MassSpringSystem> fluid_spring_systems, boundary_spring_systems;
 
 		void allocate_memory_for_verlet_variables() {
 			// Note: these need different sizes because acceleration is not needed for boundaries
@@ -67,6 +68,9 @@ class ParticleSystem {
 		// Calculate a time step that is stable.
 		float calculate_time_step() const;
 
+		template <ParticleType TypeOfPj>
+		void spring_forces();
+
 		template <ParticleType TypeOfPi, ParticleType TypeOfNeighbors>
 		void compute_derivatives(const int i);
 
@@ -74,8 +78,6 @@ class ParticleSystem {
 
 		// Integrate forward using verlet
 		void integrate_verlet(float dt);
-
-		void remove_out_of_bounds_particles();
 
 		SearchGrid::cell_indices_container get_fluid_neighbors(const Vec3f &position) const;
 		SearchGrid::cell_indices_container get_boundary_neighbors(const Vec3f &position) const;
@@ -89,7 +91,7 @@ class ParticleSystem {
 			ParticleContainer
 				prev_fluid_particles, prev_boundary_particles,
 				fluid_particles, boundary_particles;
-			MassSpringContainer fluid_fluid_springs, fluid_boundary_springs;
+			std::vector<MassSpringSystem> fluid_spring_systems, boundary_spring_systems;
 			float simulation_time;
 			int verlet_step;
 		};
@@ -111,11 +113,11 @@ class ParticleSystem {
 		ParticleConstIterator get_boundary_begin() const { return particles.cbegin() + num_of_fluid_particles; }
 		ParticleConstIterator get_boundary_end() const { return particles.cend(); }
 
-		MassSpringConstIterator get_fluid_fluid_springs_begin() const { return mass_spring_damper.cbegin(); }
-		MassSpringConstIterator get_fluid_fluid_springs_end() const { return mass_spring_damper.cbegin() + num_of_fluid_fluid_springs; }
+		//MassSpringConstIterator get_fluid_fluid_springs_begin() const { return mass_spring_damper.cbegin(); }
+		//MassSpringConstIterator get_fluid_fluid_springs_end() const { return mass_spring_damper.cbegin() + num_of_fluid_fluid_springs; }
 
-		MassSpringConstIterator get_fluid_boundary_springs_begin() const { return mass_spring_damper.cbegin() + num_of_fluid_fluid_springs; }
-		MassSpringConstIterator get_fluid_boundary_springs_end() const { return mass_spring_damper.cend(); }
+		//MassSpringConstIterator get_fluid_boundary_springs_begin() const { return mass_spring_damper.cbegin() + num_of_fluid_fluid_springs; }
+		//MassSpringConstIterator get_fluid_boundary_springs_end() const { return mass_spring_damper.cend(); }
 
 		auto current_time() const {return simulation_time;}
 		auto current_step() const { return verlet_step; }

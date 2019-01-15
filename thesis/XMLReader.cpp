@@ -62,11 +62,24 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 
 	if (auto spring = constants.FirstChildElement("spring").ToElement()) {
 		case_def.spring.on = true;
-		case_def.spring.stiffness = spring->FloatAttribute("stiffness");
-		case_def.spring.start_of_melting = spring->FloatAttribute("start_of_melting");
-		case_def.spring.duration_of_melting = spring->FloatAttribute("duration_of_melting");
 		case_def.spring.damping = spring->FloatAttribute("damping");
 		case_def.spring.max_length = spring->FloatAttribute("maxlength", case_def.particles.density);
+
+		auto spring_system_element = spring->FirstChildElement("system");
+		while (spring_system_element) {
+			CaseDef::MassSpringSystem spring_system;
+
+			spring_system.initial_k = spring_system_element->FloatAttribute("stiffness");
+			spring_system.start_of_melting = spring_system_element->FloatAttribute("start_of_melting");
+			spring_system.duration_of_melting = spring_system_element->FloatAttribute("duration_of_melting");
+			spring_system.region.origin = get_vec3f_from_element(*(spring_system_element->FirstChildElement("pointmin")));
+			const auto point_max = get_vec3f_from_element(*(spring_system_element->FirstChildElement("pointmax")));
+			spring_system.region.size = point_max - spring_system.region.origin;
+
+			case_def.spring.mass_spring_systems.push_back(spring_system);
+
+			spring_system_element = spring_system_element->NextSiblingElement("system");
+		}
 	}
 
 	if (auto ply = constants.FirstChildElement("ply").ToElement()) {
@@ -240,16 +253,30 @@ void save_particles_to_xml(XMLDocument &document, const ParticleConstIterator be
 	}
 }
 
-void save_springs_to_xml(XMLDocument &document, const MassSpringConstIterator begin,
-	const MassSpringConstIterator end, const char* element_name) {
+void save_spring_system_to_xml(XMLDocument &document, const MassSpringSystem&spring_system, const char* element_name) {
+	auto system_element = document.NewElement(element_name);
 
-	for (auto spring = begin; spring != end; ++spring) {
-		auto spring_element = document.NewElement(element_name);
-		spring_element->SetAttribute("restinglength", spring->resting_length);
-		spring_element->SetAttribute("first", spring->particle_indices.first);
-		spring_element->SetAttribute("second", spring->particle_indices.second);
+	system_element->SetAttribute("initial_k", spring_system.initial_k);
+	system_element->SetAttribute("start_of_melting", spring_system.start_of_melting);
+	system_element->SetAttribute("duration_of_melting", spring_system.duration_of_melting);
 
-		document.InsertEndChild(spring_element);
+	for (const auto &spring : spring_system.springs) {
+		auto spring_element = document.NewElement("spring");
+		spring_element->SetAttribute("restinglength", spring.resting_length);
+		spring_element->SetAttribute("first", spring.particle_indices.first);
+		spring_element->SetAttribute("second", spring.particle_indices.second);
+
+		system_element->InsertEndChild(spring_element);
+	}
+
+	document.InsertEndChild(system_element);
+}
+
+void save_multiple_spring_systems_to_xml(XMLDocument &document, const std::vector<MassSpringSystem> &spring_systems,
+                                         const char* element_prefix) {
+	for (int i = 0; i < spring_systems.size(); ++i) {
+		const std::string element_name = element_prefix + std::to_string(i);
+		save_spring_system_to_xml(document, spring_systems[i], element_name.c_str());
 	}
 }
 
@@ -268,17 +295,44 @@ ParticleContainer load_particles_from_xml(const XMLDocument &document, const cha
 	return particles;
 }
 
-MassSpringContainer load_springs_from_xml(const XMLDocument &document, const char* element_name) {
-	MassSpringContainer springs;
-	auto element = document.FirstChildElement(element_name);
-	while(element) {
-		MassSpringDamper spring;
-		spring.resting_length = element->FloatAttribute("restinglength");
-		spring.particle_indices.first = element->IntAttribute("first");
-		spring.particle_indices.second = element->IntAttribute("second");
-		springs.push_back(spring);
+MassSpringSystem load_spring_system_from_element(const XMLElement &spring_system_element) {
+	MassSpringSystem spring_system;
 
-		element = element->NextSiblingElement(element_name);
+	spring_system.initial_k = spring_system_element.FloatAttribute("initial_k");
+	spring_system.start_of_melting = spring_system_element.FloatAttribute("start_of_melting");
+	spring_system.duration_of_melting = spring_system_element.FloatAttribute("duration_of_melting");
+
+	auto spring_element = spring_system_element.FirstChildElement("spring");
+	while (spring_element) {
+		MassSpringDamper spring;
+		spring.resting_length = spring_element->FloatAttribute("restinglength");
+		spring.particle_indices.first = spring_element->IntAttribute("first");
+		spring.particle_indices.second = spring_element->IntAttribute("second");
+		spring_system.springs.push_back(spring);
+
+		spring_element = spring_element->NextSiblingElement("spring");
 	}
-	return springs;
+	return spring_system;
+}
+
+MassSpringSystem load_spring_system_from_xml(const XMLDocument &document, const char* element_name) {
+	return load_spring_system_from_element(*(document.FirstChildElement("element_name")));
+}
+
+std::vector<MassSpringSystem> load_multiple_spring_systems_from_xml(const XMLDocument &document, const char* element_prefix) {
+	std::vector<MassSpringSystem> spring_systems;
+
+	int i = 0;
+	while (true) {
+		const std::string element_name = element_prefix + std::to_string(i);
+		const auto spring_system_element = document.FirstChildElement(element_name.c_str());
+		if (!spring_system_element)
+			break;
+
+		spring_systems.push_back(load_spring_system_from_element(*spring_system_element));
+
+		++i;
+	}
+
+	return spring_systems;
 }

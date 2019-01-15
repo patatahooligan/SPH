@@ -34,11 +34,6 @@ struct CaseDef {
 	float friction_coef;
 
 	struct {
-		bool on = false;
-		float stiffness, start_of_melting, duration_of_melting, damping, max_length;
-	} spring;
-
-	struct {
 		float density, mass;
 		Vec3f point_min, point_max;
 	} particles;
@@ -77,4 +72,16 @@ struct CaseDef {
 		float scale;
 	};
 	std::vector<PolyDataModel> poly_data_models;
+
+	struct MassSpringSystem {
+		Box region;
+		float initial_k, start_of_melting, duration_of_melting;
+	};
+
+	struct {
+		bool on = false;
+		float damping, max_length;
+
+		std::vector<MassSpringSystem> mass_spring_systems;
+	} spring;
 };
