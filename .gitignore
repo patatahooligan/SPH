@@ -221,3 +221,4 @@ thesis.VC.opendb
 *.xml
 *.ply
 data/
+*.diagsession
