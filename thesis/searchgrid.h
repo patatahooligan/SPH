@@ -31,6 +31,7 @@ class SearchGrid {
 		using internal_cell_indices_container = std::vector<index_pair>;
 
 		std::vector<ParticleProxy> proxies;
+		std::vector<int> reverse_proxies;
 		Vec3f point_min, point_max, size;
 		float cell_size;
 		std::array<int, 3> grid_cells;
@@ -113,7 +114,6 @@ class SearchGrid {
 
 			if (fluid_spring_systems && boundary_spring_systems) {
 				// Create an array of reverse proxies and use it to update the mass_spring_damper indices
-				std::vector<int> reverse_proxies;
 				reverse_proxies.resize(proxies.size());
 				#pragma omp parallel for
 				for (int i = 0; i < proxies.size(); ++i) {
