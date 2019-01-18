@@ -41,7 +41,7 @@ class ParticleSystem {
 	private:
 		CaseDef case_def;
 		ParticleContainer
-			particles, prev_particles, next_particles;
+			particles, prev_particles;
 		std::vector<Vec3f> acceleration;
 		std::vector<float> density_derivative, pressure;
 		int num_of_fluid_particles, num_of_fluid_fluid_springs;

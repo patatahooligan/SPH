@@ -527,6 +527,8 @@ void ParticleSystem::integrate_verlet(const float dt) {
 	// TODO: consider making this variable
 	constexpr int corrective_step_interval = 40;
 
+	// To conserve memory, calculate the next state inside prev_particles and then swap the two vectors
+
 	#pragma omp parallel
 	if (verlet_step % corrective_step_interval == 0) {
 		// Corrective step
@@ -534,17 +536,17 @@ void ParticleSystem::integrate_verlet(const float dt) {
 		#pragma omp for
 		for (int i = 0; i < num_of_fluid_particles; ++i) {
 			auto &Pi = particles[i];
-			auto &Pi_next = next_particles[i];
+			auto &Pi_prev = prev_particles[i];
 
-			Pi_next.velocity = Pi.velocity + dt * acceleration[i];
-			Pi_next.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
-			Pi_next.density = Pi.density + dt * density_derivative[i];
+			Pi_prev.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
+			Pi_prev.velocity = Pi.velocity + dt * acceleration[i];
+			Pi_prev.density = Pi.density + dt * density_derivative[i];
 		}
 
 		// Boundary particles
 		#pragma omp for
 		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i)
-			next_particles[i].density = particles[i].density + dt * density_derivative[i];
+			prev_particles[i].density = particles[i].density + dt * density_derivative[i];
 	}
 	else {
 		// Predictor step
@@ -552,18 +554,18 @@ void ParticleSystem::integrate_verlet(const float dt) {
 		for (int i = 0; i < num_of_fluid_particles; ++i) {
 			auto
 				&Pi = particles[i],
-				&Pi_next = next_particles[i],
 				&Pi_prev = prev_particles[i];
 
-			Pi_next.velocity = Pi_prev.velocity + 2 * dt * acceleration[i];
-			Pi_next.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
-			Pi_next.density = Pi_prev.density + 2 * dt * density_derivative[i];
+			Pi_prev.position = Pi.position + dt * Pi.velocity + 0.5f * dt * dt * acceleration[i];
+			Pi_prev.velocity = Pi_prev.velocity + 2 * dt * acceleration[i];
+			Pi_prev.density = Pi_prev.density + 2 * dt * density_derivative[i];
 		}
 		#pragma omp for
 		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i)
-			next_particles[i].density = prev_particles[i].density + 2 * dt * density_derivative[i];
+			prev_particles[i].density = prev_particles[i].density + 2 * dt * density_derivative[i];
 	}
 
+	prev_particles.swap(particles);
 	++verlet_step;
 }
 
@@ -604,8 +606,6 @@ ParticleSystem::ParticleSystem(const CaseDef &case_def) :
 		nullptr
 	);
 
-	next_particles = particles;
-
 	if (case_def.spring.on)
 		generate_mass_spring_damper();
 
@@ -635,7 +635,6 @@ ParticleSystem::ParticleSystem(const CaseDef & case_def, State state) :
 
 	search_grid_boundary.build_index(particles.begin() + num_of_fluid_particles, particles.end());
 
-	next_particles = particles;
 	allocate_memory_for_verlet_variables();
 
 	fluid_spring_systems = std::move(state.fluid_spring_systems);
@@ -722,10 +721,4 @@ void ParticleSystem::simulation_step() {
 	const float time_step = calculate_time_step();
 	simulation_time += time_step;
 	integrate_verlet(time_step);
-
-	// Move variables of next step to current and current to prev
-	// Using swap instead of move assignment retains the size of next_particles
-	// next_particles practically holds garbage values after this
-	prev_particles.swap(particles);
-	particles.swap(next_particles);
 }
