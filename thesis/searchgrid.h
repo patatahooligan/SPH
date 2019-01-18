@@ -151,7 +151,6 @@ class SearchGrid {
 
 			for (int i = 0; size_t(i) < proxies.size(); ++i) {
 				// Keep a copy of [i]
-				std::array<Particle, 2> current_vec;
 				const Particle
 					target_temp = target_begin[i],
 					parallel_temp = parallel_begin[i];
