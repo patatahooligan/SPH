@@ -492,7 +492,7 @@ void ParticleSystem::compute_derivatives(const int i) {
 
 void ParticleSystem::compute_derivatives() {
 	#pragma omp parallel for
-	for (int i = 0; size_t(i) < particles.size(); ++i) {
+	for (int i = 0; i < particles.size(); ++i) {
 		constexpr int gamma = 7;
 		const float
 			beta = (case_def.speedsound * case_def.speedsound * case_def.rhop0) / gamma;
@@ -511,7 +511,7 @@ void ParticleSystem::compute_derivatives() {
 
 	// Boundary-Fluid and Boundary-Boundary interactions
 	#pragma omp parallel for
-	for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i) {
+	for (int i = num_of_fluid_particles; i < particles.size(); ++i) {
 		density_derivative[i] = 0.0f;
 		compute_derivatives<ParticleType::Boundary, ParticleType::Fluid>(i);
 	}
@@ -545,7 +545,7 @@ void ParticleSystem::integrate_verlet(const float dt) {
 
 		// Boundary particles
 		#pragma omp for
-		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i)
+		for (int i = num_of_fluid_particles; i < particles.size(); ++i)
 			prev_particles[i].density = particles[i].density + dt * density_derivative[i];
 	}
 	else {
@@ -561,7 +561,7 @@ void ParticleSystem::integrate_verlet(const float dt) {
 			Pi_prev.density = Pi_prev.density + 2 * dt * density_derivative[i];
 		}
 		#pragma omp for
-		for (int i = num_of_fluid_particles; size_t(i) < particles.size(); ++i)
+		for (int i = num_of_fluid_particles; i < particles.size(); ++i)
 			prev_particles[i].density = prev_particles[i].density + 2 * dt * density_derivative[i];
 	}
 

@@ -21,15 +21,9 @@
     <ClCompile Include="..\common\stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\common\fileIO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\common\stdafx.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\common\fileIO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

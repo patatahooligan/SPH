@@ -158,7 +158,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\common\fileIO.cpp" />
     <ClCompile Include="..\common\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -168,7 +167,6 @@
     <ClCompile Include="surface-from-vtp.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\common\fileIO.h" />
     <ClInclude Include="..\common\stdafx.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

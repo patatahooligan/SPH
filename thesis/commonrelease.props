@@ -6,7 +6,13 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <OpenMPSupport />
     </ClCompile>
+    <Link />
+    <Link />
+    <Link>
+      <LinkTimeCodeGeneration>UseFastLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+    </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
 </Project>

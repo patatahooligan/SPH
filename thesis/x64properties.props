@@ -3,8 +3,12 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <LibraryPath>C:\dev\freeglut-3.0.0\build-x64\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>C:\dev\freeglut-3.0.0\build-x64\lib;C:\dev\tinyxml2\tinyxml2\bin\tinyxml2\x64-Release-Dll;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
-  <ItemDefinitionGroup />
+  <ItemDefinitionGroup>
+    <Link>
+      <AdditionalDependencies>tinyxml2.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemGroup />
 </Project>
