@@ -12,7 +12,7 @@ struct RunOptions {
 
 	std::optional<int> max_run_time;
 	std::optional<std::string> input;
-	std::optional<std::string> particles_output_filename, surface_output_filename, initial_state_filename;
+	std::optional<std::string> particles_output_filename, initial_state_filename;
 };
 
 auto get_options(int argc, char **argv) {
@@ -21,8 +21,6 @@ auto get_options(int argc, char **argv) {
 
 	cxx_options.add_options()
 		("particles-output", "Prefix for group of vtk files to hold the result of the simulation",
-			cxxopts::value<std::string>())
-		("surface-output", "Prefix for group of vtk files to hold the reconstructed surface",
 			cxxopts::value<std::string>())
 		("t, time", "Time of simulation run in seconds",
 			cxxopts::value<float>())
@@ -61,10 +59,7 @@ auto get_options(int argc, char **argv) {
 	if (result.count("particles-output") != 0)
 		run_options.particles_output_filename = result["particles-output"].as<std::string>();
 
-	if (result.count("surface-output") != 0)
-		run_options.surface_output_filename = result["surface-output"].as<std::string>();
-
-	if (!run_options.particles_output_filename && !run_options.surface_output_filename)
+	if (!run_options.particles_output_filename)
 		throw std::runtime_error(std::string("No option specified for output"));
 
 	if (result.count("max-run-time") == 1)
@@ -114,9 +109,6 @@ int main(int argc, char **argv) {
 		SaveVTK save_VTK(ps.get_boundary_begin(), ps.get_boundary_end());
 		if (options.particles_output_filename)
 			save_VTK.save_particles(*options.particles_output_filename + "-boundary");
-
-		if (options.surface_output_filename)
-			save_VTK.save_surface(*options.surface_output_filename + "-boundary", case_def.h);
 	}
 	
 	bool user_exit = false;
@@ -131,10 +123,6 @@ int main(int argc, char **argv) {
 			SaveVTK save_VTK(ps.get_fluid_begin(), ps.get_fluid_end());
 			if (options.particles_output_filename)
 				save_VTK.save_particles(*options.particles_output_filename + "-fluid" + std::to_string(output_step));
-
-			if (options.surface_output_filename)
-				save_VTK.save_surface(
-					*options.surface_output_filename + "-fluid" + std::to_string(output_step), case_def.h);
 
 			std::cout << "Snapshot saved at time " << ps.current_time() << "s\n";
 
