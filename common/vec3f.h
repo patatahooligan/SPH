@@ -88,21 +88,21 @@ class Vec3f {
 			return *this / this->length();
 		}
 
-		constexpr Vec3f rotate_x(const float angle_in_rad) const {
+		Vec3f rotate_x(const float angle_in_rad) const {
 			return {
 				x,
 				y * std::cos(angle_in_rad) + z * std::sin(angle_in_rad),
 				- y * std::sin(angle_in_rad) + z * std::cos(angle_in_rad) };
 		}
 
-		constexpr Vec3f rotate_y(const float angle_in_rad) const {
+		Vec3f rotate_y(const float angle_in_rad) const {
 			return {
 				x * std::cos(angle_in_rad) - z * std::sin(angle_in_rad),
 				y,
 				x * std::sin(angle_in_rad) + z * std::cos(angle_in_rad) };
 		}
 
-		constexpr Vec3f rotate_z(const float angle_in_rad) const {
+		Vec3f rotate_z(const float angle_in_rad) const {
 			return {
 				x * std::cos(angle_in_rad) + y * std::sin(angle_in_rad),
 				-x * std::sin(angle_in_rad) + y * std::cos(angle_in_rad),
