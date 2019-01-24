@@ -24,7 +24,7 @@ class CubicSpline {
 class CubicSplinePrecalculated {
 	private:
 		std::vector<float> values, gradient_values;
-		float h, resolution, step;
+		float step;
 
 	public:
 		CubicSplinePrecalculated(float h, int resolution);
@@ -44,7 +44,7 @@ class ParticleSystem {
 			particles, prev_particles;
 		std::vector<Vec3f> acceleration;
 		std::vector<float> density_derivative, pressure;
-		int num_of_fluid_particles, num_of_fluid_fluid_springs;
+		int num_of_fluid_particles;
 		CaseDef::Box bounding_box;
 		SearchGrid search_grid_fluid, search_grid_boundary;
 		CubicSplinePrecalculated cubic_spline;

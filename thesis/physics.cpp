@@ -96,7 +96,7 @@ Vec3f CubicSpline::gradient(const Vec3f &r) const {
 
 
 CubicSplinePrecalculated::CubicSplinePrecalculated(const float h, const int resolution = 32767):
-	h(h), resolution(resolution), step((2.0f * h) / resolution)
+	step((2.0f * h) / resolution)
 {
 	values.resize(resolution + 1);
 	gradient_values.resize(resolution + 1);
@@ -285,7 +285,6 @@ ParticleContainer ParticleSystem::generate_particles() {
 }
 
 void ParticleSystem::generate_mass_spring_damper() {
-	const auto &density = case_def.particles.density;
 	MassSpringDamper::damping_coef = case_def.spring.damping;
 
 	for (const auto &mass_spring_system : case_def.spring.mass_spring_systems) {
