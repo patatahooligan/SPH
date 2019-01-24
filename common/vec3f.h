@@ -56,7 +56,6 @@ class Vec3f {
 
 		// Calling this with out of range i is undefined behavior
 		// Ignore the warning that not all control paths return a value
-		#pragma warning(suppress: 4715)
 		const float& operator[](size_t i) const {
 			switch (i) {
 			case 0:
@@ -66,6 +65,7 @@ class Vec3f {
 			case 2:
 				return z;
 			}
+			__builtin_unreachable();
 		}
 
 		float& operator[](size_t i) {
