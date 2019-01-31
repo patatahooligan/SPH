@@ -188,12 +188,12 @@ class ParticleGenerator {
 				}
 
 				// Otherwise, define a box for every face needed
-				const float thickness = density;
+				const float thickness = density / 2;
 
 				const Vec3f
-					right_origin = box.origin + Vec3f{ box.size.x - thickness, 0.0f, 0.0f },
-					back_origin = box.origin + Vec3f{ 0.0f, box.size.y - thickness, 0.0f },
-					top_origin = box.origin + Vec3f{ 0.0f, 0.0f, box.size.z - thickness },
+					right_origin = box.origin + Vec3f{ box.size.x, 0.0f, 0.0f },
+					back_origin = box.origin + Vec3f{ 0.0f, box.size.y, 0.0f },
+					top_origin = box.origin + Vec3f{ 0.0f, 0.0f, box.size.z},
 
 					x_size = { thickness, box.size.y, box.size.z },
 					y_size = { box.size.x, thickness, box.size.z },
@@ -219,9 +219,9 @@ class ParticleGenerator {
 					{ target.origin - boundary_offset, target.size + 2.0f * boundary_offset },
 					boundary_particles);
 				const auto target_end = target.origin + target.size;
-				for (float x = target.origin.x; x <= target_end.x; x += density) {
-					for (float y = target.origin.y; y <= target_end.y; y += density) {
-						for (float z = target.origin.z; z <= target_end.z; z += density) {
+				for (float x = target.origin.x; x < target_end.x; x += density) {
+					for (float y = target.origin.y; y < target_end.y; y += density) {
+						for (float z = target.origin.z; z < target_end.z; z += density) {
 							Particle p;
 							p.position = { x, y, z };
 							p.density = case_def.rhop0;
