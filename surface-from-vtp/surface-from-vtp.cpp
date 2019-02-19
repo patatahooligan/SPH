@@ -1,4 +1,5 @@
 #include "stdafx.h"
+#include <cstdlib>
 
 vtkSmartPointer<vtkPolyData> polydata_from_vtp(const std::string filename) {
 	auto reader = vtkSmartPointer<vtkXMLPolyDataReader>::New();
@@ -21,11 +22,15 @@ vtkSmartPointer<vtkPolyData> surface_from_polydata(
 	for (auto &bound : bounds)
 		bound = resolution * int(bound / resolution);
 
+	const float
+		x_size = bounds[1] - bounds[0], y_size = bounds[3] - bounds[2], z_size = bounds[5] - bounds[4],
+		diagonal = std::sqrt(x_size * x_size + y_size * y_size + z_size * z_size);
+
 	auto implicit_modeller = vtkSmartPointer<vtkImplicitModeller>::New();
 	implicit_modeller->SetSampleDimensions(
 		(bounds[1] - bounds[0]) / resolution, (bounds[3] - bounds[2]) / resolution, (bounds[5] - bounds[4]) / resolution);
 	implicit_modeller->SetModelBounds(bounds);
-	implicit_modeller->SetMaximumDistance(0.014);
+	implicit_modeller->SetMaximumDistance((resolution * 2) / diagonal);
 	implicit_modeller->SetProcessModeToPerVoxel();
 	implicit_modeller->SetInputData(polydata);
 	implicit_modeller->SetOutputScalarTypeToFloat();
@@ -58,15 +63,16 @@ void save_surface_to_vtp(const vtkSmartPointer<vtkPolyData> surface, std::string
 }
 
 int main(int argc, char* argv[]) {
-	if (argc < 3)
+	if (argc < 4)
 		return EXIT_FAILURE;
 
-	constexpr float resolution = 0.006;
+	const float resolution = std::atof(argv[3]);
+
 	const std::string
 		input_prefix = argv[1],
 		output_prefix = argv[2];
 
-	const int	begin_index = argc >= 4 ? std::stoi(argv[3]) : 0;
+	const int	begin_index = argc >= 5 ? std::stoi(argv[4]) : 0;
 	int end_index = begin_index;
 	while (std::filesystem::exists(input_prefix + std::to_string(end_index) + ".vtp"))
 		++end_index;
