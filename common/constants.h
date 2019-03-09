@@ -5,11 +5,6 @@
 // Constants needed in more than one translation unit
 constexpr float pi = 3.14159265359f;
 
-// Display window (and video output) dimensions
-constexpr int output_width = 800;
-constexpr int output_height = 800;
-constexpr float framerate = 60.0f;
-
 enum class ParticleType {
 	Void,
 	Fluid,
