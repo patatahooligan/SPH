@@ -19,6 +19,7 @@ vtkSmartPointer<vtkPolyData> surface_from_polydata(
 	bounds[2] -= offset; bounds[3] += offset;
 	bounds[4] -= offset; bounds[5] += offset;
 
+	// Snap bounds to grid to prevent flickering during movement of the model
 	for (auto &bound : bounds)
 		bound = resolution * int(bound / resolution);
 
@@ -26,6 +27,7 @@ vtkSmartPointer<vtkPolyData> surface_from_polydata(
 		x_size = bounds[1] - bounds[0], y_size = bounds[3] - bounds[2], z_size = bounds[5] - bounds[4],
 		diagonal = std::sqrt(x_size * x_size + y_size * y_size + z_size * z_size);
 
+	// Convert point representation to voxel representation
 	auto implicit_modeller = vtkSmartPointer<vtkImplicitModeller>::New();
 	implicit_modeller->SetSampleDimensions(
 		(bounds[1] - bounds[0]) / resolution, (bounds[3] - bounds[2]) / resolution, (bounds[5] - bounds[4]) / resolution);
@@ -35,10 +37,12 @@ vtkSmartPointer<vtkPolyData> surface_from_polydata(
 	implicit_modeller->SetInputData(polydata);
 	implicit_modeller->SetOutputScalarTypeToFloat();
 
+	// Convert voxel representation to surface representation
 	auto flyingedges3D = vtkSmartPointer<vtkFlyingEdges3D>::New();
 	flyingedges3D->SetInputConnection(implicit_modeller->GetOutputPort());
 	flyingedges3D->SetValue(0, 0.5f);
 
+	// Reduce high frequency data because flying edges does not produce a smooth surface
 	auto smoother = vtkSmartPointer<vtkWindowedSincPolyDataFilter>::New();
 	smoother->SetInputConnection(flyingedges3D->GetOutputPort());
 	smoother->SetNumberOfIterations(15);
