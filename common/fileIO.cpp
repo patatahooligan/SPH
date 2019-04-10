@@ -25,8 +25,3 @@ void SaveVTK::save_particles(std::string output_filename) {
 	writer->SetFileName(output_filename.data());
 	writer->Write();
 }
-
-//void SaveVTK::save_surface(std::string output_filename, const float h) {
-//	const auto surface = surface_from_polydata(polydata, h);
-//	save_surface_to_vtp(surface, output_filename);
-//}
