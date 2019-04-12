@@ -106,9 +106,8 @@ int main(int argc, char **argv) {
 
 	// Save initial state only if this is a clean run
 	if (output_step == 0)	{
-		SaveVTK save_VTK(ps.get_boundary_begin(), ps.get_boundary_end());
 		if (options.particles_output_filename)
-			save_VTK.save_particles(*options.particles_output_filename + "-boundary");
+			save_particles(ps.get_boundary_begin(), ps.get_boundary_end(), *options.particles_output_filename + "-boundary");
 	}
 	
 	bool user_exit = false;
@@ -120,9 +119,8 @@ int main(int argc, char **argv) {
 		(!options.max_run_time || now() - start_time < std::chrono::seconds{ *(options.max_run_time) }))
 	{
 		while (output_step * options.output_period <= ps.current_time()) {
-			SaveVTK save_VTK(ps.get_fluid_begin(), ps.get_fluid_end());
 			if (options.particles_output_filename)
-				save_VTK.save_particles(*options.particles_output_filename + "-fluid" + std::to_string(output_step));
+				save_particles(ps.get_fluid_begin(), ps.get_fluid_end(), *options.particles_output_filename + "-fluid" + std::to_string(output_step));
 
 			std::cout << "Snapshot saved at time " << ps.current_time() << "s\n";
 

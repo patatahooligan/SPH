@@ -1,20 +1,27 @@
 #pragma once
 
+#include <string>
+
 #include "particle.h"
 
-//vtkSmartPointer<vtkPolyData> polydata_from_vtp(std::string filename);
-//
-//vtkSmartPointer<vtkPolyData> surface_from_polydata(vtkSmartPointer<vtkPolyData> polydata, float h);
-//
-//void save_surface_to_vtp(vtkSmartPointer<vtkPolyData> surface, std::string output_filename);
+inline void save_particles(ParticleConstIterator begin, ParticleConstIterator end, std::string output_filename) {
+	auto points = vtkSmartPointer<vtkPoints>::New();
+	auto polydata = vtkSmartPointer<vtkPolyData>::New();
+	auto vertices = vtkSmartPointer<vtkCellArray>::New();
 
-class SaveVTK {
-	private:
-		vtkSmartPointer<vtkPoints> points;
-		vtkSmartPointer<vtkPolyData> polydata;
-		vtkSmartPointer<vtkCellArray> vertices;
-	public:
-		SaveVTK(ParticleConstIterator begin, ParticleConstIterator end);
+	for (auto p = begin; p != end; ++p) {
+		const auto id = points->InsertNextPoint(p->position.x, p->position.y, p->position.z);
+		vertices->InsertNextCell(1, &id);
+	}
 
-		void save_particles(std::string output_filename);
-};
+	polydata->SetPoints(points);
+	polydata->SetVerts(vertices);
+
+	auto writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+	writer->SetInputData(polydata);
+
+	output_filename += '.';
+	output_filename += writer->GetDefaultFileExtension();
+	writer->SetFileName(output_filename.data());
+	writer->Write();
+}
