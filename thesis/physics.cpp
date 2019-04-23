@@ -695,10 +695,10 @@ SearchGrid::cell_indices_container ParticleSystem::get_all_neighbors(const Vec3f
 
 void ParticleSystem::simulation_step() {
 	// Readjust the search space to only include the bounding box of particles in the simulation
-	// Make sure that the search space is not larger than the requested simulation space.
 	auto
 		fluid_aabb = get_particle_axis_aligned_bounding_box(get_fluid_begin(), get_fluid_end());
 
+	// Make sure that the search space is not larger than the requested simulation space.
 	if (!bounding_box.contains(fluid_aabb.origin))
 		fluid_aabb.origin = bounding_box.origin;
 	if (!bounding_box.contains(fluid_aabb.origin + fluid_aabb.size))
@@ -707,7 +707,6 @@ void ParticleSystem::simulation_step() {
 	search_grid_fluid.set_point_min(fluid_aabb.origin);
 	search_grid_fluid.set_point_max(fluid_aabb.origin + fluid_aabb.size);
 
-	// Sort fluid and boundary particles separately
 	search_grid_fluid.sort_containers(
 		particles.begin(), particles.begin() + num_of_fluid_particles,
 		prev_particles.begin(),
