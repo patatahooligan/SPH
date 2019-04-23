@@ -214,6 +214,7 @@ class SearchGrid {
 					return;
 			}
 
+			// min and max are used to enforce the bounds of the search area
 			const auto
 				min_x = std::max(target_cell[0] - 1, 0),
 				min_y = std::max(target_cell[1] - 1, 0),
