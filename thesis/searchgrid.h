@@ -1,9 +1,9 @@
 #pragma once
 
-#include "stdafx.h"
+#include "../common/stdafx.h"
 
-#include "particle.h"
-#include "vec3f.h"
+#include "../common/particle.h"
+#include "../common/vec3f.h"
 #include "massspringdamper.h"
 
 struct ParticleProxy {

@@ -5,10 +5,7 @@
 
 #pragma once
 
-#include "targetver.h"
-
 #include <stdio.h>
-#include <tchar.h>
 #include <stdexcept>
 #include <omp.h>
 #include <array>
@@ -21,7 +18,6 @@
 #include <limits>
 #include <execution>
 #include <optional>
-#include <conio.h>
 #include <chrono>
 #include <fstream>
 #include <string_view>
@@ -30,7 +26,7 @@
 #include "boost/container/static_vector.hpp"
 #include "tinyxml2.h"
 #include "cxxopts.hpp"
-#include "GL\freeglut.h"
+#include "GL/freeglut.h"
 #include "vtkPolyData.h"
 #include "vtkXMLPolyDataWriter.h"
 #include "vtkXMLPolyDataReader.h"

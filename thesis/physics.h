@@ -1,8 +1,8 @@
 #pragma once
 
-#include "constants.h"
-#include "particle.h"
-#include "Vec3f.h"
+#include "../common/constants.h"
+#include "../common/particle.h"
+#include "../common/../common/vec3f.h"
 #include "searchgrid.h"
 #include "massspringdamper.h"
 

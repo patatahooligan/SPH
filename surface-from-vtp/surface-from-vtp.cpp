@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "../common/stdafx.h"
 #include <cstdlib>
 
 vtkSmartPointer<vtkPolyData> polydata_from_vtp(const std::string filename) {

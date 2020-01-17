@@ -1,6 +1,6 @@
 #pragma once
 
-#include "constants.h"
+#include "../common/constants.h"
 #include "vec3f.h"
 
 struct Particle {

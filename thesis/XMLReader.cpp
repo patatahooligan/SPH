@@ -1,9 +1,9 @@
-#include "stdafx.h"
+#include "../common/stdafx.h"
 
-#include "vec3f.h"
-#include "constants.h"
+#include "../common/vec3f.h"
+#include "../common/constants.h"
 #include "XMLReader.h"
-#include "particle.h"
+#include "../common/particle.h"
 #include "massspringdamper.h"
 
 using namespace tinyxml2;

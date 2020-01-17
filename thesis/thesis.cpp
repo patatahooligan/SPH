@@ -1,9 +1,9 @@
 // thesis.cpp : Defines the entry point for the console application.
 
-#include "stdafx.h"
+#include "../common/stdafx.h"
 
 #include "physics.h"
-#include "fileIO.h"
+#include "../common/fileIO.h"
 #include "XMLReader.h"
 
 struct RunOptions {
