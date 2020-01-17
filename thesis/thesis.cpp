@@ -34,9 +34,8 @@ auto get_options(int argc, char **argv) {
 			cxxopts::value<float>())
 		("snapshot", "Filename for snapshot of final step (default \"snapshot.bin\")",
 			cxxopts::value<std::string>());
-	
-	auto const_argv = const_cast<const char**>(argv);       // Workaround for cxxopts bug!!!
-	const auto result = cxx_options.parse(argc, const_argv);
+
+	const auto result = cxx_options.parse(argc, argv);
 
 	if (result.count("case") == 0)
 		throw std::runtime_error(std::string("No option specified for case"));
