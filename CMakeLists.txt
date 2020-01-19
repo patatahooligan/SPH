@@ -6,11 +6,13 @@ project(sph)
 
 find_package(VTK REQUIRED)
 find_package(TBB REQUIRED)
+find_package(tinyxml2 REQUIRED)
 
-include_directories(${VTK_INCLUDE_DIRS})
+include_directories(VTK_INCLUDE_DIRS})
 link_libraries(
 	${VTK_LIBRARIES}
 	${TBB_LIBRARIES}
+	tinyxml2
 )
 
 add_subdirectory(
