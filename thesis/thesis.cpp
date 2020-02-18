@@ -6,6 +6,14 @@
 #include "../common/fileIO.h"
 #include "XMLReader.h"
 
+
+std::atomic<bool> user_exit = false;
+
+extern "C" void interrupt_handler(int ) {
+	// Notify the main loop to exit
+	user_exit = true;
+}
+
 struct RunOptions {
 	std::string case_filename;
 	float time, output_period;
@@ -108,8 +116,7 @@ int main(int argc, char **argv) {
 		if (options.particles_output_filename)
 			save_particles(ps.get_boundary_begin(), ps.get_boundary_end(), *options.particles_output_filename + "-boundary");
 	}
-	
-	bool user_exit = false;
+
 	auto& now = std::chrono::steady_clock::now;
 	const auto start_time = now();
 	while (
@@ -127,12 +134,6 @@ int main(int argc, char **argv) {
 		}
 
 		ps.simulation_step();
-
-		while (_kbhit()) {
-			auto key = _getch();
-			if (key == 27)
-				user_exit = true;
-		}
 	}
 	std::cout << '\n';
 

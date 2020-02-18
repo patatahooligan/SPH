@@ -22,6 +22,8 @@
 #include <fstream>
 #include <string_view>
 #include <filesystem>
+#include <csignal>
+#include <atomic>
 
 #include "boost/container/static_vector.hpp"
 #include "tinyxml2.h"
