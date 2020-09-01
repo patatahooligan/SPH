@@ -2,6 +2,8 @@
 
 #include "../common/stdafx.h"
 
+#include "boost/program_options.hpp"
+
 #include "physics.h"
 #include "../common/fileIO.h"
 #include "XMLReader.h"
@@ -14,72 +16,98 @@ extern "C" void interrupt_handler(int ) {
 	user_exit = true;
 }
 
-struct RunOptions {
+struct ProgramOptions {
 	std::string case_filename;
 	float time, output_period;
 
 	std::optional<int> max_run_time;
 	std::optional<std::string> input;
 	std::optional<std::string> particles_output_filename, initial_state_filename;
+
+	bool exit = false;
 };
 
 auto get_options(int argc, char **argv) {
-	cxxopts::Options cxx_options("SPH", "Smoothed Particle Hydrodynamics");
-	RunOptions run_options;
+	namespace options = boost::program_options;
 
-	cxx_options.add_options()
-		("particles-output", "Prefix for group of vtk files to hold the result of the simulation",
-			cxxopts::value<std::string>())
-		("t, time", "Time of simulation run in seconds",
-			cxxopts::value<float>())
-		("c, case", "XML file that defines the case",
-			cxxopts::value<std::string>())
-		("p, output-period", "interval in seconds between saved snapshots in binary output",
-			cxxopts::value<float>())
-		("i, initial-state", "A saved state from older simulation to be used as initial state of this one",
-			cxxopts::value<std::string>())
-		("max-run-time", "Maximum time in minutes the app can run before termination",
-			cxxopts::value<float>())
-		("snapshot", "Filename for snapshot of final step (default \"snapshot.bin\")",
-			cxxopts::value<std::string>());
+	options::options_description description(
+		"Smooth particle hydrodynamics solver. Available options"
+	);
 
-	const auto result = cxx_options.parse(argc, argv);
+	description.add_options()
+		("help,h",
+			"Produce help message")
+		("particles-output,o",
+			options::value<std::string>()->default_value("output"),
+			"Prefix for group of vtk files to hold the result of the simulation")
+		("time,t",
+			options::value<float>()->required(),
+			"Time of simulation run in seconds")
+		("case,c",
+			options::value<std::string>()->required(),
+			"XML file that defines the case")
+		("output-period,p",
+			options::value<float>()->required(),
+			"interval in seconds between saved snapshots in binary output")
+		("initial-state,i",
+			options::value<std::string>(),
+			"A saved state from older simulation to be used as initial state "
+			"of this one")
+		("max-run-time",
+			options::value<float>(),
+			"Maximum time in minutes the app can run before termination")
+		;
 
-	if (result.count("case") == 0)
-		throw std::runtime_error(std::string("No option specified for case"));
-	else
-		run_options.case_filename = result["case"].as<std::string>();
+	options::variables_map variables_map;
+	options::store(options::parse_command_line(argc, argv, description), variables_map);
+	options::store(
+		options::command_line_parser(argc, argv).
+			options(description).
+			run(),
+		variables_map);
 
-	if (result.count("time") == 0)
-		throw std::runtime_error(std::string("No options specified for time"));
-	else
-		run_options.time = result["time"].as<float>();
+	ProgramOptions program_options;
 
-	if (result.count("output-period") == 0)
-		run_options.output_period = 0;
-	else
-		run_options.output_period = result["output-period"].as<float>();
+	if (variables_map.count("help")) {
+		std::cout << description << "\n";
+		program_options.exit = true;
+		return program_options;
+	}
 
-	if (result.count("initial-state") != 0)
-		run_options.initial_state_filename = result["initial-state"].as<std::string>();
+	options::notify(variables_map);
+	if (variables_map.count("particles-output")) {
+		program_options.particles_output_filename =
+			variables_map["particles-output"].as<std::string>();
+	}
+	if (variables_map.count("time")) {
+		program_options.time =
+			variables_map["time"].as<float>();
+	}
+	if (variables_map.count("case")) {
+		program_options.case_filename =
+			variables_map["case"].as<std::string>();
+	}
+	if (variables_map.count("output-period")) {
+		program_options.output_period =
+			variables_map["output-period"].as<float>();
+	}
+	if (variables_map.count("initial-state")) {
+		program_options.initial_state_filename =
+			variables_map["initial-state"].as<std::string>();
+	}
+	if (variables_map.count("max-run-time")) {
+		program_options.max_run_time =
+			variables_map["max-run-time"].as<float>();
+	}
 
-	if (result.count("particles-output") != 0)
-		run_options.particles_output_filename = result["particles-output"].as<std::string>();
-
-	if (!run_options.particles_output_filename)
-		throw std::runtime_error(std::string("No option specified for output"));
-
-	if (result.count("max-run-time") == 1)
-		run_options.max_run_time = int(result["max-run-time"].as<float>() * 60.0f);
-
-	if (result.count("input") == 1)
-		run_options.input = result["input"].as<std::string>();
-
-	return run_options;
+	return program_options;
 }
 
 int main(int argc, char **argv) {
 	const auto options = get_options(argc, argv);
+
+	if (options.exit)
+		return 0;
 
 	const auto case_def = get_case_from_XML(options.case_filename.c_str());
 

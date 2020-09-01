@@ -44,7 +44,7 @@
 #include "vtkVoxelModeller.h"
 #include "vtkImageData.h"
 #include "vtkWindowedSincPolyDataFilter.h"
- 
+
 #include "vtkActor.h"
 #include "vtkPolyDataMapper.h"
 #include "vtkRenderWindowInteractor.h"
