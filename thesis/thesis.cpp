@@ -145,6 +145,8 @@ int main(int argc, char **argv) {
 			save_particles(ps.get_boundary_begin(), ps.get_boundary_end(), *options.particles_output_filename + "-boundary");
 	}
 
+	signal(SIGINT, interrupt_handler);
+
 	auto& now = std::chrono::steady_clock::now;
 	const auto start_time = now();
 	while (
