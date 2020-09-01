@@ -1,8 +1,8 @@
-#include "stdafx.h"
+#include "../common/stdafx.h"
 
 #include "physics.h"
-#include "constants.h"
-#include "vec3f.h"
+#include "../common/constants.h"
+#include "../common/vec3f.h"
 
 CaseDef::Box get_particle_axis_aligned_bounding_box(ParticleConstIterator begin, ParticleConstIterator end) {
 	constexpr auto

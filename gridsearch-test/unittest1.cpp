@@ -5,8 +5,8 @@
 #include <array>
 #include <iostream>
 
-#include "vec3f.h"
-#include "particle.h"
+#include "../common/vec3f.h"
+#include "../common/particle.h"
 #include "../thesis/searchgrid.h"
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;

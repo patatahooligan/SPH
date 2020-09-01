@@ -1,9 +1,9 @@
 #pragma once
 
-#include "stdafx.h"
+#include "../common/stdafx.h"
 
-#include "constants.h"
-#include "particle.h"
+#include "../common/constants.h"
+#include "../common/particle.h"
 #include "massspringdamper.h"
 
 CaseDef get_case_from_XML(const char* xml_filename);

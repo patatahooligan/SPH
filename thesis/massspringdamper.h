@@ -1,8 +1,8 @@
 #pragma once
-#include "stdafx.h"
+#include "../common/stdafx.h"
 
-#include "vec3f.h"
-#include "particle.h"
+#include "../common/vec3f.h"
+#include "../common/particle.h"
 
 struct MassSpringDamper {
 	inline static float damping_coef;

@@ -1,10 +1,18 @@
 // thesis.cpp : Defines the entry point for the console application.
 
-#include "stdafx.h"
+#include "../common/stdafx.h"
 
 #include "physics.h"
-#include "fileIO.h"
+#include "../common/fileIO.h"
 #include "XMLReader.h"
+
+
+std::atomic<bool> user_exit = false;
+
+extern "C" void interrupt_handler(int ) {
+	// Notify the main loop to exit
+	user_exit = true;
+}
 
 struct RunOptions {
 	std::string case_filename;
@@ -34,9 +42,8 @@ auto get_options(int argc, char **argv) {
 			cxxopts::value<float>())
 		("snapshot", "Filename for snapshot of final step (default \"snapshot.bin\")",
 			cxxopts::value<std::string>());
-	
-	auto const_argv = const_cast<const char**>(argv);       // Workaround for cxxopts bug!!!
-	const auto result = cxx_options.parse(argc, const_argv);
+
+	const auto result = cxx_options.parse(argc, argv);
 
 	if (result.count("case") == 0)
 		throw std::runtime_error(std::string("No option specified for case"));
@@ -109,8 +116,7 @@ int main(int argc, char **argv) {
 		if (options.particles_output_filename)
 			save_particles(ps.get_boundary_begin(), ps.get_boundary_end(), *options.particles_output_filename + "-boundary");
 	}
-	
-	bool user_exit = false;
+
 	auto& now = std::chrono::steady_clock::now;
 	const auto start_time = now();
 	while (
@@ -128,12 +134,6 @@ int main(int argc, char **argv) {
 		}
 
 		ps.simulation_step();
-
-		while (_kbhit()) {
-			auto key = _getch();
-			if (key == 27)
-				user_exit = true;
-		}
 	}
 	std::cout << '\n';
 
