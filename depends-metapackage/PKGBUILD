@@ -1,0 +1,19 @@
+pkgname=patatahooligan-sph-depends-meta
+pkgver=1
+pkgrel=1
+pkgdesc='Meta-package for the SPH projects dependencies'
+arch=('any')
+license=('none')
+depends=(
+    'cxxopts'
+    'gdal'
+    'hdf5'
+    'netcdf'
+    'openmp'
+    'pdal'
+    'proj'
+    'pugixml'
+    'tbb'
+    'tinyxml2'
+    'vtk'
+)
