@@ -36,7 +36,9 @@ CaseDef get_case_from_XML(const char*  xml_filename) {
 		throw error;
 
 	XMLHandle root(case_XML.RootElement());
-	assert(root.ToNode());
+	if (not root.ToNode()) {
+		throw std::runtime_error("Case file has no root node");
+	}
 
 	get_geometry_from_XML(root, case_def);
 
@@ -48,8 +50,18 @@ CaseDef get_case_from_XML(const char*  xml_filename) {
 }
 
 void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
-	auto constants = XML_root.FirstChildElement("casedef").FirstChildElement("constantsdef");
-	assert(constants.ToNode());
+	// TODO: many of these are treated as optional. Figure out which
+	// ones are not in fact optional and emit errors when they are
+	// absent.
+	auto casedef = XML_root.FirstChildElement("casedef");
+	if (not casedef.ToNode()) {
+		throw std::runtime_error("Case file has no casedef node under case");
+	}
+
+	auto constants = casedef.FirstChildElement("constantsdef");
+	if (not constants.ToNode()) {
+		throw std::runtime_error("Case file has no constantsdef node under casedef");
+	}
 
 	if (auto alpha = constants.FirstChildElement("alpha").ToElement())
 		case_def.alpha = alpha->FloatAttribute("value");
@@ -143,9 +155,10 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 			case_def.speedsound = case_def.coefsound * case_def.speedsystem;
 		}
 		else
-			case_def.speedsound = speedsound->FloatAttribute("value)");
+			case_def.speedsound = speedsound->FloatAttribute("value");
 	}
 
+	case_def.h = 1;
 	if (auto coefh = constants.FirstChildElement("coefh").ToElement())
 		case_def.h = coefh->FloatAttribute("value") * float(std::sqrt(3)) * case_def.particles.density;
 
@@ -167,21 +180,34 @@ void get_constants_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 }
 
 void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
-	auto geometry = XML_root.FirstChildElement("casedef").FirstChildElement("geometry");
-	assert(geometry.ToNode());
+	auto casedef = XML_root.FirstChildElement("casedef");
+	if (not casedef.ToNode()) {
+		throw std::runtime_error("Case file has no casedef node under case");
+	}
+
+	auto geometry = casedef.FirstChildElement("geometry");
+	if (not geometry.ToNode()) {
+		throw std::runtime_error("Case file has no geometry node under casedef");
+	}
 
 	auto definition = geometry.FirstChildElement("definition").ToElement();
-	assert(definition);
+	if (not definition) {
+		throw std::runtime_error("Case file has no definition node under geometry");
+	}
 
 	case_def.particles.density = definition->FloatAttribute("dp");
 
 	// Minimum and maximum points of the domain, not the fluid
 	auto pointmin = definition->FirstChildElement("pointmin");
-	assert(pointmin);
+	if (not pointmin) {
+		throw std::runtime_error("Case file has no pointmin node under definition");
+	}
 	case_def.particles.point_min = get_vec3f_from_element(*pointmin);
 
 	auto pointmax = definition->FirstChildElement("pointmax");
-	assert(pointmax);
+	if (not pointmax) {
+		throw std::runtime_error("Case file has no pointmax node under definition");
+	}
 	case_def.particles.point_max = get_vec3f_from_element(*pointmax);
 
 	// Execute the commands
@@ -200,7 +226,7 @@ void get_geometry_from_XML(XMLHandle& XML_root, CaseDef &case_def) {
 		else if (!std::strcmp(command->Name(), "setmkvoid"))
 			box_type = Type::Void;
 
-		else if (!std::strcmp(command->Name(), "drawbox")) {			
+		else if (!std::strcmp(command->Name(), "drawbox")) {
 			auto
 				point = command->FirstChildElement("point"),
 				size = command->FirstChildElement("size"),
