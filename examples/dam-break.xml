@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<case>
+    <casedef>
+        <constantsdef>
+            <alpha value="0.01" />
+            <gravity x="0" y="0" z="-9.81" />
+            <rhop0 value="1000" />
+            <speedsystem value="0" auto="true" />
+            <coefsound value="20" />
+            <speedsound value="0" auto="true" />
+            <hswl value="0" auto="true" />
+            <cflnumber value="0.2" />
+            <gamma value="7" />
+        </constantsdef>
+        <geometry>
+            <definition dp="0.0011">
+                <pointmin x="0" y="0" z="0" />
+                <pointmax x="0.1" y="0.1" z="0.1" />
+            </definition>
+            <commands>
+                <mainlist>
+                    <setmkfluid />
+                    <drawbox>
+                        <point x="0" y="0" z="0" />
+                        <size x="0.01" y="0.01" z="0.01" />
+                        <boxfill>solid</boxfill>
+                    </drawbox>
+                    <setmkbound />
+                    <drawbox>
+                        <point x="0" y="0" z="0" />
+                        <size x="0.05" y="0.01" z="0.011" />
+                        <boxfill>bottom,front,back,right,left</boxfill>
+                    </drawbox>
+                </mainlist>
+            </commands>
+        </geometry>
+    </casedef>
+</case>
