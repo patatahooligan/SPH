@@ -1,5 +1,8 @@
 #pragma once
 
+#include <cmath>
+#include <vector>
+
 // Two declarations to resolve the circular dependency issue between class methods and free functions
 class Vec3f;
 constexpr inline Vec3f operator/(Vec3f v, const float c);

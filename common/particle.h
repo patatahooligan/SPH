@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "../common/constants.h"
 #include "vec3f.h"
 
