@@ -1,11 +1,13 @@
 pkgname=patatahooligan-sph-depends-meta
-pkgver=1
+pkgver=2
 pkgrel=1
 pkgdesc='Meta-package for the SPH projects dependencies'
 arch=('any')
 license=('none')
 depends=(
     'adios2'
+    'anari-sdk'
+    'cgns'
     'cli11'
     'cxxopts'
     'eigen'
@@ -18,6 +20,7 @@ depends=(
     'liblas'
     'mariadb'
     'netcdf'
+    'nlohmann-json'
     'opencascade'
     'openmp'
     'openvr'
